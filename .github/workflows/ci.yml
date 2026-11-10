@@ -35,8 +35,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Generate dependency lockfile
-        run: npm install --package-lock-only --ignore-scripts
+      - name: Install dependencies and generate lockfile
+        run: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
       - name: Install locked dependencies
         run: npm ci
       - name: Lint
