@@ -37,8 +37,6 @@ jobs:
           node-version: 22
       - name: Install dependencies and generate lockfile
         run: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
-      - name: Install locked dependencies
-        run: npm ci --legacy-peer-deps
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -59,10 +57,7 @@ jobs:
             git commit -m "chore(frontend): add npm dependency lockfile"
             git push
           fi
-      - name: Verify committed lockfile
+      - name: Verify lockfile consistency
         run: |
-          npm ci --legacy-peer-deps
-          npm run lint
-          npm run typecheck
-          npm test -- --reporter=verbose
-          npm run build
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          git diff --exit-code -- package-lock.json
