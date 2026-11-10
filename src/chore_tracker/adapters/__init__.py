@@ -1,1 +1,1 @@
-"""Infrastructure adapters; persistence implementations are not part of this bootstrap."""
+"""Infrastructure adapters; persistence is intentionally unimplemented."""
