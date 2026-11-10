@@ -36,7 +36,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies and generate lockfile
-        run: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify clean installation
+        run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -59,5 +61,5 @@ jobs:
           fi
       - name: Verify lockfile consistency
         run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           git diff --exit-code -- package-lock.json
