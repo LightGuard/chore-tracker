@@ -39,6 +39,8 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: Verify clean installation
         run: npm ci --ignore-scripts
+      - name: Verify dependency tree
+        run: npm ls
       - name: Lint
         run: npm run lint
       - name: Type-check
