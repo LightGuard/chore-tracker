@@ -1,6 +1,9 @@
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+export function getApiBaseUrl(
+  configuredBaseUrl: string | undefined = import.meta.env.VITE_API_BASE_URL,
+): string {
+  const normalizedBaseUrl = configuredBaseUrl?.trim().replace(/\/+$/, "");
 
-export const API_BASE_URL =
-  configuredApiBaseUrl && configuredApiBaseUrl.length > 0
-    ? configuredApiBaseUrl.replace(/\/$/, "")
-    : "/api";
+  return normalizedBaseUrl || "/api";
+}
+
+export const API_BASE_URL = getApiBaseUrl();

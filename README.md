@@ -78,7 +78,7 @@ In a second terminal, from the repository root:
 ```bash
 cd frontend
 cp .env.example .env
-npm install
+npm ci
 npm run dev
 ```
 
