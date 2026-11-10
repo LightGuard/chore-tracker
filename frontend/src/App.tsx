@@ -1,4 +1,4 @@
-import { Button, Container, Reshaped } from "reshaped";
+import { Container, Reshaped } from "reshaped";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 function ApplicationShell() {
@@ -9,7 +9,6 @@ function ApplicationShell() {
           <h1>Chore Tracker</h1>
           <p>Family chore tracker</p>
         </header>
-        <Button>ReShaped is ready</Button>
       </main>
     </Container>
   );
