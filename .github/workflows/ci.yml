@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies and generate lockfile
         run: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
       - name: Install locked dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -61,7 +61,7 @@ jobs:
           fi
       - name: Verify committed lockfile
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm run lint
           npm run typecheck
           npm test -- --reporter=verbose
