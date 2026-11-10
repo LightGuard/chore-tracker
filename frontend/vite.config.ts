@@ -21,6 +21,11 @@ export default defineConfig(({ mode }) => {
       setupFiles: "./src/test/setup.ts",
       css: true,
       restoreMocks: true,
+      server: {
+        deps: {
+          inline: ["reshaped"],
+        },
+      },
     },
   };
 });
