@@ -59,3 +59,51 @@ ruff check .
 
 The layers are kept separate so HTTP concerns do not become coupled to application
 behavior or infrastructure. No persistence adapter is implemented in this bootstrap.
+
+## Frontend
+
+The frontend is a React, TypeScript, and Vite application using the ReShaped component
+library. React Router provides browser-based client-side routing. The initial route is
+only an application shell; feature screens are intentionally not part of this bootstrap.
+
+### Requirements
+
+- Node.js 22 or newer
+- npm 10 or newer
+
+### Set up and run locally
+
+In a second terminal, from the repository root:
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+The frontend is served at `http://127.0.0.1:5173`. Run the FastAPI backend separately
+using the backend instructions above. The Vite development server proxies requests
+under `/api` to `http://127.0.0.1:8000` by default.
+
+### Frontend configuration
+
+- `VITE_API_BASE_URL` sets the API base URL compiled into the frontend. It defaults
+  to the same-origin path `/api`; set it to an absolute URL only when the deployment
+  requires a separately hosted API.
+- `API_PROXY_TARGET` sets the development proxy destination. It defaults to
+  `http://127.0.0.1:8000` and is used by Vite only.
+
+Copy `.env.example` to `.env` to override the defaults for local development. Do not
+put secrets in `VITE_*` variables; those values are exposed to browser code.
+
+### Frontend quality checks
+
+Run these commands from the `frontend` directory:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
