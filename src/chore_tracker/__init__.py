@@ -1,0 +1,1 @@
+"""Chore Tracker backend application."""
