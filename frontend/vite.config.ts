@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig, loadEnv } from "vitest/config";
+import { loadEnv } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
