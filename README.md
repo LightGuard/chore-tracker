@@ -9,7 +9,7 @@ endpoint; domain behavior and persistence are intentionally not implemented yet.
 
 ### Requirements
 
-- Python 3.12 or newer (below 4.0)
+- Python 3.15 or newer (below 4.0)
 
 ### Set up the development environment
 
@@ -48,7 +48,6 @@ Run these commands from the repository root:
 ```bash
 ruff format --check .
 ruff check .
-pytest
 ```
 
 ### Backend layout
@@ -57,7 +56,6 @@ pytest
 - `src/chore_tracker/application/services/`: application-level operations.
 - `src/chore_tracker/adapters/`: infrastructure adapters, including future
   persistence implementations.
-- `tests/`: automated backend tests.
 
 The layers are kept separate so HTTP concerns do not become coupled to application
 behavior or infrastructure. No persistence adapter is implemented in this bootstrap.
