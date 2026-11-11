@@ -381,7 +381,7 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
                 """
             )
         except sqlite3.IntegrityError as error:
-            assert "same chore" in str(error)
+            assert "assigned chore" in str(error)
         else:
             raise AssertionError("A cross-chore source-item update was accepted")
 
