@@ -133,10 +133,7 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production requires an explicitly configured email transport."
                 )
-            if (
-                self.email_transport is EmailTransport.SMTP
-                and not self.smtp_starttls
-            ):
+            if self.email_transport is EmailTransport.SMTP and not self.smtp_starttls:
                 raise ValueError(
                     "Production SMTP transport requires STARTTLS encryption."
                 )
