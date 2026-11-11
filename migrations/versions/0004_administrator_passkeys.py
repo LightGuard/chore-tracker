@@ -64,7 +64,8 @@ def upgrade() -> None:
         "CREATE INDEX ix_admin_sessions_expiry ON administrator_sessions(expires_at)"
     )
     op.execute(
-        "CREATE INDEX ix_auth_challenges_expiry ON authentication_challenges(expires_at)"
+        "CREATE INDEX ix_auth_challenges_expiry "
+        "ON authentication_challenges(expires_at)"
     )
 
 
