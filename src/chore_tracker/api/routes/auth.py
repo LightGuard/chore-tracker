@@ -212,7 +212,9 @@ def setup_start(request: EmailRequest, origin: None = Depends(require_same_origi
                 (administrator_id,),
             ).fetchone()
             if enrolled:
-                raise HTTPException(status_code=409, detail="Initial setup is already complete")
+                raise HTTPException(
+                    status_code=409, detail="Initial setup is already complete"
+                )
         else:
             raise HTTPException(
                 status_code=409, detail="Initial administrator setup is already claimed"
@@ -342,8 +344,7 @@ def login_options(
         PublicKeyCredentialDescriptor(
             id=base64url_to_bytes(row["credential_id"]),
             transports=[
-                AuthenticatorTransport(value)
-                for value in json.loads(row["transports"])
+                AuthenticatorTransport(value) for value in json.loads(row["transports"])
             ],
         )
         for row in credentials
@@ -366,7 +367,10 @@ def login_options(
                 _timestamp(_now() + CHALLENGE_DURATION),
             ),
         )
-    return {"challenge_id": challenge_id, "options": json.loads(options_to_json(options))}
+    return {
+        "challenge_id": challenge_id,
+        "options": json.loads(options_to_json(options)),
+    }
 
 
 @router.post("/login/finish")
@@ -450,7 +454,10 @@ def logout(
                 (_digest(session_token),),
             )
     response.delete_cookie(
-        SESSION_COOKIE, path="/", httponly=True, samesite="strict",
+        SESSION_COOKIE,
+        path="/",
+        httponly=True,
+        samesite="strict",
         secure=get_settings().passkey_origin.startswith("https://"),
     )
     return {"status": "ok"}
@@ -487,7 +494,11 @@ def create_administrator(
             """INSERT INTO administrator_enrollment_tokens
                (token_hash, administrator_id, expires_at)
                VALUES (?, ?, ?)""",
-            (_digest(token), administrator_id, _timestamp(_now() + ENROLLMENT_DURATION)),
+            (
+                _digest(token),
+                administrator_id,
+                _timestamp(_now() + ENROLLMENT_DURATION),
+            ),
         )
     return {
         "administrator_id": administrator_id,
@@ -578,7 +589,9 @@ def enrollment_finish(
                 bytes_to_base64url(verified.credential_id),
                 verified.credential_public_key,
                 verified.sign_count,
-                json.dumps(request.credential.get("response", {}).get("transports", [])),
+                json.dumps(
+                    request.credential.get("response", {}).get("transports", [])
+                ),
             ),
         )
         consumed = connection.execute(
