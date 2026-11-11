@@ -56,7 +56,8 @@ def _clean(value: str, field: str) -> str:
 def _chore(connection, chore_id: int):
     row = connection.execute(
         "SELECT id, name, description, is_active, created_at, updated_at "
-        "FROM chores WHERE id = ?", (chore_id,)
+        "FROM chores WHERE id = ?",
+        (chore_id,),
     ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Chore was not found")
@@ -77,7 +78,8 @@ def _item(connection, chore_id: int, item_id: int):
 def _active_item_count(connection, chore_id: int) -> int:
     return connection.execute(
         "SELECT COUNT(*) FROM chore_checklist_items "
-        "WHERE chore_id = ? AND is_active = 1", (chore_id,)
+        "WHERE chore_id = ? AND is_active = 1",
+        (chore_id,),
     ).fetchone()[0]
 
 
@@ -101,7 +103,9 @@ def _serialize_chore(connection, chore_id: int) -> dict[str, Any]:
 @router.get("")
 def list_chores(administrator: Admin) -> list[dict[str, Any]]:
     with transaction(get_settings().database_path) as connection:
-        ids = connection.execute("SELECT id FROM chores ORDER BY name COLLATE NOCASE, id").fetchall()
+        ids = connection.execute(
+            "SELECT id FROM chores ORDER BY name COLLATE NOCASE, id"
+        ).fetchall()
         return [_serialize_chore(connection, row["id"]) for row in ids]
 
 
@@ -142,7 +146,10 @@ def update_chore(
         changes["description"] = changes["description"].strip()
     with transaction(get_settings().database_path) as connection:
         current = _chore(connection, chore_id)
-        if changes.get("is_active") is True and _active_item_count(connection, chore_id) == 0:
+        if (
+            changes.get("is_active") is True
+            and _active_item_count(connection, chore_id) == 0
+        ):
             raise HTTPException(
                 status_code=409,
                 detail="A chore needs at least one active checklist item before activation",
@@ -159,14 +166,18 @@ def update_chore(
 
 @router.post("/{chore_id}/checklist-items", status_code=status.HTTP_201_CREATED)
 def add_checklist_item(
-    chore_id: int, request: ChecklistItemCreate, administrator: Admin, origin: SameOrigin
+    chore_id: int,
+    request: ChecklistItemCreate,
+    administrator: Admin,
+    origin: SameOrigin,
 ):
     label = _clean(request.label, "Checklist label")
     with transaction(get_settings().database_path) as connection:
         _chore(connection, chore_id)
         position = connection.execute(
             "SELECT COALESCE(MAX(position), -1) + 1 FROM chore_checklist_items "
-            "WHERE chore_id = ?", (chore_id,)
+            "WHERE chore_id = ?",
+            (chore_id,),
         ).fetchone()[0]
         item_id = connection.execute(
             "INSERT INTO chore_checklist_items (chore_id, label, position) VALUES (?, ?, ?)",
@@ -194,7 +205,10 @@ def update_checklist_item(
         _chore(connection, chore_id)
         current = _item(connection, chore_id, item_id)
         if current["is_active"] and changes.get("is_active") is False:
-            if _chore(connection, chore_id)["is_active"] and _active_item_count(connection, chore_id) <= 1:
+            if (
+                _chore(connection, chore_id)["is_active"]
+                and _active_item_count(connection, chore_id) <= 1
+            ):
                 raise HTTPException(
                     status_code=409,
                     detail="Deactivate the chore before removing its last active checklist item",
@@ -208,7 +222,9 @@ def update_checklist_item(
         return dict(_item(connection, chore_id, item_id))
 
 
-@router.delete("/{chore_id}/checklist-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{chore_id}/checklist-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def delete_checklist_item(
     chore_id: int, item_id: int, administrator: Admin, origin: SameOrigin
 ):
@@ -218,7 +234,11 @@ def delete_checklist_item(
         item = connection.execute(
             "SELECT is_active FROM chore_checklist_items WHERE id = ?", (item_id,)
         ).fetchone()
-        if chore["is_active"] and item["is_active"] and _active_item_count(connection, chore_id) <= 1:
+        if (
+            chore["is_active"]
+            and item["is_active"]
+            and _active_item_count(connection, chore_id) <= 1
+        ):
             raise HTTPException(
                 status_code=409,
                 detail="Deactivate the chore before removing its last active checklist item",
@@ -236,12 +256,15 @@ def reorder_checklist(
     with transaction(get_settings().database_path) as connection:
         _chore(connection, chore_id)
         existing = [
-            row["id"] for row in connection.execute(
+            row["id"]
+            for row in connection.execute(
                 "SELECT id FROM chore_checklist_items WHERE chore_id = ? ORDER BY position",
                 (chore_id,),
             ).fetchall()
         ]
-        if set(existing) != set(request.ordered_item_ids) or len(existing) != len(request.ordered_item_ids):
+        if set(existing) != set(request.ordered_item_ids) or len(existing) != len(
+            request.ordered_item_ids
+        ):
             raise HTTPException(
                 status_code=422,
                 detail="The order must contain every checklist item for this chore exactly once",
