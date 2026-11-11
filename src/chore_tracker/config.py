@@ -101,6 +101,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "SMTP username and password must be configured together."
                 )
+            if self.smtp_username and not self.smtp_starttls:
+                raise ValueError(
+                    "SMTP authentication requires an encrypted STARTTLS connection."
+                )
 
         if self.environment is Environment.PRODUCTION:
             missing = [
@@ -128,6 +132,13 @@ class Settings(BaseSettings):
             if self.email_transport is EmailTransport.CONSOLE:
                 raise ValueError(
                     "Production requires an explicitly configured email transport."
+                )
+            if (
+                self.email_transport is EmailTransport.SMTP
+                and not self.smtp_starttls
+            ):
+                raise ValueError(
+                    "Production SMTP transport requires STARTTLS encryption."
                 )
 
         return self
