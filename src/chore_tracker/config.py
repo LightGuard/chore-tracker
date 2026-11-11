@@ -74,9 +74,9 @@ class Settings(BaseSettings):
         secret_file = values.get("smtp_password_file")
         if secret_file and not values.get("smtp_password"):
             try:
-                values["smtp_password"] = Path(secret_file).read_text(
-                    encoding="utf-8"
-                ).rstrip("\r\n")
+                values["smtp_password"] = (
+                    Path(secret_file).read_text(encoding="utf-8").rstrip("\r\n")
+                )
             except OSError:
                 raise ValueError(
                     "The configured SMTP password file could not be read."
@@ -96,9 +96,7 @@ class Settings(BaseSettings):
                 if not value
             ]
             if missing:
-                raise ValueError(
-                    "SMTP transport requires: " + ", ".join(missing)
-                )
+                raise ValueError("SMTP transport requires: " + ", ".join(missing))
             if bool(self.smtp_username) != bool(self.smtp_password):
                 raise ValueError(
                     "SMTP username and password must be configured together."
@@ -160,9 +158,15 @@ class Settings(BaseSettings):
         if value == "localhost":
             return value
         labels = value.rstrip(".").split(".")
-        if len(value) > 253 or len(labels) < 2 or any(
-            not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
-            for label in labels
+        if (
+            len(value) > 253
+            or len(labels) < 2
+            or any(
+                not re.fullmatch(
+                    r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label
+                )
+                for label in labels
+            )
         ):
             raise ValueError("passkey_rp_id must be a valid domain name.")
         return value
