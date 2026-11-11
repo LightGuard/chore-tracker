@@ -4,8 +4,8 @@ Basic chore tracker app for my family.
 
 ## Backend
 
-The backend is a FastAPI application. It currently provides only a health endpoint;
-domain behavior and persistence are intentionally not implemented yet.
+The backend is a FastAPI application with SQLite persistence, administrator passkey
+authentication, and health endpoints.
 
 ### Requirements
 
@@ -64,11 +64,10 @@ the available settings.
 | `CHORE_TRACKER_ENVIRONMENT` | `development` | `development`, `test`, or `production` |
 | `CHORE_TRACKER_APP_HOST` | `127.0.0.1` | API bind address |
 | `CHORE_TRACKER_APP_PORT` | `8000` | API bind port |
-| `CHORE_TRACKER_APP_ORIGIN` | `http://127.0.0.1:5173` | Browser origin allowed to call the API |
+| `CHORE_TRACKER_APP_ORIGIN` | `http://localhost:5173` | Browser origin allowed to call the API |
 | `CHORE_TRACKER_DATABASE_PATH` | `./data/chore-tracker.db` | SQLite file path; set to a persistent mounted volume in deployments |
-| `CHORE_TRACKER_ADMIN_EMAIL` | unset | Initial administrator identity setting for the identity feature |
 | `CHORE_TRACKER_PASSKEY_RP_ID` | `localhost` | Passkey relying-party ID |
-| `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://127.0.0.1:5173` | Origin used for passkey validation |
+| `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://localhost:5173` | Origin used for passkey validation |
 | `CHORE_TRACKER_EMAIL_TRANSPORT` | `console` | Initial transports: `console` or `smtp` |
 | `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone used for reports |
 | `CHORE_TRACKER_REPORT_DELIVERY_TIME` | `03:00` | Monday report delivery time in the reporting timezone (`HH:MM`) |
@@ -86,9 +85,10 @@ password. Secret values are represented as secret types and are not included in
 settings representations or validation messages. Do not commit `.env` files or secret
 files.
 
-Production startup rejects development-only configuration: administrator identity
-must be set, application and passkey origins must use HTTPS, the passkey relying-party
-ID must not be `localhost`, and a non-console email transport must be configured.
+Production startup rejects development-only configuration: application and passkey
+origins must use HTTPS, the passkey relying-party ID must not be `localhost`, and a
+non-console email transport must be configured. Administrator identity is established
+through the first-run browser setup and is not supplied through environment variables.
 Validation errors identify the missing setting without echoing secret values.
 
 ### Quality checks
@@ -110,13 +110,14 @@ pytest
 - `src/chore_tracker/config.py`: typed environment and secret configuration.
 
 The layers are kept separate so HTTP concerns do not become coupled to application
-behavior or infrastructure. No persistence adapter is implemented in this bootstrap.
+behavior or infrastructure.
 
 ## Frontend
 
 The frontend is a React, TypeScript, and Vite application using the ReShaped component
-library. React Router provides browser-based client-side routing. The initial route is
-only an application shell; feature screens are intentionally not part of this bootstrap.
+library. React Router provides browser-based client-side routing. The administrator
+screen is available at `/admin` and performs first-run setup, passkey sign-in, and
+second-administrator enrollment.
 
 ### Requirements
 
@@ -133,7 +134,7 @@ npm ci
 npm run dev
 ```
 
-The frontend is served at `http://127.0.0.1:5173`. The Vite development server proxies
+The frontend is served at `http://localhost:5173`. The Vite development server proxies
 requests under `/api` to `http://127.0.0.1:8000` by default.
 
 ### Frontend configuration
@@ -173,7 +174,7 @@ tilt up
 ```
 
 Tilt exposes the API at `http://127.0.0.1:8000` and the frontend at
-`http://127.0.0.1:5173`. Uvicorn reloads the API when Python files change, and Vite
+`http://localhost:5173`. Uvicorn reloads the API when Python files change, and Vite
 provides frontend hot-module replacement. Stop the environment with `Ctrl+C` or
 `tilt down`.
 
@@ -221,3 +222,38 @@ ordered checklist-item snapshots, so later catalog edits do not rewrite historic
 assignments. Daily completion is stored per assignment checklist item and calendar
 date. Weekly report snapshots and per-administrator delivery records provide durable,
 unique delivery state for retries.
+
+
+## Administrator identity and passkeys
+
+Administrator setup is performed in the browser; no CLI bootstrap command or
+administrator email environment variable is required. After applying migrations and
+starting the application, open `/admin` on the local network. If no administrator
+exists, the first visitor can claim the initial administrator account by entering an
+email address and registering a passkey with the browser's authenticator. The initial
+claim is serialized by SQLite so concurrent first visits cannot create competing
+initial administrators. If registration is interrupted, returning to setup with the
+same email resumes the pending enrollment; a different email cannot take over it.
+
+The first administrator can create one additional administrator from the admin page.
+The application returns a one-time enrollment link that expires after 24 hours. The
+second administrator opens that link and registers their own passkey. The application
+allows at most two administrator records. Once initial setup is complete, it cannot be
+repeated through the unauthenticated setup endpoint.
+
+Passkey registration and authentication challenges expire after five minutes and are
+consumed once. The server validates WebAuthn responses against the configured relying-
+party ID and exact browser origin. Only credential IDs, public keys, signature counters,
+and transport metadata are stored; private authenticator key material remains with the
+authenticator. Administrator sessions use random opaque tokens stored as hashes in
+SQLite and HttpOnly, SameSite=Strict cookies; cookies are Secure when the configured
+passkey origin uses HTTPS. State-changing authentication requests require the configured
+browser Origin. Administrative API routes must declare both the `require_admin` and
+`require_same_origin` dependencies for state-changing operations. Child-facing routes
+must not use administrator authentication.
+
+For local development, the defaults support `http://localhost:5173` and the
+`localhost` relying-party ID. For LAN deployment, configure `CHORE_TRACKER_APP_ORIGIN`
+and `CHORE_TRACKER_PASSKEY_ORIGIN` to the exact HTTPS origin used in the browser and
+set `CHORE_TRACKER_PASSKEY_RP_ID` to its hostname (without scheme or port). Apply
+migrations explicitly with `alembic upgrade head` before starting the application.

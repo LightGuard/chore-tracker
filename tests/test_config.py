@@ -14,7 +14,7 @@ def test_development_defaults_are_safe_and_explicit() -> None:
 
     assert settings.environment is Environment.DEVELOPMENT
     assert settings.app_host == "127.0.0.1"
-    assert settings.app_origin == "http://127.0.0.1:5173"
+    assert settings.app_origin == "http://localhost:5173"
     assert settings.database_path == Path("./data/chore-tracker.db")
     assert settings.email_transport is EmailTransport.CONSOLE
     assert settings.report_timezone == "America/Denver"
@@ -112,7 +112,7 @@ def test_smtp_username_requires_password() -> None:
 
 
 def test_production_rejects_development_defaults() -> None:
-    with pytest.raises(ValidationError, match="Production configuration requires"):
+    with pytest.raises(ValidationError, match="must use HTTPS"):
         Settings(_env_file=None, _secrets_dir=None, environment=Environment.PRODUCTION)
 
 
@@ -123,7 +123,6 @@ def test_production_accepts_explicit_secure_configuration() -> None:
         environment=Environment.PRODUCTION,
         app_host="0.0.0.0",
         app_origin="https://chores.example.test",
-        admin_email="admin@example.test",
         passkey_rp_id="chores.example.test",
         passkey_origin="https://chores.example.test",
         email_transport=EmailTransport.SMTP,
@@ -140,7 +139,6 @@ def test_production_requires_https_and_non_local_passkey_domain() -> None:
             _env_file=None,
             _secrets_dir=None,
             environment=Environment.PRODUCTION,
-            admin_email="admin@example.test",
             passkey_rp_id="example.test",
             email_transport=EmailTransport.SMTP,
             smtp_host="mail.example.test",

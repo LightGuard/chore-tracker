@@ -22,3 +22,41 @@ body {
   margin: 0 auto;
   padding: 2rem;
 }
+
+.admin-shell section {
+  max-width: 36rem;
+  margin-top: 2rem;
+}
+
+.admin-shell form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.admin-shell input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem;
+}
+
+.admin-shell button {
+  width: fit-content;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.admin-shell button:disabled {
+  cursor: wait;
+}
+
+.error-message {
+  color: #b42318;
+}
+
+.invitation-result {
+  margin-top: 1.5rem;
+  overflow-wrap: anywhere;
+}

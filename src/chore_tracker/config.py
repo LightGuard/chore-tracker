@@ -45,13 +45,12 @@ class Settings(BaseSettings):
     environment: Environment = Environment.DEVELOPMENT
     app_host: str = Field(default="127.0.0.1", min_length=1)
     app_port: int = Field(default=8000, ge=1, le=65535)
-    app_origin: str = "http://127.0.0.1:5173"
+    app_origin: str = "http://localhost:5173"
 
     database_path: Path = Path("./data/chore-tracker.db")
 
-    admin_email: str | None = None
     passkey_rp_id: str = "localhost"
-    passkey_origin: str = "http://127.0.0.1:5173"
+    passkey_origin: str = "http://localhost:5173"
 
     email_transport: EmailTransport = EmailTransport.CONSOLE
     email_from_address: str | None = None
@@ -106,7 +105,6 @@ class Settings(BaseSettings):
             missing = [
                 name
                 for name, value in (
-                    ("CHORE_TRACKER_ADMIN_EMAIL", self.admin_email),
                     ("CHORE_TRACKER_PASSKEY_RP_ID", self.passkey_rp_id),
                 )
                 if not value
@@ -123,7 +121,7 @@ class Settings(BaseSettings):
                 )
             if self.passkey_rp_id == "localhost":
                 raise ValueError(
-                    "Production passkey relying-party ID must be a public domain."
+                    "Production passkey relying-party ID must not be localhost."
                 )
             if self.email_transport is EmailTransport.CONSOLE:
                 raise ValueError(
