@@ -10,9 +10,13 @@ from pathlib import Path
 
 def connect(database_path: str | Path) -> sqlite3.Connection:
     """Open a SQLite connection with foreign-key enforcement enabled."""
-    path = str(database_path)
-    if path != ":memory:" and not path.startswith("file:"):
-        Path(path).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
+    configured_path = str(database_path)
+    if configured_path == ":memory:" or configured_path.startswith("file:"):
+        path = configured_path
+    else:
+        resolved_path = Path(configured_path).expanduser().resolve()
+        resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        path = str(resolved_path)
 
     connection = sqlite3.connect(
         path,
