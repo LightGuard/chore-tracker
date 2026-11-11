@@ -75,9 +75,12 @@ def test_catalog_requires_admin_session(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
     client.post("/auth/logout", headers=admin_headers())
     assert client.get("/chores").status_code == 401
-    assert client.post(
-        "/chores", json={"name": "Kitchen"}, headers=admin_headers()
-    ).status_code == 401
+    assert (
+        client.post(
+            "/chores", json={"name": "Kitchen"}, headers=admin_headers()
+        ).status_code
+        == 401
+    )
 
 
 def test_chore_checklist_crud_activation_and_ordering(tmp_path, monkeypatch):
@@ -144,12 +147,18 @@ def test_chore_checklist_crud_activation_and_ordering(tmp_path, monkeypatch):
     )
     assert last_item_rejection.status_code == 409
 
-    assert client.patch(
-        f"/chores/{chore_id}", json={"is_active": False}, headers=headers
-    ).status_code == 200
-    assert client.delete(
-        f"/chores/{chore_id}/checklist-items/{first_id}", headers=headers
-    ).status_code == 204
+    assert (
+        client.patch(
+            f"/chores/{chore_id}", json={"is_active": False}, headers=headers
+        ).status_code
+        == 200
+    )
+    assert (
+        client.delete(
+            f"/chores/{chore_id}/checklist-items/{first_id}", headers=headers
+        ).status_code
+        == 204
+    )
 
     updated = client.patch(
         f"/chores/{chore_id}",
@@ -163,31 +172,41 @@ def test_invalid_names_labels_and_partial_reorder_are_rejected(tmp_path, monkeyp
     client, _ = prepare_client(tmp_path, monkeypatch)
     headers = admin_headers()
 
-    assert client.post(
-        "/chores", json={"name": "   "}, headers=headers
-    ).status_code == 422
+    assert (
+        client.post("/chores", json={"name": "   "}, headers=headers).status_code
+        == 422
+    )
     created = client.post("/chores", json={"name": "Bathroom"}, headers=headers)
     chore_id = created.json()["id"]
-    assert client.post(
-        f"/chores/{chore_id}/checklist-items",
-        json={"label": "  "},
-        headers=headers,
-    ).status_code == 422
+    assert (
+        client.post(
+            f"/chores/{chore_id}/checklist-items",
+            json={"label": "  "},
+            headers=headers,
+        ).status_code
+        == 422
+    )
     item = client.post(
         f"/chores/{chore_id}/checklist-items",
         json={"label": "Clean sink"},
         headers=headers,
     ).json()
-    assert client.put(
-        f"/chores/{chore_id}/checklist-order",
-        json={"ordered_item_ids": []},
-        headers=headers,
-    ).status_code == 422
-    assert client.put(
-        f"/chores/{chore_id}/checklist-order",
-        json={"ordered_item_ids": [item["id"], item["id"]]},
-        headers=headers,
-    ).status_code == 422
+    assert (
+        client.put(
+            f"/chores/{chore_id}/checklist-order",
+            json={"ordered_item_ids": []},
+            headers=headers,
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            f"/chores/{chore_id}/checklist-order",
+            json={"ordered_item_ids": [item["id"], item["id"]]},
+            headers=headers,
+        ).status_code
+        == 422
+    )
 
 
 def test_catalog_changes_preserve_assignment_snapshots_and_completions(
@@ -227,32 +246,44 @@ def test_catalog_changes_preserve_assignment_snapshots_and_completions(
             (snapshot_id,),
         )
 
-    assert client.patch(
-        f"/chores/{chore_id}",
-        json={"name": "Laundry (revised)", "description": "New instructions"},
-        headers=headers,
-    ).status_code == 200
-    assert client.patch(
-        f"/chores/{chore_id}/checklist-items/{item['id']}",
-        json={"label": "Fold and put away clothes"},
-        headers=headers,
-    ).status_code == 200
-    assert client.delete(
-        f"/chores/{chore_id}/checklist-items/{item['id']}", headers=headers
-    ).status_code == 204
+    assert (
+        client.patch(
+            f"/chores/{chore_id}",
+            json={"name": "Laundry (revised)", "description": "New instructions"},
+            headers=headers,
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/chores/{chore_id}/checklist-items/{item['id']}",
+            json={"label": "Fold and put away clothes"},
+            headers=headers,
+        ).status_code
+        == 200
+    )
+    assert (
+        client.delete(
+            f"/chores/{chore_id}/checklist-items/{item['id']}", headers=headers
+        ).status_code
+        == 204
+    )
 
     with connect(database_path) as connection:
         assignment = connection.execute(
             "SELECT chore_name_snapshot, chore_description_snapshot "
-            "FROM weekly_assignments WHERE id = ?", (assignment_id,)
+            "FROM weekly_assignments WHERE id = ?",
+            (assignment_id,),
         ).fetchone()
         snapshot = connection.execute(
             "SELECT source_checklist_item_id, label_snapshot "
-            "FROM assignment_checklist_items WHERE id = ?", (snapshot_id,)
+            "FROM assignment_checklist_items WHERE id = ?",
+            (snapshot_id,),
         ).fetchone()
         completion = connection.execute(
             "SELECT is_completed, completed_at FROM daily_checklist_completions "
-            "WHERE assignment_checklist_item_id = ?", (snapshot_id,)
+            "WHERE assignment_checklist_item_id = ?",
+            (snapshot_id,),
         ).fetchone()
 
     assert tuple(assignment) == ("Laundry", "Original")
