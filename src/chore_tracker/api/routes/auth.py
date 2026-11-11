@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from webauthn import (
     generate_authentication_options,
     generate_registration_options,
@@ -289,7 +289,7 @@ def setup_finish(
         )
     try:
         verified = _verify_registration(challenge["challenge"], request.credential)
-    except (ValueError, ValidationError) as error:
+    except Exception as error:
         raise HTTPException(
             status_code=400, detail="Passkey registration could not be verified"
         ) from error
@@ -560,7 +560,7 @@ def enrollment_finish(
                VALUES (?, ?, ?, ?, ?)""",
             (
                 challenge["administrator_id"],
-                request.credential["id"],
+                bytes_to_base64url(verified.credential_id),
                 verified.credential_public_key,
                 verified.sign_count,
                 json.dumps(request.credential.get("response", {}).get("transports", [])),
