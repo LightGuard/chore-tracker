@@ -234,13 +234,15 @@ def test_catalog_changes_preserve_assignment_snapshots_and_completions(
         ).lastrowid
         snapshot_id = connection.execute(
             """INSERT INTO assignment_checklist_items
-               (weekly_assignment_id, source_checklist_item_id, label_snapshot, position)
+               (weekly_assignment_id, source_checklist_item_id,
+                label_snapshot, position)
                VALUES (?, ?, 'Fold clothes', 0)""",
             (assignment_id, item["id"]),
         ).lastrowid
         connection.execute(
             """INSERT INTO daily_checklist_completions
-               (assignment_checklist_item_id, completion_date, is_completed, completed_at)
+               (assignment_checklist_item_id, completion_date,
+                is_completed, completed_at)
                VALUES (?, '2026-11-09', 1, '2026-11-09T12:00:00Z')""",
             (snapshot_id,),
         )
