@@ -15,7 +15,7 @@ from chore_tracker.adapters.sqlite import connect
 from chore_tracker.main import app
 
 ROOT = Path(__file__).resolve().parents[1]
-ORIGIN = "http://127.0.0.1:5173"
+ORIGIN = "http://localhost:5173"
 CREDENTIAL_ID = "Y3JlZC0x"
 
 
