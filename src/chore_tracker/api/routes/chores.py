@@ -145,7 +145,7 @@ def update_chore(
     if "description" in changes and changes["description"] is not None:
         changes["description"] = changes["description"].strip()
     with transaction(get_settings().database_path) as connection:
-        current = _chore(connection, chore_id)
+        _chore(connection, chore_id)
         if (
             changes.get("is_active") is True
             and _active_item_count(connection, chore_id) == 0
