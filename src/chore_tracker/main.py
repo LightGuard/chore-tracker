@@ -12,7 +12,7 @@ settings = get_settings()
 app = FastAPI(title="Chore Tracker API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.app_origin],
+    allow_origins=sorted({settings.app_origin, settings.passkey_origin}),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type"],
