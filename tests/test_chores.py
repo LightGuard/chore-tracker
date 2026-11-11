@@ -142,8 +142,20 @@ def test_chore_checklist_crud_activation_and_ordering(tmp_path, monkeypatch):
     assert edited.status_code == 200
     assert edited.json()["label"] == "Wipe all counters"
 
+    assert (
+        client.delete(
+            f"/chores/{chore_id}/checklist-items/{first_id}", headers=headers
+        ).status_code
+        == 204
+    )
+    last_item_deactivation = client.patch(
+        f"/chores/{chore_id}/checklist-items/{second_id}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert last_item_deactivation.status_code == 409
     last_item_rejection = client.delete(
-        f"/chores/{chore_id}/checklist-items/{first_id}", headers=headers
+        f"/chores/{chore_id}/checklist-items/{second_id}", headers=headers
     )
     assert last_item_rejection.status_code == 409
 
@@ -155,7 +167,7 @@ def test_chore_checklist_crud_activation_and_ordering(tmp_path, monkeypatch):
     )
     assert (
         client.delete(
-            f"/chores/{chore_id}/checklist-items/{first_id}", headers=headers
+            f"/chores/{chore_id}/checklist-items/{second_id}", headers=headers
         ).status_code
         == 204
     )
