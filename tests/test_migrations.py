@@ -50,7 +50,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0002_assignments_completion_reports"
+        assert revision == "0003_immutable_assignment_history"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -444,3 +444,71 @@ def test_deleting_source_catalog_item_preserves_snapshot_and_completion(tmp_path
         assert snapshot["label_snapshot"] == "Wipe counters"
         assert snapshot["source_checklist_item_id"] is None
         assert completion_count == 1
+
+
+
+def test_immutable_history_migration_preserves_existing_assignment_data(tmp_path) -> None:
+    database_path = tmp_path / "preserve-history.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "0002_assignments_completion_reports")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO family_members (display_name) VALUES ('Taylor')"
+        )
+        connection.execute("INSERT INTO chores (name) VALUES ('Kitchen')")
+        connection.execute(
+            """
+            INSERT INTO chore_checklist_items (chore_id, label, position)
+            VALUES (1, 'Wipe counters', 0)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot
+            )
+            VALUES (1, 1, '2026-11-09', '2026-11-15', 'Kitchen')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO assignment_checklist_items (
+                weekly_assignment_id, source_checklist_item_id,
+                label_snapshot, position
+            )
+            VALUES (1, 1, 'Wipe counters', 0)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO daily_checklist_completions (
+                assignment_checklist_item_id, completion_date,
+                is_completed, completed_at
+            )
+            VALUES (1, '2026-11-09', 1, '2026-11-09T18:00:00Z')
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        assignment = connection.execute(
+            "SELECT chore_name_snapshot FROM weekly_assignments WHERE id = 1"
+        ).fetchone()
+        snapshot = connection.execute(
+            "SELECT label_snapshot FROM assignment_checklist_items WHERE id = 1"
+        ).fetchone()
+        completion = connection.execute(
+            """
+            SELECT completion_date, is_completed
+            FROM daily_checklist_completions
+            WHERE assignment_checklist_item_id = 1
+            """
+        ).fetchone()
+
+        assert assignment["chore_name_snapshot"] == "Kitchen"
+        assert snapshot["label_snapshot"] == "Wipe counters"
+        assert completion["completion_date"] == "2026-11-09"
+        assert completion["is_completed"] == 1
