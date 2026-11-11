@@ -211,6 +211,12 @@ def test_admin_authorization_and_second_administrator_enrollment(
 ):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     assert client.get("/auth/me").status_code == 401
+    denied = client.post(
+        "/auth/administrators",
+        json={"email": "second@example.test"},
+        headers=request_headers(),
+    )
+    assert denied.status_code == 401
     enroll_first_admin(client, monkeypatch)
 
     created = client.post(
