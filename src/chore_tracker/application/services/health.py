@@ -31,7 +31,9 @@ def is_database_ready(database_path: str | Path) -> bool:
 
     connection: sqlite3.Connection | None = None
     try:
-        expected_revision = ScriptDirectory(str(MIGRATIONS_DIRECTORY)).get_current_head()
+        expected_revision = ScriptDirectory(
+            str(MIGRATIONS_DIRECTORY)
+        ).get_current_head()
         if expected_revision is None:
             return False
 
