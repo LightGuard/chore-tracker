@@ -146,3 +146,68 @@ def test_production_requires_https_and_non_local_passkey_domain() -> None:
             smtp_host="mail.example.test",
             email_from_address="chores@example.test",
         )
+
+
+def test_production_rejects_smtp_without_starttls() -> None:
+    with pytest.raises(ValidationError, match="requires STARTTLS encryption"):
+        Settings(
+            _env_file=None,
+            _secrets_dir=None,
+            environment=Environment.PRODUCTION,
+            app_host="0.0.0.0",
+            app_origin="https://chores.example.test",
+            admin_email="admin@example.test",
+            passkey_rp_id="chores.example.test",
+            passkey_origin="https://chores.example.test",
+            email_transport=EmailTransport.SMTP,
+            email_from_address="chores@example.test",
+            smtp_host="mail.example.test",
+            smtp_starttls=False,
+        )
+
+
+def test_production_rejects_smtp_authentication_without_starttls() -> None:
+    with pytest.raises(ValidationError, match="requires an encrypted STARTTLS"):
+        Settings(
+            _env_file=None,
+            _secrets_dir=None,
+            environment=Environment.PRODUCTION,
+            app_host="0.0.0.0",
+            app_origin="https://chores.example.test",
+            admin_email="admin@example.test",
+            passkey_rp_id="chores.example.test",
+            passkey_origin="https://chores.example.test",
+            email_transport=EmailTransport.SMTP,
+            email_from_address="chores@example.test",
+            smtp_host="mail.example.test",
+            smtp_username="mailer",
+            smtp_password="smtp-secret",
+            smtp_starttls=False,
+        )
+
+
+def test_smtp_authentication_requires_starttls_in_all_environments() -> None:
+    with pytest.raises(ValidationError, match="requires an encrypted STARTTLS"):
+        Settings(
+            _env_file=None,
+            _secrets_dir=None,
+            email_transport=EmailTransport.SMTP,
+            email_from_address="chores@example.test",
+            smtp_host="mail.example.test",
+            smtp_username="mailer",
+            smtp_password="smtp-secret",
+            smtp_starttls=False,
+        )
+
+
+def test_development_smtp_without_auth_may_explicitly_disable_starttls() -> None:
+    settings = Settings(
+        _env_file=None,
+        _secrets_dir=None,
+        email_transport=EmailTransport.SMTP,
+        email_from_address="chores@example.test",
+        smtp_host="mail.example.test",
+        smtp_starttls=False,
+    )
+
+    assert settings.smtp_starttls is False
