@@ -242,11 +242,12 @@ def reorder_checklist(
                 status_code=422,
                 detail="The order must contain every checklist item for this chore exactly once",
             )
-        # Move all positions out of the non-negative range before assigning the new order;
-        # this avoids transient UNIQUE(chore_id, position) collisions during swaps.
+        # Move positions above the current range before assigning the new order;
+        # the schema requires non-negative positions and enforces uniqueness.
+        offset = max(existing, default=-1) + len(existing) + 1
         connection.execute(
-            "UPDATE chore_checklist_items SET position = -position - 1 WHERE chore_id = ?",
-            (chore_id,),
+            "UPDATE chore_checklist_items SET position = position + ? WHERE chore_id = ?",
+            (offset, chore_id),
         )
         for position, item_id in enumerate(request.ordered_item_ids):
             connection.execute(
