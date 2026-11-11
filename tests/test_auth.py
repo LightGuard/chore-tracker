@@ -121,9 +121,7 @@ def test_setup_rejects_requests_from_an_untrusted_origin(tmp_path, monkeypatch):
     assert response.status_code == 403
 
 
-def test_login_success_creates_session_and_replay_is_rejected(
-    tmp_path, monkeypatch
-):
+def test_login_success_creates_session_and_replay_is_rejected(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
     enroll_first_admin(client, monkeypatch)
 
@@ -149,9 +147,7 @@ def test_login_success_creates_session_and_replay_is_rejected(
     assert response.status_code == 200
     assert "chore_tracker_session" in response.cookies
 
-    replay = client.post(
-        "/auth/login/finish", json=payload, headers=request_headers()
-    )
+    replay = client.post("/auth/login/finish", json=payload, headers=request_headers())
     assert replay.status_code == 400
 
 
@@ -167,9 +163,9 @@ def test_expired_login_challenge_is_rejected(tmp_path, monkeypatch):
         connection.execute(
             "UPDATE authentication_challenges SET expires_at = ? WHERE id = ?",
             (
-                (datetime.now(UTC) - timedelta(minutes=1)).isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                (datetime.now(UTC) - timedelta(minutes=1))
+                .isoformat()
+                .replace("+00:00", "Z"),
                 options.json()["challenge_id"],
             ),
         )
@@ -184,9 +180,7 @@ def test_expired_login_challenge_is_rejected(tmp_path, monkeypatch):
     assert response.status_code == 400
 
 
-def test_failed_passkey_verification_does_not_create_session(
-    tmp_path, monkeypatch
-):
+def test_failed_passkey_verification_does_not_create_session(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
     enroll_first_admin(client, monkeypatch)
     options = client.post(
@@ -211,9 +205,7 @@ def test_failed_passkey_verification_does_not_create_session(
     assert "chore_tracker_session" not in response.cookies
 
 
-def test_admin_authorization_and_second_administrator_enrollment(
-    tmp_path, monkeypatch
-):
+def test_admin_authorization_and_second_administrator_enrollment(tmp_path, monkeypatch):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     assert client.get("/auth/me").status_code == 401
     denied = client.post(
@@ -242,7 +234,9 @@ def test_admin_authorization_and_second_administrator_enrollment(
         auth,
         "_verify_registration",
         lambda _challenge, _credential: SimpleNamespace(
-            credential_id=b"second-cred", credential_public_key=b"second-public-key", sign_count=0
+            credential_id=b"second-cred",
+            credential_public_key=b"second-public-key",
+            sign_count=0,
         ),
     )
     completed = client.post(
@@ -260,12 +254,16 @@ def test_admin_authorization_and_second_administrator_enrollment(
     assert client.get("/auth/setup").json()["enrollment_pending"] is False
 
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM administrators"
-        ).fetchone()[0] == 2
-        assert connection.execute(
-            "SELECT COUNT(*) FROM administrator_passkey_credentials"
-        ).fetchone()[0] == 2
+        assert (
+            connection.execute("SELECT COUNT(*) FROM administrators").fetchone()[0]
+            == 2
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM administrator_passkey_credentials"
+            ).fetchone()[0]
+            == 2
+        )
         user_handles = connection.execute(
             "SELECT webauthn_user_id FROM administrators ORDER BY id"
         ).fetchall()
