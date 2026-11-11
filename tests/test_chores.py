@@ -173,8 +173,7 @@ def test_invalid_names_labels_and_partial_reorder_are_rejected(tmp_path, monkeyp
     headers = admin_headers()
 
     assert (
-        client.post("/chores", json={"name": "   "}, headers=headers).status_code
-        == 422
+        client.post("/chores", json={"name": "   "}, headers=headers).status_code == 422
     )
     created = client.post("/chores", json={"name": "Bathroom"}, headers=headers)
     chore_id = created.json()["id"]
