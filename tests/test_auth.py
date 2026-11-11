@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -180,7 +183,13 @@ def test_expired_login_challenge_is_rejected(tmp_path, monkeypatch):
     assert response.status_code == 400
 
 
-def test_failed_passkey_verification_does_not_create_session(tmp_path, monkeypatch):
+def _base64url(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
+
+
+def test_failed_passkey_verification_does_not_create_session(
+    tmp_path, monkeypatch
+):
     client, _ = prepare_client(tmp_path, monkeypatch)
     enroll_first_admin(client, monkeypatch)
     options = client.post(
@@ -188,21 +197,72 @@ def test_failed_passkey_verification_does_not_create_session(tmp_path, monkeypat
         json={"email": "first@example.test"},
         headers=request_headers(),
     )
+    challenge = options.json()["options"]["challenge"]
+    client_data = json.dumps(
+        {
+            "type": "webauthn.get",
+            "challenge": challenge,
+            "origin": ORIGIN,
+            "crossOrigin": False,
+        }
+    ).encode("utf-8")
+    authenticator_data = (
+        hashlib.sha256(b"localhost").digest()
+        + bytes([0x05])
+        + (0).to_bytes(4, "big")
+    )
+    credential = {
+        "id": CREDENTIAL_ID,
+        "rawId": CREDENTIAL_ID,
+        "type": "public-key",
+        "response": {
+            "clientDataJSON": _base64url(client_data),
+            "authenticatorData": _base64url(authenticator_data),
+            "signature": _base64url(b"invalid signature"),
+            "userHandle": None,
+        },
+        "clientExtensionResults": {},
+        "authenticatorAttachment": "platform",
+    }
 
-    def reject_authentication(**_kwargs):
-        raise ValueError("invalid signature")
-
-    monkeypatch.setattr(auth, "verify_authentication_response", reject_authentication)
     response = client.post(
         "/auth/login/finish",
         json={
             "challenge_id": options.json()["challenge_id"],
-            "credential": {"id": CREDENTIAL_ID},
+            "credential": credential,
         },
         headers=request_headers(),
     )
     assert response.status_code == 401
     assert "chore_tracker_session" not in response.cookies
+
+
+def test_real_registration_verifier_rejects_malformed_browser_response(
+    tmp_path, monkeypatch
+):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    started = client.post(
+        "/auth/setup/start",
+        json={"email": "first@example.test"},
+        headers=request_headers(),
+    )
+
+    response = client.post(
+        "/auth/setup/finish",
+        json={
+            "challenge_id": started.json()["challenge_id"],
+            "credential": {
+                "id": CREDENTIAL_ID,
+                "rawId": CREDENTIAL_ID,
+                "type": "public-key",
+                "response": {},
+            },
+        },
+        headers=request_headers(),
+    )
+
+    assert response.status_code == 400
+    assert client.get("/auth/setup").json()["setup_required"] is True
 
 
 def test_admin_authorization_and_second_administrator_enrollment(tmp_path, monkeypatch):
