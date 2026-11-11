@@ -187,9 +187,7 @@ def _base64url(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
 
 
-def test_failed_passkey_verification_does_not_create_session(
-    tmp_path, monkeypatch
-):
+def test_failed_passkey_verification_does_not_create_session(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
     enroll_first_admin(client, monkeypatch)
     options = client.post(
