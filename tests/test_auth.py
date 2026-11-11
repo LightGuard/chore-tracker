@@ -279,7 +279,6 @@ def test_admin_authorization_and_second_administrator_enrollment(tmp_path, monke
     )
     assert third.status_code == 409
 
-
 def test_logout_revokes_the_server_side_session(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
     enroll_first_admin(client, monkeypatch)
