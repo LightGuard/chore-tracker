@@ -7,7 +7,7 @@ import json
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
@@ -412,7 +412,7 @@ def login_finish(
             credential_current_sign_count=stored["sign_count"],
             require_user_verification=True,
         )
-    except (ValueError, ValidationError) as error:
+    except Exception as error:
         raise HTTPException(
             status_code=401, detail="Passkey authentication failed"
         ) from error
@@ -437,7 +437,7 @@ def login_finish(
 
 @router.get("/me")
 def current_admin(
-    administrator: dict[str, Any] = Depends(require_admin),
+    administrator: Annotated[dict[str, Any], Depends(require_admin)],
 ) -> dict[str, Any]:
     return administrator
 
@@ -467,7 +467,7 @@ def logout(
 @router.post("/administrators")
 def create_administrator(
     request: EmailRequest,
-    administrator: dict[str, Any] = Depends(require_admin),
+    administrator: Annotated[dict[str, Any], Depends(require_admin)],
     origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
     """Create the second administrator and return its one-time enrollment token."""
@@ -567,7 +567,7 @@ def enrollment_finish(
         )
     try:
         verified = _verify_registration(challenge["challenge"], request.credential)
-    except (ValueError, ValidationError) as error:
+    except Exception as error:
         raise HTTPException(
             status_code=400, detail="Passkey registration could not be verified"
         ) from error
