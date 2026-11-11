@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Container, Reshaped } from "reshaped";
 import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import { API_BASE_URL } from "./config/api";
@@ -127,7 +127,7 @@ function AdminPage() {
   const navigate = useNavigate();
   const enrollmentToken = searchParams.get("token");
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const setup = await apiRequest<SetupStatus>("/auth/setup");
     setStatus(setup);
     try {
@@ -135,13 +135,13 @@ function AdminPage() {
     } catch {
       setAdministrator(null);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void refresh().catch((reason: unknown) => {
       setError(reason instanceof Error ? reason.message : "Unable to load administrator setup.");
     });
-  }, []);
+  }, [refresh]);
 
   async function handleInitialSetup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -357,6 +357,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<ApplicationShell />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/enroll" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
