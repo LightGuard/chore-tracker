@@ -115,6 +115,185 @@ async function authenticatePasskey(options: Record<string, unknown>): Promise<Re
   return serializeCredential(credential);
 }
 
+type ChecklistItem = {
+  id: number;
+  label: string;
+  position: number;
+  is_active: boolean;
+};
+type ManagedChore = {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+  checklist_items: ChecklistItem[];
+};
+
+function ChoreCatalog() {
+  const [chores, setChores] = useState<ManagedChore[]>([]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [newItems, setNewItems] = useState<Record<number, string>>({});
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setChores(await apiRequest<ManagedChore[]>("/chores"));
+  }, []);
+
+  useEffect(() => {
+    void refresh().catch((reason: unknown) => {
+      setError(reason instanceof Error ? reason.message : "Unable to load chores.");
+    });
+  }, [refresh]);
+
+  async function run(operation: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await operation();
+      await refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The chore update failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createChore(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await run(async () => {
+      await apiRequest("/chores", {
+        method: "POST",
+        body: JSON.stringify({ name, description }),
+      });
+      setName("");
+      setDescription("");
+    });
+  }
+
+  async function saveChore(chore: ManagedChore, form: HTMLFormElement) {
+    const data = new FormData(form);
+    await run(() => apiRequest(`/chores/${chore.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: data.get("name"),
+        description: data.get("description"),
+      }),
+    }));
+  }
+
+  async function addItem(chore: ManagedChore, event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const label = newItems[chore.id]?.trim();
+    if (!label) return;
+    await run(async () => {
+      await apiRequest(`/chores/${chore.id}/checklist-items`, {
+        method: "POST",
+        body: JSON.stringify({ label }),
+      });
+      setNewItems((current) => ({ ...current, [chore.id]: "" }));
+    });
+  }
+
+  async function reorder(chore: ManagedChore, itemIndex: number, offset: number) {
+    const items = [...chore.checklist_items];
+    const target = itemIndex + offset;
+    if (target < 0 || target >= items.length) return;
+    [items[itemIndex], items[target]] = [items[target], items[itemIndex]];
+    await run(() => apiRequest(`/chores/${chore.id}/checklist-order`, {
+      method: "PUT",
+      body: JSON.stringify({ ordered_item_ids: items.map((item) => item.id) }),
+    }));
+  }
+
+  return (
+    <section aria-labelledby="chore-catalog-heading" className="chore-catalog">
+      <h3 id="chore-catalog-heading">Chore catalog</h3>
+      <p>New chores start inactive. Add at least one checklist item before activating.</p>
+      {error && <p role="alert" className="error-message">{error}</p>}
+      <form onSubmit={(event) => void createChore(event)}>
+        <label htmlFor="new-chore-name">Chore name</label>
+        <input id="new-chore-name" required value={name}
+          onChange={(event) => setName(event.target.value)} />
+        <label htmlFor="new-chore-description">Description</label>
+        <textarea id="new-chore-description" value={description}
+          onChange={(event) => setDescription(event.target.value)} />
+        <button type="submit" disabled={busy}>Create chore</button>
+      </form>
+      {chores.map((chore) => (
+        <article className="chore-card" key={chore.id}>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            void saveChore(chore, event.currentTarget);
+          }}>
+            <label htmlFor={`chore-name-${chore.id}`}>Name</label>
+            <input id={`chore-name-${chore.id}`} name="name" required defaultValue={chore.name} />
+            <label htmlFor={`chore-description-${chore.id}`}>Description</label>
+            <textarea id={`chore-description-${chore.id}`} name="description"
+              defaultValue={chore.description} />
+            <button type="submit" disabled={busy}>Save chore details</button>
+          </form>
+          <p>Status: {chore.is_active ? "Active" : "Inactive"}</p>
+          <button type="button" disabled={busy || (!chore.is_active && !chore.checklist_items.some((item) => item.is_active))}
+            onClick={() => void run(() => apiRequest(`/chores/${chore.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ is_active: !chore.is_active }),
+            }))}>
+            {chore.is_active ? "Deactivate chore" : "Activate chore"}
+          </button>
+          <h4>Checklist</h4>
+          <ol>
+            {chore.checklist_items.map((item, index) => (
+              <li key={item.id}>
+                <form onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = new FormData(event.currentTarget);
+                  void run(() => apiRequest(
+                    `/chores/${chore.id}/checklist-items/${item.id}`,
+                    { method: "PATCH", body: JSON.stringify({ label: form.get("label") }) },
+                  ));
+                }}>
+                  <input aria-label={`Checklist item ${index + 1} for ${chore.name}`}
+                    name="label" required defaultValue={item.label} />
+                  <button type="submit" disabled={busy}>Save</button>
+                </form>
+                <label>
+                  <input type="checkbox" checked={item.is_active} disabled={busy}
+                    onChange={(event) => void run(() => apiRequest(
+                      `/chores/${chore.id}/checklist-items/${item.id}`,
+                      { method: "PATCH", body: JSON.stringify({ is_active: event.target.checked }) },
+                    ))} />
+                  Active
+                </label>
+                <button type="button" disabled={busy || index === 0}
+                  onClick={() => void reorder(chore, index, -1)}>Move up</button>
+                <button type="button" disabled={busy || index === chore.checklist_items.length - 1}
+                  onClick={() => void reorder(chore, index, 1)}>Move down</button>
+                <button type="button" disabled={busy || (chore.is_active && item.is_active &&
+                  chore.checklist_items.filter((candidate) => candidate.is_active).length === 1)}
+                  onClick={() => void run(() => apiRequest(
+                    `/chores/${chore.id}/checklist-items/${item.id}`,
+                    { method: "DELETE" },
+                  ))}>Remove</button>
+              </li>
+            ))}
+          </ol>
+          <form onSubmit={(event) => void addItem(chore, event)}>
+            <label htmlFor={`new-item-${chore.id}`}>Add checklist item</label>
+            <input id={`new-item-${chore.id}`} required
+              value={newItems[chore.id] ?? ""}
+              onChange={(event) => setNewItems((current) => ({
+                ...current, [chore.id]: event.target.value,
+              }))} />
+            <button type="submit" disabled={busy}>Add item</button>
+          </form>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function AdminPage() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [administrator, setAdministrator] = useState<Administrator | null>(null);
@@ -262,6 +441,7 @@ function AdminPage() {
           <section aria-labelledby="admin-heading">
             <h2 id="admin-heading">Signed in as {administrator.email}</h2>
             <button disabled={busy} onClick={() => void handleLogout()}>Sign out</button>
+            <ChoreCatalog />
             <h3>Second administrator</h3>
             <form onSubmit={(event) => void handleInvitation(event)}>
               <label htmlFor="invitation-email">Administrator email</label>
