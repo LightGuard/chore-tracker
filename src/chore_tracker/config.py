@@ -49,7 +49,6 @@ class Settings(BaseSettings):
 
     database_path: Path = Path("./data/chore-tracker.db")
 
-    admin_email: str | None = None
     passkey_rp_id: str = "localhost"
     passkey_origin: str = "http://127.0.0.1:5173"
 
