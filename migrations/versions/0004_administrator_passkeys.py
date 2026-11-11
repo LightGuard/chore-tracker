@@ -14,6 +14,11 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute("ALTER TABLE administrators ADD COLUMN webauthn_user_id BLOB")
+    op.execute(
+        "CREATE UNIQUE INDEX ix_administrators_webauthn_user_id "
+        "ON administrators(webauthn_user_id)"
+    )
     op.execute("""
         CREATE TABLE administrator_passkey_credentials (
             id INTEGER PRIMARY KEY,
@@ -59,6 +64,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute("DROP INDEX ix_administrators_webauthn_user_id")
+    op.execute("ALTER TABLE administrators DROP COLUMN webauthn_user_id")
     op.execute("DROP INDEX ix_auth_challenges_expiry")
     op.execute("DROP INDEX ix_admin_sessions_expiry")
     op.execute("DROP TABLE administrator_sessions")
