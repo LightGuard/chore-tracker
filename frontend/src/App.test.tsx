@@ -51,6 +51,9 @@ describe("administrator setup screen", () => {
           enrollment_pending: false,
         }), { status: 200 });
       }
+      if (url.endsWith("/chores")) {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
       return new Response(JSON.stringify({
         id: 1,
         email: "first@example.test",
