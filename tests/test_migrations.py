@@ -93,7 +93,10 @@ def test_assignment_snapshots_and_completion_survive_definition_changes(
             "INSERT INTO family_members (display_name) VALUES ('Taylor')"
         )
         connection.execute(
-            "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Original description')"
+            """
+            INSERT INTO chores (name, description)
+            VALUES ('Kitchen', 'Original description')
+            """
         )
         connection.execute(
             """
@@ -130,7 +133,11 @@ def test_assignment_snapshots_and_completion_survive_definition_changes(
             """
         )
         connection.execute(
-            "UPDATE family_members SET display_name = 'Taylor P.', is_active = 0 WHERE id = 1"
+            """
+            UPDATE family_members
+            SET display_name = 'Taylor P.', is_active = 0
+            WHERE id = 1
+            """
         )
         connection.execute(
             """
@@ -239,12 +246,18 @@ def test_report_delivery_is_unique_per_administrator_and_report(tmp_path) -> Non
             """
         )
         connection.execute(
-            "INSERT INTO report_deliveries (report_id, administrator_id) VALUES (1, 1)"
+            """
+            INSERT INTO report_deliveries (report_id, administrator_id)
+            VALUES (1, 1)
+            """
         )
 
         try:
             connection.execute(
-                "INSERT INTO report_deliveries (report_id, administrator_id) VALUES (1, 1)"
+                """
+                INSERT INTO report_deliveries (report_id, administrator_id)
+                VALUES (1, 1)
+                """
             )
         except sqlite3.IntegrityError:
             pass
