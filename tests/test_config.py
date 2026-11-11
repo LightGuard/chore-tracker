@@ -14,7 +14,7 @@ def test_development_defaults_are_safe_and_explicit() -> None:
 
     assert settings.environment is Environment.DEVELOPMENT
     assert settings.app_host == "127.0.0.1"
-    assert settings.app_origin == "http://127.0.0.1:5173"
+    assert settings.app_origin == "http://localhost:5173"
     assert settings.database_path == Path("./data/chore-tracker.db")
     assert settings.email_transport is EmailTransport.CONSOLE
     assert settings.report_timezone == "America/Denver"
