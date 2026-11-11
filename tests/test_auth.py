@@ -87,7 +87,12 @@ def test_initial_setup_is_available_once_and_creates_admin_session(
         credential = connection.execute(
             "SELECT public_key FROM administrator_passkey_credentials"
         ).fetchone()
+        user_handle = connection.execute(
+            "SELECT webauthn_user_id FROM administrators WHERE id = 1"
+        ).fetchone()["webauthn_user_id"]
     assert credential["public_key"] == b"public-key"
+    assert isinstance(user_handle, bytes)
+    assert len(user_handle) == 64
 
 
 def test_initial_setup_cannot_be_claimed_twice(tmp_path, monkeypatch):
@@ -261,6 +266,10 @@ def test_admin_authorization_and_second_administrator_enrollment(
         assert connection.execute(
             "SELECT COUNT(*) FROM administrator_passkey_credentials"
         ).fetchone()[0] == 2
+        user_handles = connection.execute(
+            "SELECT webauthn_user_id FROM administrators ORDER BY id"
+        ).fetchall()
+        assert len({row["webauthn_user_id"] for row in user_handles}) == 2
         invitation = connection.execute(
             "SELECT consumed_at FROM administrator_enrollment_tokens"
         ).fetchone()
