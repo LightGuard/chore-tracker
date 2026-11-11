@@ -112,7 +112,7 @@ def test_smtp_username_requires_password() -> None:
 
 
 def test_production_rejects_development_defaults() -> None:
-    with pytest.raises(ValidationError, match="Production configuration requires"):
+    with pytest.raises(ValidationError, match="must not be localhost"):
         Settings(_env_file=None, _secrets_dir=None, environment=Environment.PRODUCTION)
 
 
@@ -123,7 +123,6 @@ def test_production_accepts_explicit_secure_configuration() -> None:
         environment=Environment.PRODUCTION,
         app_host="0.0.0.0",
         app_origin="https://chores.example.test",
-        admin_email="admin@example.test",
         passkey_rp_id="chores.example.test",
         passkey_origin="https://chores.example.test",
         email_transport=EmailTransport.SMTP,
