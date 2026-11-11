@@ -281,3 +281,26 @@ def test_admin_authorization_and_second_administrator_enrollment(
         headers=request_headers(),
     )
     assert third.status_code == 409
+
+
+
+def test_logout_revokes_the_server_side_session(tmp_path, monkeypatch):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    enroll_first_admin(client, monkeypatch)
+
+    response = client.post("/auth/logout", headers=request_headers())
+
+    assert response.status_code == 200
+    assert client.get("/auth/me").status_code == 401
+
+
+def test_expired_session_is_not_authorized(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    enroll_first_admin(client, monkeypatch)
+
+    with connect(database_path) as connection:
+        connection.execute(
+            "UPDATE administrator_sessions SET expires_at = '2000-01-01T00:00:00Z'"
+        )
+
+    assert client.get("/auth/me").status_code == 401
