@@ -26,9 +26,7 @@ def database_url() -> str:
     )
 
 
-config.set_main_option(
-    "sqlalchemy.url", database_url().replace("%", "%%")
-)
+config.set_main_option("sqlalchemy.url", database_url().replace("%", "%%"))
 
 target_metadata = None
 
@@ -54,7 +52,9 @@ def run_migrations_online() -> None:
     )
 
     @event.listens_for(connectable, "connect")
-    def enable_foreign_keys(dbapi_connection: object, _connection_record: object) -> None:
+    def enable_foreign_keys(
+        dbapi_connection: object, _connection_record: object
+    ) -> None:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()

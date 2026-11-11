@@ -73,14 +73,13 @@ def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
         member = connection.execute(
             "SELECT display_name FROM family_members WHERE id = 1"
         ).fetchone()
-        chore = connection.execute(
-            "SELECT name FROM chores WHERE id = 1"
-        ).fetchone()
+        chore = connection.execute("SELECT name FROM chores WHERE id = 1").fetchone()
         assert member["display_name"] == "Taylor"
         assert chore["name"] == "Kitchen"
-        assert connection.execute(
-            "SELECT COUNT(*) FROM weekly_assignments"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
+            == 0
+        )
 
 
 def test_assignment_snapshots_and_completion_survive_definition_changes(
@@ -169,12 +168,18 @@ def test_assignment_snapshots_and_completion_survive_definition_changes(
         assert snapshot_item["source_checklist_item_id"] is None
         assert completion["is_completed"] == 1
         assert completion["completion_date"] == "2026-11-09"
-        assert connection.execute(
-            "SELECT is_active FROM family_members WHERE id = 1"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT is_active FROM chores WHERE id = 1"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT is_active FROM family_members WHERE id = 1"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute("SELECT is_active FROM chores WHERE id = 1").fetchone()[
+                0
+            ]
+            == 0
+        )
 
 
 def test_completion_date_must_be_within_assignment_week(tmp_path) -> None:
