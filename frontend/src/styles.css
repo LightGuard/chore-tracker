@@ -60,3 +60,49 @@ body {
   margin-top: 1.5rem;
   overflow-wrap: anywhere;
 }
+
+.chore-catalog {
+  max-width: 48rem;
+  margin-top: 2rem;
+}
+
+.chore-card {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.5rem;
+}
+
+.chore-card form {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.chore-card textarea,
+.chore-catalog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.chore-card li {
+  margin: 0.75rem 0;
+}
+
+.chore-card li form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chore-card li form input {
+  flex: 1 1 14rem;
+}
+
+.chore-card li > button,
+.chore-card li > label {
+  margin-right: 0.5rem;
+}
