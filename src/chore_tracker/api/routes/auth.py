@@ -172,7 +172,7 @@ def setup_status() -> dict[str, Any]:
     count = row["administrators"]
     enrolled = row["enrolled"] or 0
     return {
-        "setup_required": count == 0,
+        "setup_required": count == 0 or (count == 1 and enrolled == 0),
         "enrollment_pending": count > 0 and enrolled < count,
     }
 
