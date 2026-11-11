@@ -224,6 +224,8 @@ date. Weekly report snapshots and per-administrator delivery records provide dur
 unique delivery state for retries.
 
 
+Chore catalog management is available to authenticated administrators through the `/chores` API and the administration page. New chores are created inactive. A chore cannot be activated until it has at least one active checklist item; an active chore must be deactivated before its last active checklist item can be deactivated or removed. Checklist items can be edited, removed, and reordered. Catalog changes never update assignment snapshots or daily completion records. Removing a catalog checklist item relies on the database's `ON DELETE SET NULL` behavior to clear only the historical snapshot's source-item reference; the snapshot label and completion history remain unchanged.
+
 ## Administrator identity and passkeys
 
 Administrator setup is performed in the browser; no CLI bootstrap command or
