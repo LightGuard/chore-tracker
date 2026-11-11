@@ -134,6 +134,8 @@ def update_chore(
     changes = request.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(status_code=422, detail="At least one field is required")
+    if any(value is None for value in changes.values()):
+        raise HTTPException(status_code=422, detail="Fields cannot be null")
     if "name" in changes and changes["name"] is not None:
         changes["name"] = _clean(changes["name"], "Name")
     if "description" in changes and changes["description"] is not None:
@@ -184,6 +186,8 @@ def update_checklist_item(
     changes = request.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(status_code=422, detail="At least one field is required")
+    if any(value is None for value in changes.values()):
+        raise HTTPException(status_code=422, detail="Fields cannot be null")
     if "label" in changes and changes["label"] is not None:
         changes["label"] = _clean(changes["label"], "Checklist label")
     with transaction(get_settings().database_path) as connection:
