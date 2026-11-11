@@ -170,3 +170,41 @@ works on machines that have Docker, Podman, or neither installed; no container s
 or `DOCKER_HOST` setting is needed. The referenced Tilt Podman extension provides
 Podman image builds for container-based workloads, which this local-process setup does
 not use.
+
+## SQLite persistence and schema migrations
+
+The backend uses SQLite with Alembic for versioned schema migrations. Alembic is a
+widely used Python migration tool and supports SQLite. Migrations are explicit,
+reviewable Python revisions containing the schema changes. The application uses the
+Python standard-library `sqlite3` adapter for repository connections, so normal
+database access does not require an ORM.
+
+Set `CHORE_TRACKER_DATABASE_PATH` to the SQLite file location. The default is
+`./data/chore-tracker.db`; the parent directory is created when a database connection
+is opened. Foreign-key enforcement is enabled on every application connection and on
+the connection used by Alembic.
+
+Install the project dependencies, then apply migrations explicitly from the repository
+root:
+
+```bash
+alembic upgrade head
+```
+
+Inspect the current schema revision with:
+
+```bash
+alembic current
+```
+
+Migrations are not run automatically during application startup. Apply and review
+schema changes as a deployment step before starting a version that requires them.
+Forward migrations preserve existing records. Do not use destructive downgrades
+against production data without a verified backup and recovery plan.
+
+The schema keeps family members and chores as deactivatable records. Weekly
+assignments retain references to those records and store chore name/description and
+ordered checklist-item snapshots, so later catalog edits do not rewrite historical
+assignments. Daily completion is stored per assignment checklist item and calendar
+date. Weekly report snapshots and per-administrator delivery records provide durable,
+unique delivery state for retries.
