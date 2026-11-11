@@ -190,7 +190,8 @@ def add_checklist_item(
             "(chore_id, label, position) VALUES (?, ?, ?)",
             (chore_id, label, position),
         ).lastrowid
-        return dict(_item(connection, chore_id, item_id))
+        item = _item(connection, chore_id, item_id)
+        return {**dict(item), "is_active": bool(item["is_active"])}
 
 
 @router.patch("/{chore_id}/checklist-items/{item_id}")
@@ -229,7 +230,8 @@ def update_checklist_item(
             "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
             (*changes.values(), item_id),
         )
-        return dict(_item(connection, chore_id, item_id))
+        item = _item(connection, chore_id, item_id)
+        return {**dict(item), "is_active": bool(item["is_active"])}
 
 
 @router.delete(
