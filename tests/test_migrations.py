@@ -470,8 +470,9 @@ def test_deleting_source_catalog_item_preserves_snapshot_and_completion(
         assert completion_count == 1
 
 
-
-def test_immutable_history_migration_preserves_existing_assignment_data(tmp_path) -> None:
+def test_immutable_history_migration_preserves_existing_assignment_data(
+    tmp_path,
+) -> None:
     database_path = tmp_path / "preserve-history.db"
     config = migration_config(database_path)
     command.upgrade(config, "0002_assignments_completion_reports")
