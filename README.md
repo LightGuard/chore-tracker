@@ -63,8 +63,13 @@ the available settings.
 The development email transport writes messages to the application console and does
 not send email. To use SMTP, set `CHORE_TRACKER_EMAIL_TRANSPORT=smtp`,
 `CHORE_TRACKER_SMTP_HOST`, and `CHORE_TRACKER_EMAIL_FROM_ADDRESS`. SMTP authentication
-is optional; when used, username and password must be supplied together. The
-application does not select or depend on a particular email provider.
+is optional; when used, username and password must be supplied together. SMTP
+authentication always requires STARTTLS, including in non-production environments.
+Production SMTP always requires STARTTLS whether or not authentication is configured.
+A non-production SMTP setup may explicitly disable STARTTLS only when it does not use
+authentication; this exception is intended for isolated local test servers and must not
+be used for real email delivery. The application does not select or depend on a
+particular email provider.
 
 Secrets can be supplied through environment variables or mounted secret files. For
 SMTP, set `CHORE_TRACKER_SMTP_PASSWORD` directly, or set
