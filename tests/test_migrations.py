@@ -320,8 +320,14 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
             "UPDATE weekly_assignments SET week_end = '2026-11-16' WHERE id = 1",
             "UPDATE weekly_assignments SET chore_id = 2 WHERE id = 1",
             "UPDATE weekly_assignments SET family_member_id = 2 WHERE id = 1",
-            "UPDATE weekly_assignments SET chore_name_snapshot = 'Bathroom' WHERE id = 1",
-            "UPDATE weekly_assignments SET chore_description_snapshot = 'Changed' WHERE id = 1",
+            (
+                "UPDATE weekly_assignments SET chore_name_snapshot = 'Bathroom' "
+                "WHERE id = 1"
+            ),
+            (
+                "UPDATE weekly_assignments SET chore_description_snapshot = 'Changed' "
+                "WHERE id = 1"
+            ),
         )
         for statement in prohibited_assignment_updates:
             try:
@@ -329,11 +335,16 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
             except sqlite3.IntegrityError as error:
                 assert "immutable" in str(error)
             else:
-                raise AssertionError(f"Prohibited assignment update succeeded: {statement}")
+                raise AssertionError(
+                    f"Prohibited assignment update succeeded: {statement}"
+                )
 
         for statement in (
             "DELETE FROM weekly_assignments WHERE id = 1",
-            "UPDATE assignment_checklist_items SET label_snapshot = 'Changed' WHERE id = 1",
+            (
+                "UPDATE assignment_checklist_items SET label_snapshot = 'Changed' "
+                "WHERE id = 1"
+            ),
             "UPDATE assignment_checklist_items SET position = 1 WHERE id = 1",
             "DELETE FROM assignment_checklist_items WHERE id = 1",
         ):
@@ -342,7 +353,9 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
             except sqlite3.IntegrityError as error:
                 assert "immutable" in str(error) or "cannot be deleted" in str(error)
             else:
-                raise AssertionError(f"Prohibited snapshot operation succeeded: {statement}")
+                raise AssertionError(
+                    f"Prohibited snapshot operation succeeded: {statement}"
+                )
 
         try:
             connection.execute(
@@ -383,7 +396,9 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
         assert completion["is_completed"] == 1
 
 
-def test_deleting_source_catalog_item_preserves_snapshot_and_completion(tmp_path) -> None:
+def test_deleting_source_catalog_item_preserves_snapshot_and_completion(
+    tmp_path,
+) -> None:
     database_path = tmp_path / "source-delete.db"
     command.upgrade(migration_config(database_path), "head")
 
@@ -447,7 +462,9 @@ def test_deleting_source_catalog_item_preserves_snapshot_and_completion(tmp_path
 
 
 
-def test_immutable_history_migration_preserves_existing_assignment_data(tmp_path) -> None:
+def test_immutable_history_migration_preserves_existing_assignment_data(
+    tmp_path,
+) -> None:
     database_path = tmp_path / "preserve-history.db"
     config = migration_config(database_path)
     command.upgrade(config, "0002_assignments_completion_reports")
