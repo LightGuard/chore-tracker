@@ -38,9 +38,7 @@ def is_database_ready(database_path: str | Path) -> bool:
             return False
 
         connection = connect(database_path)
-        row = connection.execute(
-            "SELECT version_num FROM alembic_version"
-        ).fetchone()
+        row = connection.execute("SELECT version_num FROM alembic_version").fetchone()
         return row is not None and row["version_num"] == expected_revision
     except Exception:
         # Readiness is deliberately fail-closed and never exposes infrastructure
