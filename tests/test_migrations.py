@@ -385,6 +385,15 @@ def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) 
         else:
             raise AssertionError("A cross-chore source-item update was accepted")
 
+        try:
+            connection.execute(
+                "UPDATE chore_checklist_items SET chore_id = 2 WHERE id = 1"
+            )
+        except sqlite3.IntegrityError as error:
+            assert "cannot move a checklist item" in str(error)
+        else:
+            raise AssertionError("A referenced source item was moved to another chore")
+
         completion = connection.execute(
             """
             SELECT completion_date, is_completed
