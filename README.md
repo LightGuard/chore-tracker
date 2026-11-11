@@ -248,8 +248,9 @@ and transport metadata are stored; private authenticator key material remains wi
 authenticator. Administrator sessions use random opaque tokens stored as hashes in
 SQLite and HttpOnly, SameSite=Strict cookies; cookies are Secure when the configured
 passkey origin uses HTTPS. State-changing authentication requests require the configured
-browser Origin. Administrative API routes must declare the `require_admin` dependency.
-Child-facing routes must not use that dependency.
+browser Origin. Administrative API routes must declare both the `require_admin` and
+`require_same_origin` dependencies for state-changing operations. Child-facing routes
+must not use administrator authentication.
 
 For local development, the defaults support `http://localhost:5173` and the
 `localhost` relying-party ID. For LAN deployment, configure `CHORE_TRACKER_APP_ORIGIN`
