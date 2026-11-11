@@ -32,13 +32,26 @@ The development defaults are suitable for a local run.
 python -m chore_tracker
 ```
 
-The API is available at `http://127.0.0.1:8000`. Check readiness with:
+The API is available at `http://127.0.0.1:8000`. The health endpoints distinguish
+process liveness from application readiness:
+
+- `GET /health/live` reports that the API process is running. It does not access
+  the database.
+- `GET /health/ready` reports readiness only when the configured SQLite database
+  is accessible and has been upgraded to the current Alembic migration head.
+- `GET /health` is retained as an alias for the readiness endpoint.
+
+Check readiness with:
 
 ```bash
-curl http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/health/ready
 ```
 
-A healthy application returns HTTP 200 and `{"status":"ok"}`.
+A healthy endpoint returns HTTP 200 and `{"status":"ok"}`. Readiness returns HTTP
+503 and `{"status":"not_ready"}` when the database is unavailable or its schema is
+not current. The response does not include filesystem paths or database errors.
+Apply migrations explicitly with `alembic upgrade head` before expecting readiness
+to succeed; the application does not migrate the database during startup.
 
 ### Application configuration
 
