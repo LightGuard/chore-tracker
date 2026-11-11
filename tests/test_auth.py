@@ -51,7 +51,7 @@ def enroll_first_admin(client, monkeypatch, email="first@example.test"):
         auth,
         "_verify_registration",
         lambda _challenge, _credential: SimpleNamespace(
-            credential_public_key=b"public-key", sign_count=0
+            credential_id=b"cred-1", credential_public_key=b"public-key", sign_count=0
         ),
     )
     finished = client.post(
@@ -129,12 +129,6 @@ def test_login_success_creates_session_and_replay_is_rejected(
     )
     assert options.status_code == 200
 
-    class FakeAuthenticationCredential:
-        @staticmethod
-        def model_validate(_credential):
-            return object()
-
-    monkeypatch.setattr(auth, "AuthenticationCredential", FakeAuthenticationCredential)
     monkeypatch.setattr(
         auth,
         "verify_authentication_response",
@@ -196,13 +190,6 @@ def test_failed_passkey_verification_does_not_create_session(
         headers=request_headers(),
     )
 
-    class FakeAuthenticationCredential:
-        @staticmethod
-        def model_validate(_credential):
-            return object()
-
-    monkeypatch.setattr(auth, "AuthenticationCredential", FakeAuthenticationCredential)
-
     def reject_authentication(**_kwargs):
         raise ValueError("invalid signature")
 
@@ -244,7 +231,7 @@ def test_admin_authorization_and_second_administrator_enrollment(
         auth,
         "_verify_registration",
         lambda _challenge, _credential: SimpleNamespace(
-            credential_public_key=b"second-public-key", sign_count=0
+            credential_id=b"second-cred", credential_public_key=b"second-public-key", sign_count=0
         ),
     )
     completed = client.post(
