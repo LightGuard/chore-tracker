@@ -1,13 +1,27 @@
-"""Health and readiness HTTP endpoint."""
+"""Health and readiness HTTP endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
-from chore_tracker.application.services.health import get_health_status
+from chore_tracker.application.services.health import (
+    get_health_status,
+    is_database_ready,
+)
+from chore_tracker.config import get_settings
 
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health")
-def health() -> dict[str, str]:
-    """Report whether the application is ready to receive requests."""
+@router.get("/health/live")
+def liveness() -> dict[str, str]:
+    """Report process liveness without checking infrastructure."""
     return get_health_status()
+
+
+@router.get("/health")
+@router.get("/health/ready")
+def readiness(response: Response) -> dict[str, str]:
+    """Report whether the configured database is ready for application requests."""
+    if not is_database_ready(get_settings().database_path):
+        response.status_code = 503
+        return {"status": "not_ready"}
+    return {"status": "ok"}
