@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Container, Reshaped } from "reshaped";
-import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "./config/api";
 
 type Administrator = { id: number; email: string };
@@ -123,9 +123,8 @@ function AdminPage() {
   const [invitationUrl, setInvitationUrl] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const enrollmentToken = searchParams.get("token");
+  const enrollmentToken = new URLSearchParams(window.location.hash.slice(1)).get("token");
 
   const refresh = useCallback(async () => {
     const setup = await apiRequest<SetupStatus>("/auth/setup");
@@ -197,7 +196,7 @@ function AdminPage() {
         body: JSON.stringify({ email: invitationEmail }),
       });
       setInvitationUrl(
-        `${window.location.origin}/admin/enroll?token=${encodeURIComponent(result.enrollment_token)}`,
+        `${window.location.origin}/admin/enroll#token=${encodeURIComponent(result.enrollment_token)}`,
       );
       setInvitationEmail("");
     } catch (reason) {
