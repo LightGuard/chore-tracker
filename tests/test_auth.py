@@ -255,8 +255,7 @@ def test_admin_authorization_and_second_administrator_enrollment(tmp_path, monke
 
     with connect(database_path) as connection:
         assert (
-            connection.execute("SELECT COUNT(*) FROM administrators").fetchone()[0]
-            == 2
+            connection.execute("SELECT COUNT(*) FROM administrators").fetchone()[0] == 2
         )
         assert (
             connection.execute(
