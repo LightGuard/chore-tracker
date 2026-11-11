@@ -98,9 +98,30 @@ def upgrade() -> None:
         END
         """
     )
+    op.execute(
+        """
+        CREATE TRIGGER trg_chore_checklist_item_chore_consistency_update
+        BEFORE UPDATE OF chore_id ON chore_checklist_items
+        WHEN EXISTS (
+            SELECT 1
+            FROM assignment_checklist_items AS snapshot_item
+            JOIN weekly_assignments AS assignment
+              ON assignment.id = snapshot_item.weekly_assignment_id
+            WHERE snapshot_item.source_checklist_item_id = OLD.id
+              AND assignment.chore_id != NEW.chore_id
+        )
+        BEGIN
+            SELECT RAISE(
+                ABORT,
+                'cannot move a checklist item referenced by another chore assignment'
+            );
+        END
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER trg_chore_checklist_item_chore_consistency_update")
     op.execute("DROP TRIGGER trg_assignment_checklist_source_chore_update")
     op.execute("DROP TRIGGER trg_assignment_checklist_source_chore_insert")
     op.execute("DROP TRIGGER trg_assignment_checklist_snapshot_immutable_delete")
