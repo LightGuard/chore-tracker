@@ -64,10 +64,10 @@ the available settings.
 | `CHORE_TRACKER_ENVIRONMENT` | `development` | `development`, `test`, or `production` |
 | `CHORE_TRACKER_APP_HOST` | `127.0.0.1` | API bind address |
 | `CHORE_TRACKER_APP_PORT` | `8000` | API bind port |
-| `CHORE_TRACKER_APP_ORIGIN` | `http://127.0.0.1:5173` | Browser origin allowed to call the API |
+| `CHORE_TRACKER_APP_ORIGIN` | `http://localhost:5173` | Browser origin allowed to call the API |
 | `CHORE_TRACKER_DATABASE_PATH` | `./data/chore-tracker.db` | SQLite file path; set to a persistent mounted volume in deployments |
 | `CHORE_TRACKER_PASSKEY_RP_ID` | `localhost` | Passkey relying-party ID |
-| `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://127.0.0.1:5173` | Origin used for passkey validation |
+| `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://localhost:5173` | Origin used for passkey validation |
 | `CHORE_TRACKER_EMAIL_TRANSPORT` | `console` | Initial transports: `console` or `smtp` |
 | `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone used for reports |
 | `CHORE_TRACKER_REPORT_DELIVERY_TIME` | `03:00` | Monday report delivery time in the reporting timezone (`HH:MM`) |
@@ -134,7 +134,7 @@ npm ci
 npm run dev
 ```
 
-The frontend is served at `http://127.0.0.1:5173`. The Vite development server proxies
+The frontend is served at `http://localhost:5173`. The Vite development server proxies
 requests under `/api` to `http://127.0.0.1:8000` by default.
 
 ### Frontend configuration
@@ -174,7 +174,7 @@ tilt up
 ```
 
 Tilt exposes the API at `http://127.0.0.1:8000` and the frontend at
-`http://127.0.0.1:5173`. Uvicorn reloads the API when Python files change, and Vite
+`http://localhost:5173`. Uvicorn reloads the API when Python files change, and Vite
 provides frontend hot-module replacement. Stop the environment with `Ctrl+C` or
 `tilt down`.
 
@@ -251,7 +251,7 @@ passkey origin uses HTTPS. State-changing authentication requests require the co
 browser Origin. Administrative API routes must declare the `require_admin` dependency.
 Child-facing routes must not use that dependency.
 
-For local development, the defaults support `http://127.0.0.1:5173` and the
+For local development, the defaults support `http://localhost:5173` and the
 `localhost` relying-party ID. For LAN deployment, configure `CHORE_TRACKER_APP_ORIGIN`
 and `CHORE_TRACKER_PASSKEY_ORIGIN` to the exact HTTPS origin used in the browser and
 set `CHORE_TRACKER_PASSKEY_RP_ID` to its hostname (without scheme or port). Apply
