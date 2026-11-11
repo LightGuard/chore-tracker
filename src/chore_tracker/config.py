@@ -106,7 +106,6 @@ class Settings(BaseSettings):
             missing = [
                 name
                 for name, value in (
-                    ("CHORE_TRACKER_ADMIN_EMAIL", self.admin_email),
                     ("CHORE_TRACKER_PASSKEY_RP_ID", self.passkey_rp_id),
                 )
                 if not value
@@ -123,7 +122,7 @@ class Settings(BaseSettings):
                 )
             if self.passkey_rp_id == "localhost":
                 raise ValueError(
-                    "Production passkey relying-party ID must be a public domain."
+                    "Production passkey relying-party ID must not be localhost."
                 )
             if self.email_transport is EmailTransport.CONSOLE:
                 raise ValueError(
