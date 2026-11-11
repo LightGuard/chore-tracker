@@ -112,7 +112,7 @@ def test_smtp_username_requires_password() -> None:
 
 
 def test_production_rejects_development_defaults() -> None:
-    with pytest.raises(ValidationError, match="must not be localhost"):
+    with pytest.raises(ValidationError, match="must use HTTPS"):
         Settings(_env_file=None, _secrets_dir=None, environment=Environment.PRODUCTION)
 
 
@@ -139,7 +139,6 @@ def test_production_requires_https_and_non_local_passkey_domain() -> None:
             _env_file=None,
             _secrets_dir=None,
             environment=Environment.PRODUCTION,
-            admin_email="admin@example.test",
             passkey_rp_id="example.test",
             email_transport=EmailTransport.SMTP,
             smtp_host="mail.example.test",
