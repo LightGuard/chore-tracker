@@ -1,0 +1,281 @@
+"""Integration tests for administrator passkey setup and authentication."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+
+from alembic import command
+from alembic.config import Config
+from fastapi.testclient import TestClient
+
+import chore_tracker.api.routes.auth as auth
+from chore_tracker.adapters.sqlite import connect
+from chore_tracker.main import app
+
+ROOT = Path(__file__).resolve().parents[1]
+ORIGIN = "http://127.0.0.1:5173"
+CREDENTIAL_ID = "Y3JlZC0x"
+
+
+def prepare_client(tmp_path, monkeypatch):
+    database_path = tmp_path / "auth.db"
+    config = Config(str(ROOT / "alembic.ini"))
+    config.attributes["database_path"] = str(database_path)
+    command.upgrade(config, "head")
+    monkeypatch.setattr(
+        auth,
+        "get_settings",
+        lambda: SimpleNamespace(
+            database_path=database_path,
+            passkey_rp_id="localhost",
+            passkey_origin=ORIGIN,
+        ),
+    )
+    return TestClient(app), database_path
+
+
+def request_headers():
+    return {"Origin": ORIGIN}
+
+
+def enroll_first_admin(client, monkeypatch, email="first@example.test"):
+    started = client.post(
+        "/auth/setup/start",
+        json={"email": email},
+        headers=request_headers(),
+    )
+    assert started.status_code == 200
+    monkeypatch.setattr(
+        auth,
+        "_verify_registration",
+        lambda _challenge, _credential: SimpleNamespace(
+            credential_public_key=b"public-key", sign_count=0
+        ),
+    )
+    finished = client.post(
+        "/auth/setup/finish",
+        json={
+            "challenge_id": started.json()["challenge_id"],
+            "credential": {
+                "id": CREDENTIAL_ID,
+                "response": {"transports": ["internal"]},
+            },
+        },
+        headers=request_headers(),
+    )
+    assert finished.status_code == 200
+    return finished
+
+
+def test_initial_setup_is_available_once_and_creates_admin_session(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    assert client.get("/auth/setup").json()["setup_required"] is True
+    enrolled = enroll_first_admin(client, monkeypatch)
+
+    assert enrolled.json() == {"status": "ok"}
+    assert "chore_tracker_session" in enrolled.cookies
+    assert client.get("/auth/setup").json()["setup_required"] is False
+    assert client.get("/auth/me").json() == {
+        "id": 1,
+        "email": "first@example.test",
+    }
+    with connect(database_path) as connection:
+        credential = connection.execute(
+            "SELECT public_key FROM administrator_passkey_credentials"
+        ).fetchone()
+    assert credential["public_key"] == b"public-key"
+
+
+def test_initial_setup_cannot_be_claimed_twice(tmp_path, monkeypatch):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    first = client.post(
+        "/auth/setup/start",
+        json={"email": "first@example.test"},
+        headers=request_headers(),
+    )
+    second = client.post(
+        "/auth/setup/start",
+        json={"email": "attacker@example.test"},
+        headers=request_headers(),
+    )
+    assert first.status_code == 200
+    assert second.status_code == 409
+
+
+def test_setup_rejects_requests_from_an_untrusted_origin(tmp_path, monkeypatch):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    response = client.post(
+        "/auth/setup/start",
+        json={"email": "first@example.test"},
+        headers={"Origin": "https://attacker.example"},
+    )
+    assert response.status_code == 403
+
+
+def test_login_success_creates_session_and_replay_is_rejected(
+    tmp_path, monkeypatch
+):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    enroll_first_admin(client, monkeypatch)
+
+    options = client.post(
+        "/auth/login/options",
+        json={"email": "first@example.test"},
+        headers=request_headers(),
+    )
+    assert options.status_code == 200
+
+    class FakeAuthenticationCredential:
+        @staticmethod
+        def model_validate(_credential):
+            return object()
+
+    monkeypatch.setattr(auth, "AuthenticationCredential", FakeAuthenticationCredential)
+    monkeypatch.setattr(
+        auth,
+        "verify_authentication_response",
+        lambda **_kwargs: SimpleNamespace(new_sign_count=1),
+    )
+    payload = {
+        "challenge_id": options.json()["challenge_id"],
+        "credential": {"id": CREDENTIAL_ID},
+    }
+    response = client.post(
+        "/auth/login/finish", json=payload, headers=request_headers()
+    )
+    assert response.status_code == 200
+    assert "chore_tracker_session" in response.cookies
+
+    replay = client.post(
+        "/auth/login/finish", json=payload, headers=request_headers()
+    )
+    assert replay.status_code == 400
+
+
+def test_expired_login_challenge_is_rejected(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    enroll_first_admin(client, monkeypatch)
+    options = client.post(
+        "/auth/login/options",
+        json={"email": "first@example.test"},
+        headers=request_headers(),
+    )
+    with connect(database_path) as connection:
+        connection.execute(
+            "UPDATE authentication_challenges SET expires_at = ? WHERE id = ?",
+            (
+                (datetime.now(UTC) - timedelta(minutes=1)).isoformat().replace(
+                    "+00:00", "Z"
+                ),
+                options.json()["challenge_id"],
+            ),
+        )
+    response = client.post(
+        "/auth/login/finish",
+        json={
+            "challenge_id": options.json()["challenge_id"],
+            "credential": {"id": CREDENTIAL_ID},
+        },
+        headers=request_headers(),
+    )
+    assert response.status_code == 400
+
+
+def test_failed_passkey_verification_does_not_create_session(
+    tmp_path, monkeypatch
+):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    enroll_first_admin(client, monkeypatch)
+    options = client.post(
+        "/auth/login/options",
+        json={"email": "first@example.test"},
+        headers=request_headers(),
+    )
+
+    class FakeAuthenticationCredential:
+        @staticmethod
+        def model_validate(_credential):
+            return object()
+
+    monkeypatch.setattr(auth, "AuthenticationCredential", FakeAuthenticationCredential)
+
+    def reject_authentication(**_kwargs):
+        raise ValueError("invalid signature")
+
+    monkeypatch.setattr(auth, "verify_authentication_response", reject_authentication)
+    response = client.post(
+        "/auth/login/finish",
+        json={
+            "challenge_id": options.json()["challenge_id"],
+            "credential": {"id": CREDENTIAL_ID},
+        },
+        headers=request_headers(),
+    )
+    assert response.status_code == 401
+    assert "chore_tracker_session" not in response.cookies
+
+
+def test_admin_authorization_and_second_administrator_enrollment(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    assert client.get("/auth/me").status_code == 401
+    enroll_first_admin(client, monkeypatch)
+
+    created = client.post(
+        "/auth/administrators",
+        json={"email": "second@example.test"},
+        headers=request_headers(),
+    )
+    assert created.status_code == 200
+    token = created.json()["enrollment_token"]
+    enrollment = client.post(
+        "/auth/enrollment/options",
+        json={"token": token},
+        headers=request_headers(),
+    )
+    assert enrollment.status_code == 200
+
+    monkeypatch.setattr(
+        auth,
+        "_verify_registration",
+        lambda _challenge, _credential: SimpleNamespace(
+            credential_public_key=b"second-public-key", sign_count=0
+        ),
+    )
+    completed = client.post(
+        "/auth/enrollment/finish",
+        json={
+            "challenge_id": enrollment.json()["challenge_id"],
+            "credential": {
+                "id": "c2Vjb25kLWNyZWQ",
+                "response": {"transports": ["internal"]},
+            },
+        },
+        headers=request_headers(),
+    )
+    assert completed.status_code == 200
+    assert client.get("/auth/setup").json()["enrollment_pending"] is False
+
+    with connect(database_path) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM administrators"
+        ).fetchone()[0] == 2
+        assert connection.execute(
+            "SELECT COUNT(*) FROM administrator_passkey_credentials"
+        ).fetchone()[0] == 2
+        invitation = connection.execute(
+            "SELECT consumed_at FROM administrator_enrollment_tokens"
+        ).fetchone()
+    assert invitation["consumed_at"] is not None
+
+    third = client.post(
+        "/auth/administrators",
+        json={"email": "third@example.test"},
+        headers=request_headers(),
+    )
+    assert third.status_code == 409
