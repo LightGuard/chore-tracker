@@ -177,7 +177,7 @@ class Settings(BaseSettings):
         """Require a well-formed HTTP origin without a path or query."""
         parsed = urlsplit(value)
         try:
-            parsed.port
+            _ = parsed.port
         except ValueError as error:
             raise ValueError("Origins must contain a valid port.") from error
         if (
