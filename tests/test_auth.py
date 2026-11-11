@@ -205,9 +205,7 @@ def test_failed_passkey_verification_does_not_create_session(tmp_path, monkeypat
         }
     ).encode("utf-8")
     authenticator_data = (
-        hashlib.sha256(b"localhost").digest()
-        + bytes([0x05])
-        + (0).to_bytes(4, "big")
+        hashlib.sha256(b"localhost").digest() + bytes([0x05]) + (0).to_bytes(4, "big")
     )
     credential = {
         "id": CREDENTIAL_ID,
