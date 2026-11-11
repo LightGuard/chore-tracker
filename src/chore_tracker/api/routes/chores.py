@@ -116,7 +116,10 @@ def create_chore(request: ChoreCreate, administrator: Admin, origin: SameOrigin)
         if request.is_active:
             raise HTTPException(
                 status_code=422,
-                detail="A chore must have an active checklist item before it can be activated",
+                detail=(
+                    "A chore must have an active checklist item "
+                    "before it can be activated"
+                ),
             )
         chore_id = connection.execute(
             "INSERT INTO chores (name, description, is_active) VALUES (?, ?, 0)",
@@ -152,7 +155,10 @@ def update_chore(
         ):
             raise HTTPException(
                 status_code=409,
-                detail="A chore needs at least one active checklist item before activation",
+                detail=(
+                    "A chore needs at least one active checklist item "
+                    "before activation"
+                ),
             )
         assignments = ", ".join(f"{field} = ?" for field in changes)
         if changes:
@@ -180,7 +186,8 @@ def add_checklist_item(
             (chore_id,),
         ).fetchone()[0]
         item_id = connection.execute(
-            "INSERT INTO chore_checklist_items (chore_id, label, position) VALUES (?, ?, ?)",
+            "INSERT INTO chore_checklist_items "
+            "(chore_id, label, position) VALUES (?, ?, ?)",
             (chore_id, label, position),
         ).lastrowid
         return dict(_item(connection, chore_id, item_id))
@@ -211,7 +218,10 @@ def update_checklist_item(
             ):
                 raise HTTPException(
                     status_code=409,
-                    detail="Deactivate the chore before removing its last active checklist item",
+                    detail=(
+                        "Deactivate the chore before removing its last "
+                        "active checklist item"
+                    ),
                 )
         assignments = ", ".join(f"{field} = ?" for field in changes)
         connection.execute(
@@ -241,7 +251,10 @@ def delete_checklist_item(
         ):
             raise HTTPException(
                 status_code=409,
-                detail="Deactivate the chore before removing its last active checklist item",
+                detail=(
+                    "Deactivate the chore before removing its last "
+                    "active checklist item"
+                ),
             )
         connection.execute("DELETE FROM chore_checklist_items WHERE id = ?", (item_id,))
     return None
@@ -258,7 +271,8 @@ def reorder_checklist(
         existing = [
             row["id"]
             for row in connection.execute(
-                "SELECT id FROM chore_checklist_items WHERE chore_id = ? ORDER BY position",
+                "SELECT id FROM chore_checklist_items "
+                "WHERE chore_id = ? ORDER BY position",
                 (chore_id,),
             ).fetchall()
         ]
@@ -267,13 +281,17 @@ def reorder_checklist(
         ):
             raise HTTPException(
                 status_code=422,
-                detail="The order must contain every checklist item for this chore exactly once",
+                detail=(
+                    "The order must contain every checklist item "
+                    "for this chore exactly once"
+                ),
             )
         # Move positions above the current range before assigning the new order;
         # the schema requires non-negative positions and enforces uniqueness.
         offset = max(existing, default=-1) + len(existing) + 1
         connection.execute(
-            "UPDATE chore_checklist_items SET position = position + ? WHERE chore_id = ?",
+            "UPDATE chore_checklist_items SET position = position + ? "
+            "WHERE chore_id = ?",
             (offset, chore_id),
         )
         for position, item_id in enumerate(request.ordered_item_ids):
