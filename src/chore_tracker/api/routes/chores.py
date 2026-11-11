@@ -156,8 +156,7 @@ def update_chore(
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    "A chore needs at least one active checklist item "
-                    "before activation"
+                    "A chore needs at least one active checklist item before activation"
                 ),
             )
         assignments = ", ".join(f"{field} = ?" for field in changes)
