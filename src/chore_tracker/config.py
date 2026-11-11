@@ -45,12 +45,12 @@ class Settings(BaseSettings):
     environment: Environment = Environment.DEVELOPMENT
     app_host: str = Field(default="127.0.0.1", min_length=1)
     app_port: int = Field(default=8000, ge=1, le=65535)
-    app_origin: str = "http://127.0.0.1:5173"
+    app_origin: str = "http://localhost:5173"
 
     database_path: Path = Path("./data/chore-tracker.db")
 
     passkey_rp_id: str = "localhost"
-    passkey_origin: str = "http://127.0.0.1:5173"
+    passkey_origin: str = "http://localhost:5173"
 
     email_transport: EmailTransport = EmailTransport.CONSOLE
     email_from_address: str | None = None
