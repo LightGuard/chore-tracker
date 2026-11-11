@@ -16,9 +16,8 @@ from webauthn import (
     options_to_json,
     verify_authentication_response,
     verify_registration_response,
-    base64url_to_bytes,
-    bytes_to_base64url,
 )
+from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
 from webauthn.helpers.structs import (
     AuthenticatorSelectionCriteria,
     AuthenticatorTransport,
@@ -86,10 +85,24 @@ def _registration_options(
     administrator_id: int, email: str, database_path
 ) -> tuple[str, dict[str, Any]]:
     challenge_id = str(uuid.uuid4())
+    with transaction(database_path) as connection:
+        administrator = connection.execute(
+            "SELECT webauthn_user_id FROM administrators WHERE id = ?",
+            (administrator_id,),
+        ).fetchone()
+        if administrator is None:
+            raise HTTPException(status_code=404, detail="Administrator was not found")
+        user_id = administrator["webauthn_user_id"]
+        if user_id is None:
+            user_id = secrets.token_bytes(64)
+            connection.execute(
+                "UPDATE administrators SET webauthn_user_id = ? WHERE id = ?",
+                (user_id, administrator_id),
+            )
     options = generate_registration_options(
         rp_id=get_settings().passkey_rp_id,
         rp_name="Chore Tracker",
-        user_id=str(administrator_id).encode("utf-8"),
+        user_id=user_id,
         user_name=email,
         user_display_name=email,
         authenticator_selection=AuthenticatorSelectionCriteria(
@@ -188,7 +201,8 @@ def setup_start(request: EmailRequest, origin: None = Depends(require_same_origi
         ).fetchone()
         if row is None:
             administrator_id = connection.execute(
-                "INSERT INTO administrators (email) VALUES (?)", (email,)
+                "INSERT INTO administrators (email, webauthn_user_id) VALUES (?, ?)",
+                (email, secrets.token_bytes(64)),
             ).lastrowid
         elif row["email"].casefold() == email.casefold():
             administrator_id = row["id"]
@@ -461,7 +475,8 @@ def create_administrator(
             )
         try:
             administrator_id = connection.execute(
-                "INSERT INTO administrators (email) VALUES (?)", (email,)
+                "INSERT INTO administrators (email, webauthn_user_id) VALUES (?, ?)",
+                (email, secrets.token_bytes(64)),
             ).lastrowid
         except Exception as error:
             raise HTTPException(
