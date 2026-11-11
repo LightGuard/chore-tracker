@@ -3,6 +3,7 @@
 Revision ID: 0004_administrator_passkeys
 Revises: 0003_immutable_assignment_history
 """
+
 from __future__ import annotations
 
 from alembic import op
@@ -59,8 +60,12 @@ def upgrade() -> None:
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
         )
     """)
-    op.execute("CREATE INDEX ix_admin_sessions_expiry ON administrator_sessions(expires_at)")
-    op.execute("CREATE INDEX ix_auth_challenges_expiry ON authentication_challenges(expires_at)")
+    op.execute(
+        "CREATE INDEX ix_admin_sessions_expiry ON administrator_sessions(expires_at)"
+    )
+    op.execute(
+        "CREATE INDEX ix_auth_challenges_expiry ON authentication_challenges(expires_at)"
+    )
 
 
 def downgrade() -> None:
