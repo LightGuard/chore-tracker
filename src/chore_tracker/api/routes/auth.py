@@ -76,7 +76,7 @@ def _validate_email(email: str) -> str:
     return normalized
 
 
-def _same_origin(request: Request) -> None:
+def require_same_origin(request: Request) -> None:
     """Reject browser state changes from origins other than the configured app."""
     if request.headers.get("origin") != get_settings().passkey_origin:
         raise HTTPException(status_code=403, detail="Request origin is not allowed")
@@ -177,7 +177,7 @@ def setup_status() -> dict[str, Any]:
 
 
 @router.post("/setup/start")
-def setup_start(request: EmailRequest, origin: None = Depends(_same_origin)):
+def setup_start(request: EmailRequest, origin: None = Depends(require_same_origin)):
     """Claim the initial administrator slot and begin browser passkey enrollment."""
     email = _validate_email(request.email)
     database_path = get_settings().database_path
@@ -272,7 +272,7 @@ def _save_registration(
 def setup_finish(
     request: CeremonyRequest,
     response: Response,
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     """Verify and persist the first administrator's public credential."""
     database_path = get_settings().database_path
@@ -302,7 +302,7 @@ def setup_finish(
 
 @router.post("/login/options")
 def login_options(
-    request: EmailRequest, origin: None = Depends(_same_origin)
+    request: EmailRequest, origin: None = Depends(require_same_origin)
 ) -> dict[str, Any]:
     email = _validate_email(request.email)
     database_path = get_settings().database_path
@@ -359,7 +359,7 @@ def login_options(
 def login_finish(
     request: CeremonyRequest,
     response: Response,
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     database_path = get_settings().database_path
     with transaction(database_path) as connection:
@@ -427,7 +427,7 @@ def current_admin(
 def logout(
     response: Response,
     session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE),
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     if session_token:
         with transaction(get_settings().database_path) as connection:
@@ -446,7 +446,7 @@ def logout(
 def create_administrator(
     request: EmailRequest,
     administrator: dict[str, Any] = Depends(require_admin),
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
     """Create the second administrator and return its one-time enrollment token."""
     email = _validate_email(request.email)
@@ -484,7 +484,7 @@ def create_administrator(
 @router.post("/enrollment/options")
 def enrollment_options(
     request: EnrollmentStartRequest,
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
     """Start passkey enrollment using the one-time invitation token."""
     database_path = get_settings().database_path
@@ -515,7 +515,7 @@ def enrollment_options(
 def enrollment_finish(
     request: CeremonyRequest,
     response: Response,
-    origin: None = Depends(_same_origin),
+    origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     """Complete invited administrator enrollment and consume its invitation."""
     database_path = get_settings().database_path
