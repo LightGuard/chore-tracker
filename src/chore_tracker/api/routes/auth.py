@@ -16,14 +16,13 @@ from webauthn import (
     options_to_json,
     verify_authentication_response,
     verify_registration_response,
+    base64url_to_bytes,
+    bytes_to_base64url,
 )
-from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
 from webauthn.helpers.structs import (
     AuthenticatorSelectionCriteria,
     AuthenticatorTransport,
-    AuthenticationCredential,
     PublicKeyCredentialDescriptor,
-    RegistrationCredential,
     ResidentKeyRequirement,
     UserVerificationRequirement,
 )
@@ -183,6 +182,7 @@ def setup_start(request: EmailRequest, origin: None = Depends(_same_origin)):
     email = _validate_email(request.email)
     database_path = get_settings().database_path
     with transaction(database_path) as connection:
+        connection.execute("BEGIN IMMEDIATE")
         row = connection.execute(
             "SELECT id, email FROM administrators ORDER BY id LIMIT 1"
         ).fetchone()
@@ -214,9 +214,8 @@ def setup_start(request: EmailRequest, origin: None = Depends(_same_origin)):
 
 
 def _verify_registration(challenge: str, credential_data: dict[str, Any]):
-    credential = RegistrationCredential.model_validate(credential_data)
     return verify_registration_response(
-        credential=credential,
+        credential=credential_data,
         expected_challenge=base64url_to_bytes(challenge),
         expected_rp_id=get_settings().passkey_rp_id,
         expected_origin=get_settings().passkey_origin,
@@ -254,7 +253,7 @@ def _save_registration(
                    VALUES (?, ?, ?, ?, ?)""",
                 (
                     challenge["administrator_id"],
-                    credential_data["id"],
+                    bytes_to_base64url(verified.credential_id),
                     verified.credential_public_key,
                     verified.sign_count,
                     json.dumps(
@@ -385,9 +384,8 @@ def login_finish(
     if stored is None:
         raise HTTPException(status_code=401, detail="Passkey is not registered")
     try:
-        credential = AuthenticationCredential.model_validate(request.credential)
         verified = verify_authentication_response(
-            credential=credential,
+            credential=request.credential,
             expected_challenge=base64url_to_bytes(challenge["challenge"]),
             expected_rp_id=get_settings().passkey_rp_id,
             expected_origin=get_settings().passkey_origin,
@@ -455,6 +453,7 @@ def create_administrator(
     database_path = get_settings().database_path
     token = _new_token()
     with transaction(database_path) as connection:
+        connection.execute("BEGIN IMMEDIATE")
         count = connection.execute("SELECT COUNT(*) FROM administrators").fetchone()[0]
         if count >= 2:
             raise HTTPException(
