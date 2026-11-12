@@ -166,12 +166,14 @@ class SQLiteChildViewsPersistence:
             )
             connection.execute(
                 """INSERT INTO daily_checklist_completions
-                   (assignment_checklist_item_id, completion_date, is_completed, completed_at)
+                   (assignment_checklist_item_id, completion_date,
+                    is_completed, completed_at)
                    VALUES (?, ?, ?, ?)
                    ON CONFLICT (assignment_checklist_item_id, completion_date)
                    DO UPDATE SET is_completed = excluded.is_completed,
                      completed_at = CASE
-                       WHEN daily_checklist_completions.is_completed = excluded.is_completed
+                       WHEN daily_checklist_completions.is_completed
+                            = excluded.is_completed
                        THEN daily_checklist_completions.completed_at
                        ELSE excluded.completed_at END""",
                 (checklist_item_id, day.isoformat(), int(is_completed), completed_at),
@@ -197,7 +199,8 @@ class SQLiteChildViewsPersistence:
             if member is None:
                 return None
             total = connection.execute(
-                "SELECT COUNT(*) * 7 FROM weekly_assignments WHERE family_member_id = ?",
+                """SELECT COUNT(*) * 7 FROM weekly_assignments
+                   WHERE family_member_id = ?""",
                 (family_member_id,),
             ).fetchone()[0]
             rows = connection.execute(
@@ -218,7 +221,8 @@ class SQLiteChildViewsPersistence:
                 ),
                 daily_completion_counts AS (
                   SELECT item.weekly_assignment_id, completion.completion_date,
-                         COUNT(*) AS recorded_count, SUM(completion.is_completed) AS completed_count
+                         COUNT(*) AS recorded_count,
+                         SUM(completion.is_completed) AS completed_count
                   FROM assignment_checklist_items AS item
                   JOIN daily_checklist_completions AS completion
                     ON completion.assignment_checklist_item_id = item.id
@@ -229,8 +233,10 @@ class SQLiteChildViewsPersistence:
                        day.completion_date,
                        CASE
                          WHEN COALESCE(checklist.item_count, 0) = 0
-                           OR COALESCE(daily.recorded_count, 0) = 0 THEN 'not_yet_recorded'
-                         WHEN daily.completed_count = checklist.item_count THEN 'complete'
+                           OR COALESCE(daily.recorded_count, 0) = 0
+                           THEN 'not_yet_recorded'
+                         WHEN daily.completed_count = checklist.item_count
+                           THEN 'complete'
                          ELSE 'incomplete'
                        END AS completion_status
                 FROM assignment_days AS day
