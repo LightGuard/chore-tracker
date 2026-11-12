@@ -1,4 +1,4 @@
-"""Static architecture checks for the HTTP/API layer.
+"""Static architecture checks for the HTTP/API layer."
 
 These checks intentionally inspect source rather than importing application modules,
 so they remain deterministic and do not require a database.
