@@ -67,9 +67,7 @@ def list_family_members(administrator: Admin) -> list[dict[str, Any]]:
                FROM family_members
                ORDER BY display_name COLLATE NOCASE, id"""
         ).fetchall()
-        return [
-            {**dict(row), "is_active": bool(row["is_active"])} for row in rows
-        ]
+        return [{**dict(row), "is_active": bool(row["is_active"])} for row in rows]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -88,9 +86,7 @@ def create_family_member(
 
 
 @router.get("/{family_member_id}")
-def get_family_member(
-    family_member_id: int, administrator: Admin
-) -> dict[str, Any]:
+def get_family_member(family_member_id: int, administrator: Admin) -> dict[str, Any]:
     with transaction(get_settings().database_path) as connection:
         return _family_member(connection, family_member_id)
 
