@@ -147,9 +147,7 @@ def test_repeated_generation_reuses_existing_assignments_and_snapshots(tmp_path)
         generated_on=GENERATED_ON,
     )
     with connect(database_path) as connection:
-        connection.execute(
-            "UPDATE chores SET name = 'Renamed bathroom' WHERE id = 3"
-        )
+        connection.execute("UPDATE chores SET name = 'Renamed bathroom' WHERE id = 3")
         connection.execute(
             "UPDATE chore_checklist_items SET label = 'Changed label' WHERE id = 4"
         )
@@ -178,12 +176,16 @@ def test_repeated_generation_reuses_existing_assignments_and_snapshots(tmp_path)
 
     assert repeated == first
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM weekly_assignments"
-        ).fetchone()[0] == 2
-        assert connection.execute(
-            "SELECT COUNT(*) FROM assignment_checklist_items"
-        ).fetchone()[0] == 3
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
+            == 2
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_checklist_items"
+            ).fetchone()[0]
+            == 3
+        )
 
 
 def test_generation_failure_rolls_back_rotation_state_and_all_assignments(tmp_path):
@@ -208,18 +210,28 @@ def test_generation_failure_rolls_back_rotation_state_and_all_assignments(tmp_pa
         )
 
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM assignment_rotation_state"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT COUNT(*) FROM weekly_assignment_generations"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT COUNT(*) FROM weekly_assignments"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT COUNT(*) FROM assignment_checklist_items"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_rotation_state"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_checklist_items"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_catalog_changes_only_affect_later_week_and_preserve_history(tmp_path):
@@ -242,9 +254,7 @@ def test_catalog_changes_only_affect_later_week_and_preserve_history(tmp_path):
             """,
             (first[0].checklist_items[0].id,),
         )
-        connection.execute(
-            "UPDATE chores SET name = 'Renamed kitchen' WHERE id = 1"
-        )
+        connection.execute("UPDATE chores SET name = 'Renamed kitchen' WHERE id = 1")
         connection.execute(
             "UPDATE chore_checklist_items SET label = 'New floor task' WHERE id = 1"
         )
@@ -318,12 +328,18 @@ def test_fewer_active_chores_rolls_back_generation_state(tmp_path):
         )
 
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM assignment_rotation_state"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT COUNT(*) FROM weekly_assignment_generations"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_rotation_state"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_week_normalization_uses_configured_timezone_for_aware_datetime(tmp_path):
