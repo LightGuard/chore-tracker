@@ -229,3 +229,57 @@ def test_child_facing_endpoints_do_not_require_authentication(tmp_path, monkeypa
         client.get(f"/family-members/{member_id}/current-assignment").status_code
         == 200
     )
+
+
+def test_current_assignment_remains_same_on_sunday_boundary(tmp_path, monkeypatch):
+    class SundayDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 15, 23, 59, tzinfo=tz)
+
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    monkeypatch.setattr(child_views, "datetime", SundayDateTime)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        create_assignment(connection, member_id)
+
+    response = client.get(f"/family-members/{member_id}/current-assignment")
+
+    assert response.status_code == 200
+    assert response.json()["today"] == "2026-11-15"
+    assert response.json()["week_start"] == "2026-11-09"
+    assert response.json()["week_end"] == "2026-11-15"
+
+
+def test_current_assignment_moves_to_new_week_on_monday_boundary(
+    tmp_path, monkeypatch
+):
+    class MondayDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 16, 0, 1, tzinfo=tz)
+
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    monkeypatch.setattr(child_views, "datetime", MondayDateTime)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        create_assignment(connection, member_id)
+        next_chore_id = connection.execute(
+            """INSERT INTO chores (name, description, is_active)
+               VALUES ('Yard', '', 1)"""
+        ).lastrowid
+        connection.execute(
+            """INSERT INTO weekly_assignments
+               (family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot)
+               VALUES (?, ?, '2026-11-16', '2026-11-22', 'Next week', '')""",
+            (member_id, next_chore_id),
+        )
+
+    response = client.get(f"/family-members/{member_id}/current-assignment")
+
+    assert response.status_code == 200
+    assert response.json()["today"] == "2026-11-16"
+    assert response.json()["week_start"] == "2026-11-16"
+    assert response.json()["week_end"] == "2026-11-22"
+    assert response.json()["chore_name"] == "Next week"
