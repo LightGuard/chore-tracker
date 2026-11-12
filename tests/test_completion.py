@@ -120,9 +120,22 @@ def test_partial_and_all_complete_status_and_idempotent_retry(tmp_path, monkeypa
     )
     payload = {"completion_date": "2026-11-12", "is_completed": True}
     first = client.put(url, json=payload)
+    with connect(database_path) as connection:
+        first_completed_at = connection.execute(
+            """SELECT completed_at FROM daily_checklist_completions
+               WHERE assignment_checklist_item_id = ? AND completion_date = ?""",
+            (item_ids[0], "2026-11-12"),
+        ).fetchone()["completed_at"]
     retry = client.put(url, json=payload)
+    with connect(database_path) as connection:
+        retry_completed_at = connection.execute(
+            """SELECT completed_at FROM daily_checklist_completions
+               WHERE assignment_checklist_item_id = ? AND completion_date = ?""",
+            (item_ids[0], "2026-11-12"),
+        ).fetchone()["completed_at"]
 
     assert first.status_code == retry.status_code == 200
+    assert retry_completed_at == first_completed_at
     assert first.json()["checklist_item"]["is_completed"] is True
     assert first.json()["is_complete"] is False
     with connect(database_path) as connection:
