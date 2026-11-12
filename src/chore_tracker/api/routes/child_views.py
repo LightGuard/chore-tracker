@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from datetime import date, datetime
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
@@ -13,24 +12,17 @@ from pydantic import BaseModel, ConfigDict
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
 
-def __getattr__(name: str):
-    """Retain the legacy settings monkeypatch seam used by API integration tests."""
-    if name == "get_settings":
-        from importlib import import_module
-
-        return import_module("chore_tracker.config").get_settings
-    raise AttributeError(name)
-
-
 def _service(request: Request):
-    settings = getattr(sys.modules[__name__], "get_settings")()
-    return request.app.state.child_views_service_factory(
-        getattr(settings, "database_path")
-    )
+    from chore_tracker.config import get_settings
+
+    settings = get_settings()
+    return request.app.state.child_views_service_factory(settings.database_path)
 
 
 def _today() -> date:
-    settings = getattr(sys.modules[__name__], "get_settings")()
+    from chore_tracker.config import get_settings
+
+    settings = get_settings()
     return datetime.now(ZoneInfo(settings.report_timezone)).date()
 
 
