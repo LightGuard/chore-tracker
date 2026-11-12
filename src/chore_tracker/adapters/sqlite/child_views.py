@@ -58,8 +58,12 @@ class SQLiteChildViewsPersistence:
                 (today.isoformat(), assignment["id"]),
             ).fetchall()
             items = [
-                {"id": row["id"], "label": row["label_snapshot"],
-                 "position": row["position"], "is_completed": bool(row["is_completed"])}
+                {
+                    "id": row["id"],
+                    "label": row["label_snapshot"],
+                    "position": row["position"],
+                    "is_completed": bool(row["is_completed"]),
+                }
                 for row in rows
             ]
             return {
@@ -71,7 +75,8 @@ class SQLiteChildViewsPersistence:
                 "chore_description": assignment["chore_description_snapshot"],
                 "today": today,
                 "checklist_items": items,
-                "is_complete": bool(items) and all(item["is_completed"] for item in items),
+                "is_complete": bool(items)
+                and all(item["is_completed"] for item in items),
             }
 
     def _assignment_for_date(self, connection, family_member_id, assignment_id, day):
@@ -107,12 +112,17 @@ class SQLiteChildViewsPersistence:
             (day.isoformat(), assignment_id),
         ).fetchall()
         items = [
-            {"id": row["id"], "label": row["label_snapshot"],
-             "position": row["position"], "is_completed": bool(row["is_completed"])}
+            {
+                "id": row["id"],
+                "label": row["label_snapshot"],
+                "position": row["position"],
+                "is_completed": bool(row["is_completed"]),
+            }
             for row in rows
         ]
         return {
-            "assignment_id": assignment_id, "completion_date": day,
+            "assignment_id": assignment_id,
+            "completion_date": day,
             "checklist_items": items,
             "is_complete": bool(items) and all(item["is_completed"] for item in items),
         }
@@ -128,7 +138,9 @@ class SQLiteChildViewsPersistence:
             )
             if error:
                 return self._error_result(error)
-            return {"completion": self._daily_completion(connection, assignment["id"], day)}
+            return {
+                "completion": self._daily_completion(connection, assignment["id"], day)
+            }
 
     def update_assignment_checklist_completion(
         self, family_member_id, assignment_id, checklist_item_id, day, is_completed
@@ -149,7 +161,8 @@ class SQLiteChildViewsPersistence:
                 return {"item_missing": True}
             completed_at = (
                 datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
-                if is_completed else None
+                if is_completed
+                else None
             )
             connection.execute(
                 """INSERT INTO daily_checklist_completions
@@ -164,11 +177,17 @@ class SQLiteChildViewsPersistence:
                 (checklist_item_id, day.isoformat(), int(is_completed), completed_at),
             )
             daily = self._daily_completion(connection, assignment_id, day)
-            updated = next(i for i in daily["checklist_items"] if i["id"] == checklist_item_id)
-            return {"completion": {
-                "assignment_id": assignment_id, "completion_date": day,
-                "checklist_item": updated, "is_complete": daily["is_complete"],
-            }}
+            updated = next(
+                i for i in daily["checklist_items"] if i["id"] == checklist_item_id
+            )
+            return {
+                "completion": {
+                    "assignment_id": assignment_id,
+                    "completion_date": day,
+                    "checklist_item": updated,
+                    "is_complete": daily["is_complete"],
+                }
+            }
 
     def get_completion_history(self, family_member_id, limit, offset):
         with transaction(self._database_path) as connection:
@@ -227,12 +246,18 @@ class SQLiteChildViewsPersistence:
             ).fetchall()
             return {
                 "items": [
-                    {"assignment_id": row["assignment_id"], "week_start": row["week_start"],
-                     "week_end": row["week_end"], "chore_name": row["chore_name_snapshot"],
-                     "chore_description": row["chore_description_snapshot"],
-                     "completion_date": row["completion_date"],
-                     "completion_status": row["completion_status"]}
+                    {
+                        "assignment_id": row["assignment_id"],
+                        "week_start": row["week_start"],
+                        "week_end": row["week_end"],
+                        "chore_name": row["chore_name_snapshot"],
+                        "chore_description": row["chore_description_snapshot"],
+                        "completion_date": row["completion_date"],
+                        "completion_status": row["completion_status"],
+                    }
                     for row in rows
                 ],
-                "total": total, "limit": limit, "offset": offset,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
             }
