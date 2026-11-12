@@ -41,6 +41,8 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "chores",
             "chore_checklist_items",
             "weekly_assignments",
+            "assignment_rotation_state",
+            "weekly_assignment_generations",
             "assignment_checklist_items",
             "daily_checklist_completions",
             "weekly_reports",
