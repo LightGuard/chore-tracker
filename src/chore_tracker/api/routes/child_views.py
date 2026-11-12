@@ -11,18 +11,25 @@ from pydantic import BaseModel, ConfigDict
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
+# Optional test seam: production settings are supplied by the composition root.
+get_settings = None
+
+
+def _settings(request: Request):
+    return (
+        get_settings()
+        if get_settings is not None
+        else request.app.state.settings
+    )
+
 
 def _service(request: Request):
-    from chore_tracker.config import get_settings
-
-    settings = get_settings()
+    settings = _settings(request)
     return request.app.state.child_views_service_factory(settings.database_path)
 
 
-def _today() -> date:
-    from chore_tracker.config import get_settings
-
-    settings = get_settings()
+def _today(request: Request) -> date:
+    settings = _settings(request)
     return datetime.now(ZoneInfo(settings.report_timezone)).date()
 
 
