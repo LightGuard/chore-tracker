@@ -299,7 +299,6 @@ def test_catalog_edits_do_not_change_completed_historical_snapshot(
     assert history.json()["is_complete"] is False
 
 
-
 def test_concurrent_item_updates_preserve_a_consistent_daily_state(
     tmp_path, monkeypatch
 ):
