@@ -39,7 +39,7 @@ def chores(count: int) -> list[RotationChore]:
     ]
 
 
-def assignments_for(week: datetime.date, child_count: int, chore_count: int):
+def assignments_for(week, child_count: int, chore_count: int):
     return plan_weekly_assignments(
         members(child_count), chores(chore_count), week, FIRST_WEEK
     )
