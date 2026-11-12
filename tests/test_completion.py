@@ -101,9 +101,12 @@ def test_daily_completion_defaults_to_unchecked_without_creating_rows(
         False,
     ]
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM daily_checklist_completions"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM daily_checklist_completions"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_partial_and_all_complete_status_and_idempotent_retry(tmp_path, monkeypatch):
@@ -123,11 +126,14 @@ def test_partial_and_all_complete_status_and_idempotent_retry(tmp_path, monkeypa
     assert first.json()["checklist_item"]["is_completed"] is True
     assert first.json()["is_complete"] is False
     with connect(database_path) as connection:
-        assert connection.execute(
-            """SELECT COUNT(*) FROM daily_checklist_completions
-               WHERE assignment_checklist_item_id = ? AND completion_date = ?""",
-            (item_ids[0], "2026-11-12"),
-        ).fetchone()[0] == 1
+        assert (
+            connection.execute(
+                """SELECT COUNT(*) FROM daily_checklist_completions
+                   WHERE assignment_checklist_item_id = ? AND completion_date = ?""",
+                (item_ids[0], "2026-11-12"),
+            ).fetchone()[0]
+            == 1
+        )
 
     second_url = (
         f"/family-members/{member_id}/assignments/{assignment_id}/"
@@ -149,12 +155,18 @@ def test_unchecking_item_updates_only_that_date_and_preserves_other_days(
         f"/family-members/{member_id}/assignments/{assignment_id}/"
         f"checklist-items/{item_ids[0]}/completion"
     )
-    assert client.put(
-        url, json={"completion_date": "2026-11-11", "is_completed": True}
-    ).status_code == 200
-    assert client.put(
-        url, json={"completion_date": "2026-11-12", "is_completed": True}
-    ).status_code == 200
+    assert (
+        client.put(
+            url, json={"completion_date": "2026-11-11", "is_completed": True}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.put(
+            url, json={"completion_date": "2026-11-12", "is_completed": True}
+        ).status_code
+        == 200
+    )
     unchecked = client.put(
         url, json={"completion_date": "2026-11-12", "is_completed": False}
     )
@@ -194,14 +206,20 @@ def test_date_is_scoped_to_assignment_week_and_invalid_dates_are_rejected(
 
     assert response.status_code == 422
     assert "within the weekly assignment" in response.json()["detail"]
-    assert client.get(
-        f"/family-members/{member_id}/assignments/{assignment_id}/completion",
-        params={"completion_date": "not-a-date"},
-    ).status_code == 422
+    assert (
+        client.get(
+            f"/family-members/{member_id}/assignments/{assignment_id}/completion",
+            params={"completion_date": "not-a-date"},
+        ).status_code
+        == 422
+    )
     with connect(database_path) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM daily_checklist_completions"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM daily_checklist_completions"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_member_assignment_and_checklist_item_relationships_are_enforced(
@@ -219,16 +237,22 @@ def test_member_assignment_and_checklist_item_relationships_are_enforced(
         f"checklist-items/{item_ids[0]}/completion"
     )
     payload = {"completion_date": "2026-11-12", "is_completed": True}
-    assert client.put(
-        f"/family-members/{other_member_id}/assignments/{assignment_id}/"
-        f"checklist-items/{item_ids[0]}/completion",
-        json=payload,
-    ).status_code == 404
-    assert client.put(
-        f"/family-members/{member_id}/assignments/{assignment_id}/"
-        "checklist-items/999/completion",
-        json=payload,
-    ).status_code == 404
+    assert (
+        client.put(
+            f"/family-members/{other_member_id}/assignments/{assignment_id}/"
+            f"checklist-items/{item_ids[0]}/completion",
+            json=payload,
+        ).status_code
+        == 404
+    )
+    assert (
+        client.put(
+            f"/family-members/{member_id}/assignments/{assignment_id}/"
+            "checklist-items/999/completion",
+            json=payload,
+        ).status_code
+        == 404
+    )
 
 
 def test_inactive_profile_cannot_update_completion(tmp_path, monkeypatch):
