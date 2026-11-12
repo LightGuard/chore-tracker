@@ -115,13 +115,20 @@ def set_checklist_item_completion(
            ON CONFLICT (assignment_checklist_item_id, completion_date)
            DO UPDATE SET is_completed = excluded.is_completed,
                          completed_at = excluded.completed_at""",
-        (\n            checklist_item_id,\n            completion_date.isoformat(),\n            int(is_completed),\n            completed_at,\n        ),
+        (
+            checklist_item_id,
+            completion_date.isoformat(),
+            int(is_completed),
+            completed_at,
+        ),
     )
     daily_state = get_daily_completion(
         connection, family_member_id, assignment_id, completion_date
     )
     updated_item = next(
-        item\n        for item in daily_state["checklist_items"]\n        if item["id"] == checklist_item_id
+        item
+        for item in daily_state["checklist_items"]
+        if item["id"] == checklist_item_id
     )
     return {
         "assignment_id": assignment_id,
