@@ -1,4 +1,4 @@
-""""Static architecture checks for application and persistence dependencies."""
+"""Static architecture checks for application and persistence dependencies."""
 
 from __future__ import annotations
 
@@ -65,8 +65,8 @@ def test_application_services_are_independent_of_http_and_sqlite() -> None:
     assert not violations, (
         "Application-layer dependency violations found. Application services may "
         "depend on application-owned contracts and the standard library, but not "
-        "HTTP frameworks, API modules, sqlite3, or concrete adapters:\\n- "
-        + "\\n- ".join(violations)
+        "HTTP frameworks, API modules, sqlite3, or concrete adapters:\n- "
+        + "\n- ".join(violations)
     )
 
 
@@ -79,5 +79,5 @@ def test_persistence_adapters_do_not_depend_on_http_or_api_layers() -> None:
     assert not violations, (
         "Persistence-layer dependency violations found. Adapters may use SQLite "
         "and database-specific types, but must not depend on HTTP frameworks or "
-        "API modules:\\n- " + "\\n- ".join(violations)
+        "API modules:\n- " + "\n- ".join(violations)
     )
