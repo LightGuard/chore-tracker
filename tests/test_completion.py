@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
-import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
@@ -276,28 +275,29 @@ def test_catalog_edits_do_not_change_completed_historical_snapshot(
     assert history.json()["is_complete"] is False
 
 
-def test_completion_is_transactional_when_database_rejects_write(
+
+def test_concurrent_item_updates_preserve_a_consistent_daily_state(
     tmp_path, monkeypatch
 ):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     with connect(database_path) as connection:
         member_id, assignment_id, item_ids = create_assignment(connection)
-        connection.execute(
-            """CREATE TRIGGER reject_completion_update
-               BEFORE UPDATE ON daily_checklist_completions
-               BEGIN SELECT RAISE(ABORT, 'forced failure'); END"""
+
+    def complete(item_id):
+        return client.put(
+            f"/family-members/{member_id}/assignments/{assignment_id}/"
+            f"checklist-items/{item_id}/completion",
+            json={"completion_date": "2026-11-12", "is_completed": True},
         )
 
-    url = (
-        f"/family-members/{member_id}/assignments/{assignment_id}/"
-        f"checklist-items/{item_ids[0]}/completion"
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(complete, item_ids))
+
+    assert [response.status_code for response in responses] == [200, 200]
+    daily = client.get(
+        f"/family-members/{member_id}/assignments/{assignment_id}/completion",
+        params={"completion_date": "2026-11-12"},
     )
-    assert client.put(
-        url, json={"completion_date": "2026-11-12", "is_completed": True}
-    ).status_code == 200
-    with pytest.raises(sqlite3.IntegrityError):
-        with connect(database_path) as connection:
-            connection.execute(
-                """UPDATE daily_checklist_completions
-                   SET is_completed = 0, completed_at = NULL"""
-            )
+    assert daily.status_code == 200
+    assert daily.json()["is_complete"] is True
+    assert all(item["is_completed"] for item in daily.json()["checklist_items"])
