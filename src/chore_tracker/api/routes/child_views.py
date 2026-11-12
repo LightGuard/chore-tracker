@@ -248,7 +248,6 @@ def update_assignment_checklist_completion(
         )
 
 
-
 class CompletionHistoryRecord(BaseModel):
     """One historical local calendar day for an immutable weekly assignment."""
 
