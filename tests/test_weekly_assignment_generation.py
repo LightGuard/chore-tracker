@@ -183,7 +183,7 @@ def test_repeated_generation_reuses_existing_assignments_and_snapshots(tmp_path)
         ).fetchone()[0] == 2
         assert connection.execute(
             "SELECT COUNT(*) FROM assignment_checklist_items"
-        ).fetchone()[0] == 2
+        ).fetchone()[0] == 3
 
 
 def test_generation_failure_rolls_back_rotation_state_and_all_assignments(tmp_path):
@@ -284,7 +284,7 @@ def test_catalog_changes_only_affect_later_week_and_preserve_history(tmp_path):
 def test_fewer_active_chores_rolls_back_generation_state(tmp_path):
     database_path = _database(tmp_path)
     with connect(database_path) as connection:
-        connection.execute("UPDATE chores SET is_active = 0 WHERE id = 2")
+        connection.execute("UPDATE chores SET is_active = 0 WHERE id IN (2, 3)")
 
     with pytest.raises(ValueError, match="require at least"):
         generate_weekly_assignments(
