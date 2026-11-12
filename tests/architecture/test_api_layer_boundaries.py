@@ -1,4 +1,4 @@
-"""Static architecture checks for the HTTP/API layer.
+"""Static architecture checks for the HTTP/API layer."
 
 These checks intentionally inspect source rather than importing application modules,
 so they remain deterministic and do not require a database.
@@ -71,11 +71,7 @@ def test_api_modules_do_not_own_persistence_or_transactions() -> None:
     modules = _python_modules()
     assert modules, f"No Python modules found under API package: {API_ROOT}"
 
-    violations = [
-        violation
-        for path in modules
-        for violation in _violations(path)
-    ]
+    violations = [violation for path in modules for violation in _violations(path)]
     assert not violations, (
         "API architecture violations found. Move persistence and transaction "
         "responsibilities out of API modules:\n- " + "\n- ".join(violations)

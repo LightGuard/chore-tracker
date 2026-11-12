@@ -49,11 +49,18 @@ def _violations(root: Path, forbidden_prefixes: tuple[str, ...]) -> list[str]:
 def test_application_services_are_independent_of_http_and_sqlite() -> None:
     """Application services must not know HTTP framework or concrete storage APIs."""
     modules = _python_modules(APPLICATION_ROOT)
-    assert modules, f"No Python modules found under application package: {APPLICATION_ROOT}"
+    assert modules, (
+        f"No Python modules found under application package: {APPLICATION_ROOT}"
+    )
 
     violations = _violations(
         APPLICATION_ROOT,
-        (*HTTP_IMPORT_PREFIXES, SQLITE_IMPORT_PREFIX, ADAPTER_IMPORT_PREFIX, API_IMPORT_PREFIX),
+        (
+            *HTTP_IMPORT_PREFIXES,
+            SQLITE_IMPORT_PREFIX,
+            ADAPTER_IMPORT_PREFIX,
+            API_IMPORT_PREFIX,
+        ),
     )
     assert not violations, (
         "Application-layer dependency violations found. Application services may "
