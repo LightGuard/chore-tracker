@@ -73,6 +73,23 @@ These read-only endpoints do not create assignments. The weekly assignment
 generation service must have generated the current week's assignments before a
 child can view one.
 
+- `GET /family-members/{family_member_id}/assignments/{assignment_id}/completion?completion_date=YYYY-MM-DD`
+  returns the assigned checklist and its completion state for that local calendar date.
+- `PUT /family-members/{family_member_id}/assignments/{assignment_id}/checklist-items/{checklist_item_id}/completion`
+  accepts `{ "completion_date": "YYYY-MM-DD", "is_completed": true|false }`
+  and idempotently sets that item's state for the date.
+
+The completion date is interpreted as a calendar date in
+`CHORE_TRACKER_REPORT_TIMEZONE`; callers send the local date, not a UTC timestamp.
+A date must fall within the assignment's Monday–Sunday week. Reads do not create
+completion rows, so a date with no saved state returns every item as unchecked.
+Unchecking an item updates only that item's record for that date; records for other
+dates remain intact. The daily `is_complete` result is derived from the immutable
+assignment checklist and is true only when every checklist item is checked.
+Completion writes acquire a SQLite write reservation before reading and updating,
+so concurrent requests are serialized. These endpoints remain unauthenticated under
+the child-facing household trust model.
+
 ### Application configuration
 
 Configuration is loaded and validated when the application starts. All settings use
