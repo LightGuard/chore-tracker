@@ -41,17 +41,37 @@ process liveness from application readiness:
   is accessible and has been upgraded to the current Alembic migration head.
 - `GET /health` is retained as an alias for the readiness endpoint.
 
-Check readiness with:
-
-```bash
-curl --fail http://127.0.0.1:8000/health/ready
-```
-
 A healthy endpoint returns HTTP 200 and `{"status":"ok"}`. Readiness returns HTTP
 503 and `{"status":"not_ready"}` when the database is unavailable or its schema is
 not current. The response does not include filesystem paths or database errors.
 Apply migrations explicitly with `alembic upgrade head` before expecting readiness
 to succeed; the application does not migrate the database during startup.
+
+### Child-facing API
+
+Child-facing endpoints intentionally do not require an administrator session or
+child authentication. The household trust model uses profile selection rather than
+individual child accounts.
+
+- `GET /family-members/active` returns active profiles as an array of
+  `{ "id": integer, "display_name": string }`, ordered by display name (case-insensitive)
+  and then ID. Inactive profiles are excluded.
+- `GET /family-members/{family_member_id}/current-assignment` returns the selected
+  active child's assignment for the current Monday–Sunday week in the configured
+  `CHORE_TRACKER_REPORT_TIMEZONE`. The response includes the immutable chore name
+  and description snapshots, ordered checklist snapshots, each item's completion
+  state for today's local date, and an `is_complete` value that is true only when
+  every checklist item is complete.
+
+The current-assignment endpoint returns HTTP 404 when the profile does not exist or
+has no assignment for the current week, and HTTP 409 when the profile exists but is
+inactive. Error responses use FastAPI's standard `{"detail":"..."}` shape. The
+response schemas and error status codes are also published in the generated OpenAPI
+document at `/openapi.json`.
+
+These read-only endpoints do not create assignments. The weekly assignment
+generation service must have generated the current week's assignments before a
+child can view one.
 
 ### Application configuration
 
@@ -69,7 +89,7 @@ the available settings.
 | `CHORE_TRACKER_PASSKEY_RP_ID` | `localhost` | Passkey relying-party ID |
 | `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://localhost:5173` | Origin used for passkey validation |
 | `CHORE_TRACKER_EMAIL_TRANSPORT` | `console` | Initial transports: `console` or `smtp` |
-| `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone used for reports |
+| `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone used for reports and child-facing local dates |
 | `CHORE_TRACKER_REPORT_DELIVERY_TIME` | `03:00` | Monday report delivery time in the reporting timezone (`HH:MM`) |
 
 The development email transport writes messages to the application console and does
@@ -219,12 +239,19 @@ against production data without a verified backup and recovery plan.
 The schema keeps family members and chores as deactivatable records. Weekly
 assignments retain references to those records and store chore name/description and
 ordered checklist-item snapshots, so later catalog edits do not rewrite historical
-assignments. Daily completion is stored per assignment checklist item and calendar
-date. Weekly report snapshots and per-administrator delivery records provide durable,
+assignments. Daily completion is stored per assigned checklist item and calendar date.
+Weekly report snapshots and per-administrator delivery records provide durable,
 unique delivery state for retries.
 
-
-Chore catalog management is available to authenticated administrators through the `/chores` API and the administration page. New chores are created inactive. A chore cannot be activated until it has at least one active checklist item; an active chore must be deactivated before its last active checklist item can be deactivated or removed. Checklist items can be edited, removed, and reordered. Catalog changes never update assignment snapshots or daily completion records. Removing a catalog checklist item relies on the database's `ON DELETE SET NULL` behavior to clear only the historical snapshot's source-item reference; the snapshot label and completion history remain unchanged.
+Chore catalog management is available to authenticated administrators through the
+`/chores` API and the administration page. New chores are created inactive. A chore
+cannot be activated until it has at least one active checklist item; an active chore
+must be deactivated before its last active checklist item can be deactivated or
+removed. Checklist items can be edited, removed, and reordered. Catalog changes never
+update assignment snapshots or daily completion records. Removing a catalog checklist
+item relies on the database's `ON DELETE SET NULL` behavior to clear only the
+historical snapshot's source-item reference; the snapshot label and completion history
+remain unchanged.
 
 ## Administrator identity and passkeys
 

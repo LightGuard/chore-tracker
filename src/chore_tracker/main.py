@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from chore_tracker.api.routes.auth import router as auth_router
+from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
 from chore_tracker.api.routes.family_members import router as family_members_router
 from chore_tracker.api.routes.health import router as health_router
@@ -22,4 +23,6 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(chores_router)
+# Register child views before the dynamic /family-members/{family_member_id} route.
+app.include_router(child_views_router)
 app.include_router(family_members_router)
