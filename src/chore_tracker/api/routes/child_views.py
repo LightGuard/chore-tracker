@@ -213,7 +213,10 @@ def get_assignment_completion(
 
 
 @router.put(
-    "/{family_member_id}/assignments/{assignment_id}/checklist-items/{checklist_item_id}/completion",
+    (
+        "/{family_member_id}/assignments/{assignment_id}/checklist-items/"
+        "{checklist_item_id}/completion"
+    ),
     response_model=ChecklistCompletionResult,
     responses={
         404: {"description": "Family member, assignment, or checklist item not found."},
