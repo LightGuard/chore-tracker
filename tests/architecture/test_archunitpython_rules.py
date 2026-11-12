@@ -76,7 +76,7 @@ def test_application_does_not_depend_on_adapters() -> None:
 
 
 def test_application_does_not_import_http_or_sqlite_modules() -> None:
-    """Keep HTTP frameworks and SQLite implementation details out of application code."""
+    """Keep HTTP frameworks and SQLite implementation details out of\n    application code."""
     for forbidden_module in ("fastapi", "starlette", "sqlite3"):
         rule = (
             project_files("src")
