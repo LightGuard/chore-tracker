@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import datetime
 
-import pytest
-
 from chore_tracker.application.services.weekly_rotation import (
     InsufficientActiveChoresError,
     RotationChore,
@@ -16,6 +14,14 @@ from chore_tracker.application.services.weekly_rotation import (
 
 
 FIRST_WEEK = datetime.date(2026, 11, 16)
+
+
+def assert_raises(exception_type, function, *args, **kwargs):
+    try:
+        function(*args, **kwargs)
+    except exception_type as error:
+        return error
+    raise AssertionError(f"Expected {exception_type.__name__} to be raised")
 
 
 def members(count: int) -> list[RotationFamilyMember]:
@@ -62,11 +68,16 @@ def test_extra_chores_are_left_unassigned_and_rotation_advances_each_week():
 
 
 def test_fewer_chores_than_children_rejects_the_entire_plan():
-    with raises(InsufficientActiveChoresError) as error:
-        assignments_for(FIRST_WEEK, child_count=4, chore_count=3)
+    error = assert_raises(
+        InsufficientActiveChoresError,
+        assignments_for,
+        FIRST_WEEK,
+        child_count=4,
+        chore_count=3,
+    )
 
-    assert error.value.family_member_count == 4
-    assert error.value.chore_count == 3
+    assert error.family_member_count == 4
+    assert error.chore_count == 3
 
 
 def test_inactive_members_and_chores_are_excluded():
