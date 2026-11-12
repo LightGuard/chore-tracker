@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 import pytest
+
+from datetime import date
 
 from chore_tracker.application.services.weekly_rotation import (
     InsufficientActiveChoresError,
