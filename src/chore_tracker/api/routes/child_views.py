@@ -24,7 +24,9 @@ def __getattr__(name: str):
 
 def _service(request: Request):
     settings = getattr(sys.modules[__name__], "get_settings")()
-    return request.app.state.child_views_service_factory(getattr(settings, "database_path"))
+    return request.app.state.child_views_service_factory(
+        getattr(settings, "database_path")
+    )
 
 
 def _today() -> date:
@@ -37,7 +39,9 @@ def _invoke(operation):
         return operation()
     except Exception as error:
         if hasattr(error, "status_code") and hasattr(error, "detail"):
-            raise HTTPException(status_code=error.status_code, detail=error.detail) from error
+            raise HTTPException(
+                status_code=error.status_code, detail=error.detail
+            ) from error
         raise
 
 
@@ -74,8 +78,11 @@ class CurrentWeeklyAssignment(BaseModel):
     is_complete: bool
 
 
-@router.get("/active", response_model=list[ActiveFamilyMember],
-            summary="List active family members for child selection")
+@router.get(
+    "/active",
+    response_model=list[ActiveFamilyMember],
+    summary="List active family members for child selection",
+)
 def list_active_family_members(request: Request) -> list[dict[str, Any]]:
     return _service(request).list_active_family_members()
 
@@ -90,7 +97,9 @@ def list_active_family_members(request: Request) -> list[dict[str, Any]]:
     summary="Get a child's current weekly chore",
 )
 def get_current_assignment(family_member_id: int, request: Request) -> dict[str, Any]:
-    return _invoke(lambda: _service(request).get_current_assignment(family_member_id, _today()))
+    return _invoke(
+        lambda: _service(request).get_current_assignment(family_member_id, _today())
+    )
 
 
 class DailyCompletionChecklistItem(BaseModel):
@@ -144,9 +153,11 @@ class ChecklistCompletionResult(BaseModel):
 def get_assignment_completion(
     family_member_id: int, assignment_id: int, completion_date: date, request: Request
 ) -> dict[str, Any]:
-    return _invoke(lambda: _service(request).get_assignment_completion(
-        family_member_id, assignment_id, completion_date
-    ))
+    return _invoke(
+        lambda: _service(request).get_assignment_completion(
+            family_member_id, assignment_id, completion_date
+        )
+    )
 
 
 @router.put(
@@ -161,13 +172,21 @@ def get_assignment_completion(
     summary="Set a checklist item's completion state for a local date",
 )
 def update_assignment_checklist_completion(
-    family_member_id: int, assignment_id: int, checklist_item_id: int,
-    request: ChecklistCompletionUpdate, http_request: Request,
+    family_member_id: int,
+    assignment_id: int,
+    checklist_item_id: int,
+    request: ChecklistCompletionUpdate,
+    http_request: Request,
 ) -> dict[str, Any]:
-    return _invoke(lambda: _service(http_request).update_assignment_checklist_completion(
-        family_member_id, assignment_id, checklist_item_id, request.completion_date,
-        request.is_completed,
-    ))
+    return _invoke(
+        lambda: _service(http_request).update_assignment_checklist_completion(
+            family_member_id,
+            assignment_id,
+            checklist_item_id,
+            request.completion_date,
+            request.is_completed,
+        )
+    )
 
 
 class CompletionHistoryRecord(BaseModel):
@@ -200,10 +219,13 @@ class CompletionHistoryPage(BaseModel):
     summary="Get a child's historical daily chore completion",
 )
 def get_family_member_completion_history(
-    family_member_id: int, request: Request,
+    family_member_id: int,
+    request: Request,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, Any]:
-    return _invoke(lambda: _service(request).get_completion_history(
-        family_member_id, limit, offset
-    ))
+    return _invoke(
+        lambda: _service(request).get_completion_history(
+            family_member_id, limit, offset
+        )
+    )
