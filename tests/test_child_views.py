@@ -173,9 +173,7 @@ def test_current_assignment_is_complete_only_when_every_item_is_checked(
     assert response.json()["is_complete"] is True
 
 
-def test_current_assignment_uses_monday_sunday_week_boundaries(
-    tmp_path, monkeypatch
-):
+def test_current_assignment_uses_monday_sunday_week_boundaries(tmp_path, monkeypatch):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     with connect(database_path) as connection:
         member_id = create_member(connection, "Alex")
@@ -226,8 +224,7 @@ def test_child_facing_endpoints_do_not_require_authentication(tmp_path, monkeypa
 
     assert client.get("/family-members/active").status_code == 200
     assert (
-        client.get(f"/family-members/{member_id}/current-assignment").status_code
-        == 200
+        client.get(f"/family-members/{member_id}/current-assignment").status_code == 200
     )
 
 
@@ -251,9 +248,7 @@ def test_current_assignment_remains_same_on_sunday_boundary(tmp_path, monkeypatc
     assert response.json()["week_end"] == "2026-11-15"
 
 
-def test_current_assignment_moves_to_new_week_on_monday_boundary(
-    tmp_path, monkeypatch
-):
+def test_current_assignment_moves_to_new_week_on_monday_boundary(tmp_path, monkeypatch):
     class MondayDateTime(datetime):
         @classmethod
         def now(cls, tz=None):
