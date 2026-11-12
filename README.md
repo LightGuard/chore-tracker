@@ -90,6 +90,25 @@ Completion writes acquire a SQLite write reservation before reading and updating
 so concurrent requests are serialized. These endpoints remain unauthenticated under
 the child-facing household trust model.
 
+- `GET /family-members/{family_member_id}/completion-history?limit=50&offset=0`
+  returns historical daily records for every persisted weekly assignment belonging to
+  the selected profile. Each assignment contributes one record for each day in its
+  Monday–Sunday week, including days with no saved completion rows. Records are ordered
+  newest date first, with assignment ID as a deterministic tie-breaker. Pagination
+  defaults to 50 records and accepts a limit from 1 through 100 and a non-negative
+  offset. The response contains `items`, the total number of available daily records,
+  and the effective pagination values.
+
+Each history record includes the assignment ID, week boundaries, immutable chore name
+and description snapshots, local calendar date, and `completion_status`. Status is
+`complete` only when every checklist snapshot item has a saved completed record;
+`incomplete` when at least one completion record exists but the full checklist is
+not complete; and `not_yet_recorded` when no completion record exists for that day.
+The endpoint does not create completion rows or infer a result from a missing row.
+Historical records remain available when a family profile or chore is inactive, and
+catalog edits do not change the assignment snapshots. An unknown profile returns HTTP
+404; a known profile with no assignments returns HTTP 200 with an empty page.
+
 ### Application configuration
 
 Configuration is loaded and validated when the application starts. All settings use
