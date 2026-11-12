@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from chore_tracker.adapters.sqlite import transaction
-from chore_tracker.config import get_settings
+from chore_tracker.application.services.completion import (\n    get_daily_completion,\n    set_checklist_item_completion,\n)\nfrom chore_tracker.config import get_settings
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
@@ -143,3 +143,97 @@ def get_current_assignment(family_member_id: int) -> dict[str, Any]:
             "is_complete": bool(checklist_items)
             and all(item["is_completed"] for item in checklist_items),
         }
+
+
+
+class DailyCompletionChecklistItem(BaseModel):
+    """One assigned checklist item and its state for a selected local date."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    label: str
+    position: int
+    is_completed: bool
+
+
+class DailyCompletion(BaseModel):
+    """The full checklist state for one assignment and local calendar date."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    assignment_id: int
+    completion_date: date
+    checklist_items: list[DailyCompletionChecklistItem]
+    is_complete: bool
+
+
+class ChecklistCompletionUpdate(BaseModel):
+    """Desired state for one checklist item on one local calendar date."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    completion_date: date
+    is_completed: bool
+
+
+class ChecklistCompletionResult(BaseModel):
+    """Updated item state and aggregate daily chore status."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    assignment_id: int
+    completion_date: date
+    checklist_item: DailyCompletionChecklistItem
+    is_complete: bool
+
+
+@router.get(
+    "/{family_member_id}/assignments/{assignment_id}/completion",
+    response_model=DailyCompletion,
+    responses={
+        404: {"description": "Family member, assignment, or checklist not found."},
+        409: {"description": "The selected family member is inactive."},
+        422: {"description": "The date is outside the assignment week."},
+    },
+    summary="Get a child's checklist completion for a local date",
+)
+def get_assignment_completion(
+    family_member_id: int, assignment_id: int, completion_date: date
+) -> dict[str, Any]:
+    """Return the selected assignment's checklist state for the requested local date."""
+    with transaction(get_settings().database_path) as connection:
+        return get_daily_completion(
+            connection, family_member_id, assignment_id, completion_date
+        )
+
+
+@router.put(
+    "/{family_member_id}/assignments/{assignment_id}/checklist-items/{checklist_item_id}/completion",
+    response_model=ChecklistCompletionResult,
+    responses={
+        404: {"description": "Family member, assignment, or checklist item not found."},
+        409: {"description": "The selected family member is inactive."},
+        422: {"description": "The date is outside the assignment week."},
+    },
+    summary="Set a checklist item's completion state for a local date",
+)
+def update_assignment_checklist_completion(
+    family_member_id: int,
+    assignment_id: int,
+    checklist_item_id: int,
+    request: ChecklistCompletionUpdate,
+) -> dict[str, Any]:
+    """Idempotently set one assigned checklist item for the requested local date."""
+    with transaction(get_settings().database_path) as connection:
+        # Acquire the SQLite write reservation before validating and updating. This
+        # serializes competing completion writes and avoids read-to-write lock races.
+        connection.execute("BEGIN IMMEDIATE")
+        return set_checklist_item_completion(
+            connection,
+            family_member_id,
+            assignment_id,
+            checklist_item_id,
+            request.completion_date,
+            request.is_completed,
+        )
