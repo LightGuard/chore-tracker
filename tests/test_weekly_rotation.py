@@ -157,3 +157,35 @@ def test_no_active_members_produces_no_assignments():
 def test_invalid_rotation_weeks_are_rejected(week_start, first_week_start):
     with pytest.raises(ValueError):
         plan_weekly_assignments(members(1), chores(1), week_start, first_week_start)
+
+
+def test_same_inputs_and_rotation_anchor_produce_identical_assignments():
+    first = assignments_for(date(2026, 11, 23), child_count=3, chore_count=5)
+    second = assignments_for(date(2026, 11, 23), child_count=3, chore_count=5)
+
+    assert first == second
+
+
+def test_deactivation_changes_next_week_without_changing_existing_plan():
+    active_members = members(3)
+    active_chores = chores(3)
+    existing_week = plan_weekly_assignments(
+        active_members, active_chores, FIRST_WEEK, FIRST_WEEK
+    )
+
+    next_week = plan_weekly_assignments(
+        [active_members[0], active_members[2]],
+        [active_chores[0], active_chores[2]],
+        date(2026, 11, 23),
+        FIRST_WEEK,
+    )
+
+    assert [(item.family_member_id, item.chore_id) for item in existing_week] == [
+        (1, 1),
+        (2, 2),
+        (3, 3),
+    ]
+    assert [(item.family_member_id, item.chore_id) for item in next_week] == [
+        (1, 3),
+        (3, 1),
+    ]
