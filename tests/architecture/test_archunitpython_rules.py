@@ -44,7 +44,7 @@ def test_api_does_not_depend_on_persistence_adapters() -> None:
         .should_not()
         .depend_on_files()
         .in_folder("**/adapters/**")
-        .because("API routes must delegate application work instead of using persistence adapters")
+        .because("routes delegate persistence to application services")
     )
     assert_passes(rule, CHECK_OPTIONS)
 
@@ -57,7 +57,7 @@ def test_application_does_not_depend_on_api() -> None:
         .should_not()
         .depend_on_files()
         .in_folder("**/api/**")
-        .because("application services must not depend on API routes or HTTP contracts")
+        .because("application code must not depend on HTTP delivery code")
     )
     assert_passes(rule, CHECK_OPTIONS)
 
@@ -70,7 +70,7 @@ def test_application_does_not_depend_on_adapters() -> None:
         .should_not()
         .depend_on_files()
         .in_folder("**/adapters/**")
-        .because("application services must not depend on concrete persistence adapters")
+        .because("application code must not depend on persistence implementations")
     )
     assert_passes(rule, CHECK_OPTIONS)
 
@@ -100,7 +100,7 @@ def test_adapters_do_not_depend_on_api() -> None:
         .should_not()
         .depend_on_files()
         .in_folder("**/api/**")
-        .because("persistence adapters must not depend on API routes or HTTP contracts")
+        .because("adapters must not depend on HTTP delivery code")
     )
     assert_passes(rule, CHECK_OPTIONS)
 
@@ -112,6 +112,6 @@ def test_application_package_has_no_circular_dependencies() -> None:
         .in_folder("**/application/**")
         .should()
         .have_no_cycles()
-        .because("application services should have an acyclic dependency structure")
+        .because("application dependencies must remain acyclic")
     )
     assert_passes(rule, CHECK_OPTIONS)
