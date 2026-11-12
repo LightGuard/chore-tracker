@@ -128,6 +128,16 @@ def test_create_list_and_update_family_members_allow_duplicate_names(
     assert updated.json()["display_name"] == "Alexandra"
     assert updated.json()["is_active"] is False
 
+    listed_after_deactivation = client.get("/family-members").json()
+    assert any(
+        item["id"] == first.json()["id"] and item["is_active"] is False
+        for item in listed_after_deactivation
+    )
+    assert any(
+        item["id"] == second.json()["id"] and item["is_active"] is True
+        for item in listed_after_deactivation
+    )
+
 
 def test_family_member_validation_and_missing_profile(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
