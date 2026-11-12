@@ -10,7 +10,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from chore_tracker.adapters.sqlite import transaction
-from chore_tracker.application.services.completion import (\n    get_daily_completion,\n    set_checklist_item_completion,\n)\nfrom chore_tracker.config import get_settings
+from chore_tracker.application.services.completion import (
+    get_daily_completion,
+    set_checklist_item_completion,
+)
+from chore_tracker.config import get_settings
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
