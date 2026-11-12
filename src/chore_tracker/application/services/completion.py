@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 from fastapi import HTTPException
@@ -104,7 +104,7 @@ def set_checklist_item_completion(
         )
 
     completed_at = (
-        datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
         if is_completed
         else None
     )
