@@ -47,12 +47,11 @@ def _route_trees() -> list[tuple[Path, ast.Module]]:
     return parsed
 
 
-def test_management_routes_do_not_import_persistence_or_database_configuration():
+def test_management_routes_do_not_import_persistence_or_database_configuration() -> None:
     """Routes must not know about concrete persistence or database configuration."""
     violations = []
     for path, tree in _route_trees():
         for node in ast.walk(tree):
-            module = None
             if isinstance(node, ast.Import):
                 modules = [alias.name for alias in node.names]
             elif isinstance(node, ast.ImportFrom):
@@ -76,7 +75,7 @@ def test_management_routes_do_not_import_persistence_or_database_configuration()
     )
 
 
-def test_management_routes_do_not_execute_sql_or_manage_transactions():
+def test_management_routes_do_not_execute_sql_or_manage_transactions() -> None:
     """All SQL execution and transaction handling must live outside API routes."""
     violations = []
     for path, tree in _route_trees():
@@ -101,7 +100,7 @@ def test_management_routes_do_not_execute_sql_or_manage_transactions():
     )
 
 
-def test_management_routes_do_not_resolve_database_paths():
+def test_management_routes_do_not_resolve_database_paths() -> None:
     """Database settings are resolved at the composition boundary, not in routes."""
     violations = []
     for path, tree in _route_trees():
@@ -114,10 +113,7 @@ def test_management_routes_do_not_resolve_database_paths():
                     f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}: "
                     f"route references {node.id!r}"
                 )
-            elif (
-                isinstance(node, ast.Attribute)
-                and node.attr == "database_path"
-            ):
+            elif isinstance(node, ast.Attribute) and node.attr == "database_path":
                 violations.append(
                     f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}: "
                     "route accesses database_path"
