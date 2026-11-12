@@ -87,7 +87,7 @@ def test_daily_completion_defaults_to_unchecked_without_creating_rows(
 ):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     with connect(database_path) as connection:
-        member_id, assignment_id, item_ids = create_assignment(connection)
+        member_id, assignment_id, _ = create_assignment(connection)
 
     response = client.get(
         f"/family-members/{member_id}/assignments/{assignment_id}/completion",
