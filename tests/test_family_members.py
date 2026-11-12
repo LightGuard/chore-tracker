@@ -76,16 +76,22 @@ def test_family_member_endpoints_require_admin_session(tmp_path, monkeypatch):
     client.post("/auth/logout", headers=admin_headers())
 
     assert client.get("/family-members").status_code == 401
-    assert client.post(
-        "/family-members",
-        json={"display_name": "Alex"},
-        headers=admin_headers(),
-    ).status_code == 401
-    assert client.patch(
-        "/family-members/1",
-        json={"display_name": "Alex"},
-        headers=admin_headers(),
-    ).status_code == 401
+    assert (
+        client.post(
+            "/family-members",
+            json={"display_name": "Alex"},
+            headers=admin_headers(),
+        ).status_code
+        == 401
+    )
+    assert (
+        client.patch(
+            "/family-members/1",
+            json={"display_name": "Alex"},
+            headers=admin_headers(),
+        ).status_code
+        == 401
+    )
 
 
 def test_create_list_and_update_family_members_allow_duplicate_names(
@@ -135,16 +141,22 @@ def test_family_member_validation_and_missing_profile(tmp_path, monkeypatch):
         )
         assert response.status_code == 422
 
-    assert client.patch(
-        "/family-members/999",
-        json={"display_name": "Unknown"},
-        headers=headers,
-    ).status_code == 404
-    assert client.patch(
-        "/family-members/999",
-        json={},
-        headers=headers,
-    ).status_code == 422
+    assert (
+        client.patch(
+            "/family-members/999",
+            json={"display_name": "Unknown"},
+            headers=headers,
+        ).status_code
+        == 404
+    )
+    assert (
+        client.patch(
+            "/family-members/999",
+            json={},
+            headers=headers,
+        ).status_code
+        == 422
+    )
 
 
 def test_deactivation_preserves_historical_assignment_and_completion(
