@@ -15,6 +15,7 @@ from chore_tracker.config import get_settings
 settings = get_settings()
 
 app = FastAPI(title="Chore Tracker API")
+app.state.settings = settings
 app.state.child_views_service_factory = lambda database_path: ChildViewsService(
     SQLiteChildViewsPersistence(database_path)
 )
