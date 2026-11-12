@@ -81,11 +81,18 @@ class ChildViewsService:
         return result["completion"]
 
     def update_assignment_checklist_completion(
-        self, family_member_id: int, assignment_id: int, checklist_item_id: int,
-        completion_date: date, is_completed: bool,
+        self,
+        family_member_id: int,
+        assignment_id: int,
+        checklist_item_id: int,
+        completion_date: date,
+        is_completed: bool,
     ) -> dict[str, Any]:
         result = self._persistence.update_assignment_checklist_completion(
-            family_member_id, assignment_id, checklist_item_id, completion_date,
+            family_member_id,
+            assignment_id,
+            checklist_item_id,
+            completion_date,
             is_completed,
         )
         if result is None:
