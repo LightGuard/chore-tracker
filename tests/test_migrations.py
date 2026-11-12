@@ -54,7 +54,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0004_administrator_passkeys"
+        assert revision == "0005_weekly_assignment_generation"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
