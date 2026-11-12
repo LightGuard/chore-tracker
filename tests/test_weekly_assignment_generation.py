@@ -346,7 +346,7 @@ def test_week_normalization_uses_configured_timezone_for_aware_datetime(tmp_path
     database_path = _database(tmp_path)
 
     assignments = generate_weekly_assignments(
-        # Sunday UTC is still Saturday in Denver and belongs to the prior week.
+        # Monday UTC is still Sunday in Denver and belongs to the prior week.
         datetime.fromisoformat("2026-11-23T01:00:00+00:00"),
         database_path=database_path,
         timezone_name="America/Denver",
