@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date
+import datetime
 
-from pytest import mark, raises
+import pytest
 
 from chore_tracker.application.services.weekly_rotation import (
     InsufficientActiveChoresError,
@@ -15,7 +15,7 @@ from chore_tracker.application.services.weekly_rotation import (
 )
 
 
-FIRST_WEEK = date(2026, 11, 16)
+FIRST_WEEK = datetime.date(2026, 11, 16)
 
 
 def members(count: int) -> list[RotationFamilyMember]:
@@ -31,14 +31,14 @@ def chores(count: int) -> list[RotationChore]:
     ]
 
 
-def assignments_for(week: date, child_count: int, chore_count: int):
+def assignments_for(week: datetime.date, child_count: int, chore_count: int):
     return plan_weekly_assignments(
         members(child_count), chores(chore_count), week, FIRST_WEEK
     )
 
 
 def test_first_assignment_week_is_first_monday_on_or_after_today():
-    assert first_assignment_week(date(2026, 11, 11)) == FIRST_WEEK
+    assert first_assignment_week(datetime.date(2026, 11, 11)) == FIRST_WEEK
     assert first_assignment_week(FIRST_WEEK) == FIRST_WEEK
 
 
@@ -54,7 +54,7 @@ def test_equal_counts_assign_one_distinct_chore_to_each_child():
 
 def test_extra_chores_are_left_unassigned_and_rotation_advances_each_week():
     first = assignments_for(FIRST_WEEK, child_count=3, chore_count=5)
-    second = assignments_for(date(2026, 11, 23), child_count=3, chore_count=5)
+    second = assignments_for(datetime.date(2026, 11, 23), child_count=3, chore_count=5)
 
     assert [item.chore_id for item in first] == [1, 2, 3]
     assert [item.chore_id for item in second] == [2, 3, 4]
@@ -121,7 +121,7 @@ def test_changes_to_active_catalog_apply_to_next_plan_only():
     next_members = [*original_members, RotationFamilyMember(3, "Child 3")]
     next_chores = [*original_chores, RotationChore(4, "Chore 4")]
     next_week = plan_weekly_assignments(
-        next_members, next_chores, date(2026, 11, 23), FIRST_WEEK
+        next_members, next_chores, datetime.date(2026, 11, 23), FIRST_WEEK
     )
 
     assert [(item.family_member_id, item.chore_id) for item in original_week] == [
@@ -146,22 +146,22 @@ def test_no_active_members_produces_no_assignments():
     assert result == ()
 
 
-@mark.parametrize(
+@pytest.mark.parametrize(
     ("week_start", "first_week_start"),
     [
-        (date(2026, 11, 17), FIRST_WEEK),
-        (FIRST_WEEK, date(2026, 11, 17)),
-        (date(2026, 11, 9), FIRST_WEEK),
+        (datetime.date(2026, 11, 17), FIRST_WEEK),
+        (FIRST_WEEK, datetime.date(2026, 11, 17)),
+        (datetime.date(2026, 11, 9), FIRST_WEEK),
     ],
 )
 def test_invalid_rotation_weeks_are_rejected(week_start, first_week_start):
-    with pytest.raises(ValueError):
+    with pytest.pytest.raises(ValueError):
         plan_weekly_assignments(members(1), chores(1), week_start, first_week_start)
 
 
 def test_same_inputs_and_rotation_anchor_produce_identical_assignments():
-    first = assignments_for(date(2026, 11, 23), child_count=3, chore_count=5)
-    second = assignments_for(date(2026, 11, 23), child_count=3, chore_count=5)
+    first = assignments_for(datetime.date(2026, 11, 23), child_count=3, chore_count=5)
+    second = assignments_for(datetime.date(2026, 11, 23), child_count=3, chore_count=5)
 
     assert first == second
 
@@ -176,7 +176,7 @@ def test_deactivation_changes_next_week_without_changing_existing_plan():
     next_week = plan_weekly_assignments(
         [active_members[0], active_members[2]],
         [active_chores[0], active_chores[2]],
-        date(2026, 11, 23),
+        datetime.date(2026, 11, 23),
         FIRST_WEEK,
     )
 
