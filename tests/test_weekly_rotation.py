@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-import pytest
+from pytest import mark, raises
 
 from chore_tracker.application.services.weekly_rotation import (
     InsufficientActiveChoresError,
@@ -62,7 +62,7 @@ def test_extra_chores_are_left_unassigned_and_rotation_advances_each_week():
 
 
 def test_fewer_chores_than_children_rejects_the_entire_plan():
-    with pytest.raises(InsufficientActiveChoresError) as error:
+    with raises(InsufficientActiveChoresError) as error:
         assignments_for(FIRST_WEEK, child_count=4, chore_count=3)
 
     assert error.value.family_member_count == 4
@@ -146,7 +146,7 @@ def test_no_active_members_produces_no_assignments():
     assert result == ()
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     ("week_start", "first_week_start"),
     [
         (date(2026, 11, 17), FIRST_WEEK),
