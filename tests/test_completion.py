@@ -114,10 +114,6 @@ def test_partial_and_all_complete_status_and_idempotent_retry(tmp_path, monkeypa
     with connect(database_path) as connection:
         member_id, assignment_id, item_ids = create_assignment(connection)
 
-    url = (
-        f"/family-members/{member_id}/assignments/{assignment_id}/"
-        f"checklist-items/{item_ids[0]}/completion"
-    )
     payload = {"completion_date": "2026-11-12", "is_completed": True}
     first = client.put(url, json=payload)
     retry = client.put(url, json=payload)
