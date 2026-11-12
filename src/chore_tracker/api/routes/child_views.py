@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 
 from chore_tracker.adapters.sqlite import transaction
 from chore_tracker.application.services.completion import (
     get_daily_completion,
     set_checklist_item_completion,
+)
+from chore_tracker.application.services.completion_history import (
+    get_completion_history,
 )
 from chore_tracker.config import get_settings
 
@@ -243,3 +246,44 @@ def update_assignment_checklist_completion(
             request.completion_date,
             request.is_completed,
         )
+
+
+class CompletionHistoryRecord(BaseModel):
+    """One historical local calendar day for an immutable weekly assignment."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    assignment_id: int
+    week_start: date
+    week_end: date
+    chore_name: str
+    chore_description: str
+    completion_date: date
+    completion_status: Literal["complete", "incomplete", "not_yet_recorded"]
+
+
+class CompletionHistoryPage(BaseModel):
+    """A bounded page of historical daily completion records."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[CompletionHistoryRecord]
+    total: int
+    limit: int
+    offset: int
+
+
+@router.get(
+    "/{family_member_id}/completion-history",
+    response_model=CompletionHistoryPage,
+    responses={404: {"description": "Family member was not found."}},
+    summary="Get a child's historical daily chore completion",
+)
+def get_family_member_completion_history(
+    family_member_id: int,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    """Return daily history, including days without a saved completion record."""
+    with transaction(get_settings().database_path) as connection:
+        return get_completion_history(connection, family_member_id, limit, offset)
