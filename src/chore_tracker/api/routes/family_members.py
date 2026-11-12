@@ -36,12 +36,12 @@ def _clean_display_name(value: str) -> str:
     cleaned = value.strip()
     if not cleaned:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Display name must not be blank",
         )
     if len(cleaned) > DISPLAY_NAME_MAX_LENGTH:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Display name must be at most {DISPLAY_NAME_MAX_LENGTH} characters",
         )
     return cleaned
