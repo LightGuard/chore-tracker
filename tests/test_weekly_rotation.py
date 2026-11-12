@@ -165,9 +165,21 @@ def test_no_active_members_produces_no_assignments():
         (datetime.date(2026, 11, 9), FIRST_WEEK),
     ],
 )
-def test_invalid_rotation_weeks_are_rejected(week_start, first_week_start):
-    with pytest.pytest.raises(ValueError):
-        plan_weekly_assignments(members(1), chores(1), week_start, first_week_start)
+def test_invalid_rotation_weeks_are_rejected():
+    invalid_weeks = [
+        (datetime.date(2026, 11, 17), FIRST_WEEK),
+        (FIRST_WEEK, datetime.date(2026, 11, 17)),
+        (datetime.date(2026, 11, 9), FIRST_WEEK),
+    ]
+    for week_start, first_week_start in invalid_weeks:
+        assert_raises(
+            ValueError,
+            plan_weekly_assignments,
+            members(1),
+            chores(1),
+            week_start,
+            first_week_start,
+        )
 
 
 def test_same_inputs_and_rotation_anchor_produce_identical_assignments():
