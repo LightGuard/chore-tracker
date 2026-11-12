@@ -149,7 +149,6 @@ def get_current_assignment(family_member_id: int) -> dict[str, Any]:
         }
 
 
-
 class DailyCompletionChecklistItem(BaseModel):
     """One assigned checklist item and its state for a selected local date."""
 
