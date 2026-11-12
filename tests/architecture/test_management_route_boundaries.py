@@ -31,7 +31,7 @@ FORBIDDEN_CALLS = {
     "rollback",
 }
 SQL_STATEMENT = re.compile(
-    r"^\\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|CREATE|ALTER|DROP|PRAGMA)\\b",
+    r"^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|CREATE|ALTER|DROP|PRAGMA)\b",
     re.IGNORECASE,
 )
 
@@ -71,7 +71,7 @@ def test_management_routes_do_not_import_persistence_or_database_configuration()
 
     assert not violations, (
         "Management routes must depend on application services, not persistence "
-        "adapters or database configuration:\\n- " + "\\n- ".join(violations)
+        "adapters or database configuration:\n- " + "\n- ".join(violations)
     )
 
 
@@ -96,7 +96,7 @@ def test_management_routes_do_not_execute_sql_or_manage_transactions() -> None:
 
     assert not violations, (
         "Management routes must delegate persistence to application services "
-        "and adapters:\\n- " + "\\n- ".join(violations)
+        "and adapters:\n- " + "\n- ".join(violations)
     )
 
 
@@ -121,5 +121,5 @@ def test_management_routes_do_not_resolve_database_paths() -> None:
 
     assert not violations, (
         "Management routes must receive configured application services rather "
-        "than resolve database settings:\\n- " + "\\n- ".join(violations)
+        "than resolve database settings:\n- " + "\n- ".join(violations)
     )
