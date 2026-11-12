@@ -233,6 +233,16 @@ def test_catalog_changes_only_affect_later_week_and_preserve_history(tmp_path):
     )
     with connect(database_path) as connection:
         connection.execute(
+            """
+            INSERT INTO daily_checklist_completions (
+                assignment_checklist_item_id, completion_date,
+                is_completed, completed_at
+            )
+            VALUES (?, '2026-11-16', 1, '2026-11-16T18:00:00Z')
+            """,
+            (first[0].checklist_items[0].id,),
+        )
+        connection.execute(
             "UPDATE chores SET name = 'Renamed kitchen' WHERE id = 1"
         )
         connection.execute(
@@ -273,12 +283,25 @@ def test_catalog_changes_only_affect_later_week_and_preserve_history(tmp_path):
             """,
             (date(2026, 11, 23).isoformat(),),
         ).fetchone()
+        completion = connection.execute(
+            """
+            SELECT completion_date, is_completed, completed_at
+            FROM daily_checklist_completions
+            WHERE assignment_checklist_item_id = ?
+            """,
+            (first[0].checklist_items[0].id,),
+        ).fetchone()
 
     assert first[0].chore_name == "Bathroom"
     assert original["chore_name_snapshot"] == "Bathroom"
     assert original_item["label_snapshot"] == "Clean sink"
     assert later["chore_name_snapshot"] == "Renamed kitchen"
     assert second[0].chore_name == "Renamed kitchen"
+    assert dict(completion) == {
+        "completion_date": "2026-11-16",
+        "is_completed": 1,
+        "completed_at": "2026-11-16T18:00:00Z",
+    }
 
 
 def test_fewer_active_chores_rolls_back_generation_state(tmp_path):
