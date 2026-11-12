@@ -55,7 +55,9 @@ def _week_start(value: date | datetime, timezone: ZoneInfo) -> date:
     return local_date - timedelta(days=local_date.weekday())
 
 
-def _load_week_assignments(connection, week_start: date) -> tuple[WeeklyAssignment, ...]:
+def _load_week_assignments(
+    connection, week_start: date
+) -> tuple[WeeklyAssignment, ...]:
     rows = connection.execute(
         """
         SELECT id, family_member_id, chore_id, week_start, week_end,
