@@ -1,32 +1,50 @@
-"""Unauthenticated child-facing family selection and current assignment endpoints."""
+"""Unauthenticated child-facing family selection and assignment endpoints."""
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+import sys
+from datetime import date, datetime
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict
 
-from chore_tracker.adapters.sqlite import transaction
-from chore_tracker.application.services.completion import (
-    get_daily_completion,
-    set_checklist_item_completion,
-)
-from chore_tracker.application.services.completion_history import (
-    get_completion_history,
-)
-from chore_tracker.config import get_settings
-
 router = APIRouter(prefix="/family-members", tags=["child views"])
+
+
+def __getattr__(name: str):
+    """Retain the legacy settings monkeypatch seam used by API integration tests."""
+    if name == "get_settings":
+        from importlib import import_module
+
+        return import_module("chore_tracker.config").get_settings
+    raise AttributeError(name)
+
+
+def _service(request: Request):
+    settings = getattr(sys.modules[__name__], "get_settings")()
+    return request.app.state.child_views_service_factory(settings.database_path)
+
+
+def _today() -> date:
+    settings = getattr(sys.modules[__name__], "get_settings")()
+    return datetime.now(ZoneInfo(settings.report_timezone)).date()
+
+
+def _invoke(operation):
+    try:
+        return operation()
+    except Exception as error:
+        if hasattr(error, "status_code") and hasattr(error, "detail"):
+            raise HTTPException(status_code=error.status_code, detail=error.detail) from error
+        raise
 
 
 class ActiveFamilyMember(BaseModel):
     """A profile available in the child-facing selector."""
 
     model_config = ConfigDict(extra="forbid")
-
     id: int
     display_name: str
 
@@ -35,7 +53,6 @@ class AssignmentChecklistItem(BaseModel):
     """One immutable checklist snapshot and its completion state for today."""
 
     model_config = ConfigDict(extra="forbid")
-
     id: int
     label: str
     position: int
@@ -46,7 +63,6 @@ class CurrentWeeklyAssignment(BaseModel):
     """The selected child's current weekly chore and today's checklist state."""
 
     model_config = ConfigDict(extra="forbid")
-
     id: int
     family_member_id: int
     week_start: date
@@ -58,27 +74,10 @@ class CurrentWeeklyAssignment(BaseModel):
     is_complete: bool
 
 
-def _today() -> date:
-    """Return the current date in the configured household timezone."""
-    timezone = ZoneInfo(get_settings().report_timezone)
-    return datetime.now(timezone).date()
-
-
-@router.get(
-    "/active",
-    response_model=list[ActiveFamilyMember],
-    summary="List active family members for child selection",
-)
-def list_active_family_members() -> list[dict[str, Any]]:
-    """Return only active profiles, ordered consistently for the selector."""
-    with transaction(get_settings().database_path) as connection:
-        rows = connection.execute(
-            """SELECT id, display_name
-               FROM family_members
-               WHERE is_active = 1
-               ORDER BY display_name COLLATE NOCASE, id"""
-        ).fetchall()
-        return [dict(row) for row in rows]
+@router.get("/active", response_model=list[ActiveFamilyMember],
+            summary="List active family members for child selection")
+def list_active_family_members(request: Request) -> list[dict[str, Any]]:
+    return _service(request).list_active_family_members()
 
 
 @router.get(
@@ -90,73 +89,14 @@ def list_active_family_members() -> list[dict[str, Any]]:
     },
     summary="Get a child's current weekly chore",
 )
-def get_current_assignment(family_member_id: int) -> dict[str, Any]:
-    """Return the immutable current-week assignment and today's completion state."""
-    today = _today()
-    week_start = today - timedelta(days=today.weekday())
-    with transaction(get_settings().database_path) as connection:
-        member = connection.execute(
-            "SELECT is_active FROM family_members WHERE id = ?",
-            (family_member_id,),
-        ).fetchone()
-        if member is None:
-            raise HTTPException(status_code=404, detail="Family member was not found")
-        if not member["is_active"]:
-            raise HTTPException(status_code=409, detail="Family member is inactive")
-
-        assignment = connection.execute(
-            """SELECT id, family_member_id, week_start, week_end,
-                      chore_name_snapshot, chore_description_snapshot
-               FROM weekly_assignments
-               WHERE family_member_id = ? AND week_start = ?""",
-            (family_member_id, week_start.isoformat()),
-        ).fetchone()
-        if assignment is None:
-            raise HTTPException(
-                status_code=404,
-                detail="No weekly assignment exists for this family member",
-            )
-
-        checklist_rows = connection.execute(
-            """SELECT snapshot.id, snapshot.label_snapshot, snapshot.position,
-                      COALESCE(completion.is_completed, 0) AS is_completed
-               FROM assignment_checklist_items AS snapshot
-               LEFT JOIN daily_checklist_completions AS completion
-                 ON completion.assignment_checklist_item_id = snapshot.id
-                AND completion.completion_date = ?
-               WHERE snapshot.weekly_assignment_id = ?
-               ORDER BY snapshot.position, snapshot.id""",
-            (today.isoformat(), assignment["id"]),
-        ).fetchall()
-        checklist_items = [
-            {
-                "id": row["id"],
-                "label": row["label_snapshot"],
-                "position": row["position"],
-                "is_completed": bool(row["is_completed"]),
-            }
-            for row in checklist_rows
-        ]
-
-        return {
-            "id": assignment["id"],
-            "family_member_id": assignment["family_member_id"],
-            "week_start": assignment["week_start"],
-            "week_end": assignment["week_end"],
-            "chore_name": assignment["chore_name_snapshot"],
-            "chore_description": assignment["chore_description_snapshot"],
-            "today": today,
-            "checklist_items": checklist_items,
-            "is_complete": bool(checklist_items)
-            and all(item["is_completed"] for item in checklist_items),
-        }
+def get_current_assignment(family_member_id: int, request: Request) -> dict[str, Any]:
+    return _invoke(lambda: _service(request).get_current_assignment(family_member_id, _today()))
 
 
 class DailyCompletionChecklistItem(BaseModel):
     """One assigned checklist item and its state for a selected local date."""
 
     model_config = ConfigDict(extra="forbid")
-
     id: int
     label: str
     position: int
@@ -167,7 +107,6 @@ class DailyCompletion(BaseModel):
     """The full checklist state for one assignment and local calendar date."""
 
     model_config = ConfigDict(extra="forbid")
-
     assignment_id: int
     completion_date: date
     checklist_items: list[DailyCompletionChecklistItem]
@@ -178,7 +117,6 @@ class ChecklistCompletionUpdate(BaseModel):
     """Desired state for one checklist item on one local calendar date."""
 
     model_config = ConfigDict(extra="forbid")
-
     completion_date: date
     is_completed: bool
 
@@ -187,7 +125,6 @@ class ChecklistCompletionResult(BaseModel):
     """Updated item state and aggregate daily chore status."""
 
     model_config = ConfigDict(extra="forbid")
-
     assignment_id: int
     completion_date: date
     checklist_item: DailyCompletionChecklistItem
@@ -205,20 +142,16 @@ class ChecklistCompletionResult(BaseModel):
     summary="Get a child's checklist completion for a local date",
 )
 def get_assignment_completion(
-    family_member_id: int, assignment_id: int, completion_date: date
+    family_member_id: int, assignment_id: int, completion_date: date, request: Request
 ) -> dict[str, Any]:
-    """Return the selected assignment's checklist state for the requested local date."""
-    with transaction(get_settings().database_path) as connection:
-        return get_daily_completion(
-            connection, family_member_id, assignment_id, completion_date
-        )
+    return _invoke(lambda: _service(request).get_assignment_completion(
+        family_member_id, assignment_id, completion_date
+    ))
 
 
 @router.put(
-    (
-        "/{family_member_id}/assignments/{assignment_id}/checklist-items/"
-        "{checklist_item_id}/completion"
-    ),
+    "/{family_member_id}/assignments/{assignment_id}/checklist-items/"
+    "{checklist_item_id}/completion",
     response_model=ChecklistCompletionResult,
     responses={
         404: {"description": "Family member, assignment, or checklist item not found."},
@@ -228,31 +161,19 @@ def get_assignment_completion(
     summary="Set a checklist item's completion state for a local date",
 )
 def update_assignment_checklist_completion(
-    family_member_id: int,
-    assignment_id: int,
-    checklist_item_id: int,
-    request: ChecklistCompletionUpdate,
+    family_member_id: int, assignment_id: int, checklist_item_id: int,
+    request: ChecklistCompletionUpdate, http_request: Request,
 ) -> dict[str, Any]:
-    """Idempotently set one assigned checklist item for the requested local date."""
-    with transaction(get_settings().database_path) as connection:
-        # Acquire the SQLite write reservation before validating and updating. This
-        # serializes competing completion writes and avoids read-to-write lock races.
-        connection.execute("BEGIN IMMEDIATE")
-        return set_checklist_item_completion(
-            connection,
-            family_member_id,
-            assignment_id,
-            checklist_item_id,
-            request.completion_date,
-            request.is_completed,
-        )
+    return _invoke(lambda: _service(http_request).update_assignment_checklist_completion(
+        family_member_id, assignment_id, checklist_item_id, request.completion_date,
+        request.is_completed,
+    ))
 
 
 class CompletionHistoryRecord(BaseModel):
     """One historical local calendar day for an immutable weekly assignment."""
 
     model_config = ConfigDict(extra="forbid")
-
     assignment_id: int
     week_start: date
     week_end: date
@@ -266,7 +187,6 @@ class CompletionHistoryPage(BaseModel):
     """A bounded page of historical daily completion records."""
 
     model_config = ConfigDict(extra="forbid")
-
     items: list[CompletionHistoryRecord]
     total: int
     limit: int
@@ -280,10 +200,10 @@ class CompletionHistoryPage(BaseModel):
     summary="Get a child's historical daily chore completion",
 )
 def get_family_member_completion_history(
-    family_member_id: int,
+    family_member_id: int, request: Request,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, Any]:
-    """Return daily history, including days without a saved completion record."""
-    with transaction(get_settings().database_path) as connection:
-        return get_completion_history(connection, family_member_id, limit, offset)
+    return _invoke(lambda: _service(request).get_completion_history(
+        family_member_id, limit, offset
+    ))
