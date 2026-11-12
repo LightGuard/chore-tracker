@@ -27,8 +27,7 @@ def members(count: int) -> list[RotationFamilyMember]:
 
 def chores(count: int) -> list[RotationChore]:
     return [
-        RotationChore(id=index, name=f"Chore {index}")
-        for index in range(1, count + 1)
+        RotationChore(id=index, name=f"Chore {index}") for index in range(1, count + 1)
     ]
 
 
@@ -157,6 +156,4 @@ def test_no_active_members_produces_no_assignments():
 )
 def test_invalid_rotation_weeks_are_rejected(week_start, first_week_start):
     with pytest.raises(ValueError):
-        plan_weekly_assignments(
-            members(1), chores(1), week_start, first_week_start
-        )
+        plan_weekly_assignments(members(1), chores(1), week_start, first_week_start)
