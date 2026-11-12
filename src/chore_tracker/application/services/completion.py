@@ -114,7 +114,12 @@ def set_checklist_item_completion(
            VALUES (?, ?, ?, ?)
            ON CONFLICT (assignment_checklist_item_id, completion_date)
            DO UPDATE SET is_completed = excluded.is_completed,
-                         completed_at = excluded.completed_at""",
+                         completed_at = CASE
+                             WHEN daily_checklist_completions.is_completed
+                                  = excluded.is_completed
+                             THEN daily_checklist_completions.completed_at
+                             ELSE excluded.completed_at
+                         END""",
         (
             checklist_item_id,
             completion_date.isoformat(),
