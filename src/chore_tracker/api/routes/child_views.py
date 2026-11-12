@@ -24,7 +24,7 @@ def __getattr__(name: str):
 
 def _service(request: Request):
     settings = getattr(sys.modules[__name__], "get_settings")()
-    return request.app.state.child_views_service_factory(settings.database_path)
+    return request.app.state.child_views_service_factory(getattr(settings, "database_path"))
 
 
 def _today() -> date:
