@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from chore_tracker.api.routes.auth import router as auth_router
 from chore_tracker.api.routes.chores import router as chores_router
+from chore_tracker.api.routes.family_members import router as family_members_router
 from chore_tracker.api.routes.health import router as health_router
 from chore_tracker.config import get_settings
 
@@ -21,3 +22,4 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(chores_router)
+app.include_router(family_members_router)
