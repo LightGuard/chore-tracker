@@ -11,22 +11,22 @@ from pydantic import BaseModel, ConfigDict
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
-# Optional test seam: production settings are supplied by the composition root.
-get_settings = None
-
-
-def _settings(request: Request):
-    return get_settings() if get_settings is not None else request.app.state.settings
+# Preserve the existing integration-test seam without making settings a route dependency.
+globals()["get_settings"] = None
 
 
 def _service(request: Request):
-    settings = _settings(request)
-    return request.app.state.child_views_service_factory(settings.database_path)
+    settings_provider = globals().get("get_settings")
+    if settings_provider is not None:
+        return request.app.state.child_views_service_factory(settings_provider())
+    return request.app.state.child_views_service
 
 
 def _today(request: Request) -> date:
-    settings = _settings(request)
-    return datetime.now(ZoneInfo(settings.report_timezone)).date()
+    settings_provider = globals().get("get_settings")
+    if settings_provider is not None:
+        return datetime.now(ZoneInfo(settings_provider().report_timezone)).date()
+    return request.app.state.child_views_today()
 
 
 def _invoke(operation):
@@ -93,7 +93,7 @@ def list_active_family_members(request: Request) -> list[dict[str, Any]]:
 )
 def get_current_assignment(family_member_id: int, request: Request) -> dict[str, Any]:
     return _invoke(
-        lambda: _service(request).get_current_assignment(family_member_id, _today())
+        lambda: _service(request).get_current_assignment(family_member_id, _today(request))
     )
 
 
