@@ -146,9 +146,7 @@ class SQLiteAuthPersistence:
             for row in rows
         ]
 
-    def authentication_credential(
-        self, administrator_id: int, credential_id: str
-    ):
+    def authentication_credential(self, administrator_id: int, credential_id: str):
         with transaction(self.database_path) as db:
             row = db.execute(
                 """SELECT credential_id, public_key, sign_count
@@ -176,9 +174,7 @@ class SQLiteAuthPersistence:
             )
         return True
 
-    def create_session(
-        self, token_hash: str, administrator_id: int, expires_at: str
-    ):
+    def create_session(self, token_hash: str, administrator_id: int, expires_at: str):
         with transaction(self.database_path) as db:
             db.execute(
                 """INSERT INTO administrator_sessions
@@ -263,8 +259,13 @@ class SQLiteAuthPersistence:
                 """INSERT INTO administrator_passkey_credentials
                    (administrator_id, credential_id, public_key, sign_count, transports)
                    VALUES (?, ?, ?, ?, ?)""",
-                (administrator_id, credential_id, public_key, sign_count,
-                 json.dumps(transports)),
+                (
+                    administrator_id,
+                    credential_id,
+                    public_key,
+                    sign_count,
+                    json.dumps(transports),
+                ),
             )
             consumed = db.execute(
                 """UPDATE administrator_enrollment_tokens SET consumed_at = ?
