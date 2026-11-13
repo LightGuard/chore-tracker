@@ -9,7 +9,7 @@ from alembic.script import ScriptDirectory
 
 from chore_tracker.adapters.sqlite import connect
 
-MIGRATIONS_DIRECTORY = Path(__file__).resolve().parents[3] / "migrations"
+MIGRATIONS_DIRECTORY = Path(__file__).resolve().parents[4] / "migrations"
 
 
 class SQLiteReadinessProbe:
