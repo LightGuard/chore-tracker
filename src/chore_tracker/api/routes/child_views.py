@@ -93,7 +93,9 @@ def list_active_family_members(request: Request) -> list[dict[str, Any]]:
 )
 def get_current_assignment(family_member_id: int, request: Request) -> dict[str, Any]:
     return _invoke(
-        lambda: _service(request).get_current_assignment(family_member_id, _today(request))
+        lambda: _service(request).get_current_assignment(
+            family_member_id, _today(request)
+        )
     )
 
 
