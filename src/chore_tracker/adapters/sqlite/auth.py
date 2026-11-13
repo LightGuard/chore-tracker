@@ -212,7 +212,8 @@ class SQLiteAuthPersistence:
                 raise ValueError("The two administrator accounts already exist")
             try:
                 administrator_id = db.execute(
-                    "INSERT INTO administrators (email, webauthn_user_id) VALUES (?, ?)",
+                    """INSERT INTO administrators
+                       (email, webauthn_user_id) VALUES (?, ?)""",
                     (email, user_id),
                 ).lastrowid
             except Exception as error:
