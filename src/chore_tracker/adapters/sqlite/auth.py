@@ -277,7 +277,6 @@ class SQLiteAuthPersistence:
                 raise ValueError("Enrollment invitation has already been used")
         return True
 
-
     def finish_registration(
         self,
         challenge_id: str,
