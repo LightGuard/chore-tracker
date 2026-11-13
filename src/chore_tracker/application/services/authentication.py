@@ -52,10 +52,13 @@ def _new_token() -> str:
 
 def validate_email(email: str) -> str:
     normalized = email.strip()
-    if (len(normalized) > 254 or normalized.count("@") != 1
-            or not normalized.rsplit("@", 1)[0]
-            or "." not in normalized.rsplit("@", 1)[1]
-            or any(char.isspace() for char in normalized)):
+    if (
+        len(normalized) > 254
+        or normalized.count("@") != 1
+        or not normalized.rsplit("@", 1)[0]
+        or "." not in normalized.rsplit("@", 1)[1]
+        or any(char.isspace() for char in normalized)
+    ):
         raise AuthenticationError("invalid_email", "A valid email address is required")
     return normalized
 
@@ -68,14 +71,21 @@ class AuthenticationService:
     enrollment_duration = timedelta(hours=24)
 
     def __init__(
-        self, persistence, *, rp_id: str, origin: str,
-        registration_verifier=None, authentication_verifier=None,
+        self,
+        persistence,
+        *,
+        rp_id: str,
+        origin: str,
+        registration_verifier=None,
+        authentication_verifier=None,
     ) -> None:
         self.persistence = persistence
         self.rp_id = rp_id
         self.origin = origin
         self.registration_verifier = registration_verifier
-        self.authentication_verifier = authentication_verifier or verify_authentication_response
+        self.authentication_verifier = (
+            authentication_verifier or verify_authentication_response
+        )
 
     def setup_status(self) -> dict[str, bool]:
         count, enrolled = self.persistence.setup_status()
@@ -87,13 +97,18 @@ class AuthenticationService:
     def _registration_options(self, administrator_id: int, email: str):
         user_id = self.persistence.administrator_user_id(administrator_id)
         if user_id is None:
-            raise AuthenticationError("administrator_missing", "Administrator was not found")
+            raise AuthenticationError(
+                "administrator_missing", "Administrator was not found"
+            )
         if not user_id:
             user_id = secrets.token_bytes(64)
             self.persistence.set_administrator_user_id(administrator_id, user_id)
         options = generate_registration_options(
-            rp_id=self.rp_id, rp_name="Chore Tracker", user_id=user_id,
-            user_name=email, user_display_name=email,
+            rp_id=self.rp_id,
+            rp_name="Chore Tracker",
+            user_id=user_id,
+            user_name=email,
+            user_display_name=email,
             authenticator_selection=AuthenticatorSelectionCriteria(
                 resident_key=ResidentKeyRequirement.PREFERRED,
                 user_verification=UserVerificationRequirement.REQUIRED,
@@ -101,8 +116,11 @@ class AuthenticationService:
         )
         challenge_id = str(uuid.uuid4())
         self.persistence.create_challenge(
-            challenge_id, bytes_to_base64url(options.challenge), "registration",
-            administrator_id, _timestamp(_now() + self.challenge_duration),
+            challenge_id,
+            bytes_to_base64url(options.challenge),
+            "registration",
+            administrator_id,
+            _timestamp(_now() + self.challenge_duration),
         )
         return challenge_id, json.loads(options_to_json(options))
 
@@ -117,22 +135,31 @@ class AuthenticationService:
             code = "setup_complete" if "complete" in message else "setup_claimed"
             raise AuthenticationError(code, message) from error
         challenge_id, options = self._registration_options(administrator_id, email)
-        return {"administrator_id": administrator_id, "challenge_id": challenge_id,
-                "options": options}
+        return {
+            "administrator_id": administrator_id,
+            "challenge_id": challenge_id,
+            "options": options,
+        }
 
     def _verify_registration(self, challenge: str, credential: dict[str, Any]):
         if self.registration_verifier is not None:
             return self.registration_verifier(challenge, credential)
         return verify_registration_response(
-            credential=credential, expected_challenge=base64url_to_bytes(challenge),
-            expected_rp_id=self.rp_id, expected_origin=self.origin,
+            credential=credential,
+            expected_challenge=base64url_to_bytes(challenge),
+            expected_rp_id=self.rp_id,
+            expected_origin=self.origin,
             require_user_verification=True,
         )
 
-    def _verify_authentication(self, challenge: str, credential: dict[str, Any], stored):
+    def _verify_authentication(
+        self, challenge: str, credential: dict[str, Any], stored
+    ):
         return self.authentication_verifier(
-            credential=credential, expected_challenge=base64url_to_bytes(challenge),
-            expected_rp_id=self.rp_id, expected_origin=self.origin,
+            credential=credential,
+            expected_challenge=base64url_to_bytes(challenge),
+            expected_rp_id=self.rp_id,
+            expected_origin=self.origin,
             credential_public_key=stored["public_key"],
             credential_current_sign_count=stored["sign_count"],
             require_user_verification=True,
@@ -141,7 +168,7 @@ class AuthenticationService:
     def _new_session(self, administrator_id: int) -> str:
         token = _new_token()
         self.persistence.create_session(
-            _digest(token), administrator_id,
+            _digest(token),\n            administrator_id,
             _timestamp(_now() + self.session_duration),
         )
         return token
@@ -165,13 +192,18 @@ class AuthenticationService:
         now = _timestamp(_now())
         try:
             completed = self.persistence.finish_registration(
-                challenge_id, challenge["administrator_id"],
+                challenge_id,
+                challenge["administrator_id"],
                 bytes_to_base64url(verified.credential_id),
-                verified.credential_public_key, verified.sign_count,
-                credential.get("response", {}).get("transports", []), now,
+                verified.credential_public_key,
+                verified.sign_count,
+                credential.get("response", {}).get("transports", []),
+                now,
             )
         except ValueError as error:
-            raise AuthenticationError("credential_duplicate", "Passkey is already registered") from error
+            raise AuthenticationError(
+                "credential_duplicate", "Passkey is already registered"
+            ) from error
         if not completed:
             raise AuthenticationError(
                 "registration_challenge_used",
@@ -190,11 +222,15 @@ class AuthenticationService:
         descriptors = [
             PublicKeyCredentialDescriptor(
                 id=base64url_to_bytes(row["credential_id"]),
-                transports=[AuthenticatorTransport(value) for value in row["transports"]],
-            ) for row in credentials
+                transports=[
+                    AuthenticatorTransport(value) for value in row["transports"]
+                ],
+            )
+            for row in credentials
         ]
         options = generate_authentication_options(
-            rp_id=self.rp_id, allow_credentials=descriptors,
+            rp_id=self.rp_id,
+            allow_credentials=descriptors,
             user_verification=UserVerificationRequirement.REQUIRED,
         )
         challenge_id = str(uuid.uuid4())
@@ -202,7 +238,10 @@ class AuthenticationService:
             challenge_id, bytes_to_base64url(options.challenge), "authentication",
             administrator_id, _timestamp(_now() + self.challenge_duration),
         )
-        return {"challenge_id": challenge_id, "options": json.loads(options_to_json(options))}
+        return {
+            "challenge_id": challenge_id,
+            "options": json.loads(options_to_json(options)),
+        }
 
     def login_finish(self, challenge_id: str, credential: dict[str, Any]) -> str:
         challenge = self.persistence.get_challenge(
@@ -219,13 +258,17 @@ class AuthenticationService:
         if stored is None:
             raise AuthenticationError("credential_missing", "Passkey is not registered")
         try:
-            verified = self._verify_authentication(challenge["challenge"], credential, stored)
+            verified = self._verify_authentication(
+                challenge["challenge"], credential, stored
+            )
         except Exception as error:
             raise AuthenticationError(
                 "authentication_failed", "Passkey authentication failed"
             ) from error
         if not self.persistence.finish_authentication(
-            challenge_id, stored["credential_id"], verified.new_sign_count,
+            challenge_id,
+            stored["credential_id"],
+            verified.new_sign_count,
             _timestamp(_now()),
         ):
             raise AuthenticationError(
@@ -237,7 +280,9 @@ class AuthenticationService:
     def administrator_for_session(self, token: str):
         if not token:
             return None
-        return self.persistence.administrator_for_session(_digest(token), _timestamp(_now()))
+        return self.persistence.administrator_for_session(
+            _digest(token), _timestamp(_now())
+        )
 
     def logout(self, token: str | None) -> None:
         if token:
@@ -248,15 +293,24 @@ class AuthenticationService:
         token = _new_token()
         try:
             administrator_id = self.persistence.create_invitation(
-                email, secrets.token_bytes(64), _digest(token),
+                email,
+                secrets.token_bytes(64),
+                _digest(token),
                 _timestamp(_now() + self.enrollment_duration),
             )
         except ValueError as error:
             message = str(error)
-            code = "administrator_limit" if "two administrator" in message else "duplicate_email"
+            code = (
+                "administrator_limit"
+                if "two administrator" in message
+                else "duplicate_email"
+            )
             raise AuthenticationError(code, message) from error
-        return {"administrator_id": administrator_id, "email": email,
-                "enrollment_token": token}
+        return {
+            "administrator_id": administrator_id,
+            "email": email,
+            "enrollment_token": token,
+        }
 
     def enrollment_options(self, token: str) -> dict[str, Any]:
         enrollment = self.persistence.get_invitation(_digest(token), _timestamp(_now()))
@@ -267,8 +321,11 @@ class AuthenticationService:
         challenge_id, options = self._registration_options(
             enrollment["administrator_id"], enrollment["email"]
         )
-        return {"administrator_id": enrollment["administrator_id"],
-                "challenge_id": challenge_id, "options": options}
+        return {
+            "administrator_id": enrollment["administrator_id"],
+            "challenge_id": challenge_id,
+            "options": options,
+        }
 
     def enrollment_finish(self, challenge_id: str, credential: dict[str, Any]):
         challenge = self.persistence.get_challenge(
@@ -296,11 +353,14 @@ class AuthenticationService:
             ) from error
         try:
             completed = self.persistence.finish_enrollment(
-                challenge_id, challenge["administrator_id"],
+                challenge_id,
+                challenge["administrator_id"],
                 bytes_to_base64url(verified.credential_id),
-                verified.credential_public_key, verified.sign_count,
+                verified.credential_public_key,
+                verified.sign_count,
                 credential.get("response", {}).get("transports", []),
-                invitation_hash, _timestamp(_now()),
+                invitation_hash,
+                _timestamp(_now()),
             )
         except ValueError as error:
             raise AuthenticationError("invitation_used", str(error)) from error
