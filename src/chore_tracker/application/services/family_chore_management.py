@@ -91,7 +91,9 @@ class FamilyChoreManagementService:
             )
         member = self._persistence.update_family_member(family_member_id, changes)
         if member is None:
-            raise ManagementError("family_member_missing", "Family member was not found")
+            raise ManagementError(
+                "family_member_missing", "Family member was not found"
+            )
         return member
 
     def list_chores(self) -> list[dict[str, Any]]:
@@ -162,7 +164,9 @@ class FamilyChoreManagementService:
         if result == "chore_missing":
             raise ManagementError("chore_missing", "Chore was not found")
         if result == "item_missing":
-            raise ManagementError("checklist_item_missing", "Checklist item was not found")
+            raise ManagementError(
+                "checklist_item_missing", "Checklist item was not found"
+            )
         if result == "last_active_item":
             raise ManagementError(
                 "last_active_item",
