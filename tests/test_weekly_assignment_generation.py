@@ -11,13 +11,27 @@ from alembic import command
 from alembic.config import Config
 
 from chore_tracker.adapters.sqlite import connect
+from chore_tracker.adapters.sqlite.weekly_assignments import (
+    SQLiteWeeklyAssignmentPersistence,
+)
 from chore_tracker.application.services.weekly_assignment_generation import (
-    generate_weekly_assignments,
+    generate_weekly_assignments as _generate_weekly_assignments,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 FIRST_WEEK = date(2026, 11, 16)
 GENERATED_ON = date(2026, 11, 11)
+
+
+def generate_weekly_assignments(
+    week, *, database_path, timezone_name, generated_on=None
+):
+    return _generate_weekly_assignments(
+        week,
+        persistence=SQLiteWeeklyAssignmentPersistence(database_path),
+        timezone_name=timezone_name,
+        generated_on=generated_on,
+    )
 
 
 def _database(tmp_path: Path) -> Path:
