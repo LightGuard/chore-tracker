@@ -245,3 +245,41 @@ class SQLiteAuthPersistence:
             if consumed != 1:
                 raise ValueError("Enrollment invitation has already been used")
         return True
+
+
+    def finish_registration(
+        self, challenge_id: str, administrator_id: int, credential_id: str,
+        public_key: bytes, sign_count: int, transports: list[str], now: str,
+    ) -> bool:
+        with transaction(self.database_path) as db:
+            changed = db.execute(
+                """UPDATE authentication_challenges SET consumed_at = ?
+                   WHERE id = ? AND purpose = 'registration' AND administrator_id = ?
+                     AND consumed_at IS NULL AND expires_at > ?""",
+                (now, challenge_id, administrator_id, now),
+            ).rowcount
+            if changed != 1:
+                return False
+            try:
+                db.execute(
+                    """INSERT INTO administrator_passkey_credentials
+                       (administrator_id, credential_id, public_key, sign_count, transports)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (administrator_id, credential_id, public_key, sign_count,
+                     json.dumps(transports)),
+                )
+            except Exception as error:
+                raise ValueError("Passkey is already registered") from error
+        return True
+
+    def enrollment_hash_for_administrator(
+        self, administrator_id: int, now: str
+    ) -> str | None:
+        with transaction(self.database_path) as db:
+            row = db.execute(
+                """SELECT token_hash FROM administrator_enrollment_tokens
+                   WHERE administrator_id = ? AND consumed_at IS NULL
+                     AND expires_at > ?""",
+                (administrator_id, now),
+            ).fetchone()
+        return row["token_hash"] if row else None
