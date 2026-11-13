@@ -91,9 +91,13 @@ def _set_session(response: Response, token: str) -> None:
     from datetime import timedelta
 
     response.set_cookie(
-        SESSION_COOKIE, token, httponly=True,
+        SESSION_COOKIE,
+        token,
+        httponly=True,
         secure=settings.passkey_origin.startswith("https://"),
-        samesite="strict", path="/", max_age=int(timedelta(days=7).total_seconds()),
+        samesite="strict",
+        path="/",
+        max_age=int(timedelta(days=7).total_seconds()),
     )
 
 
@@ -123,7 +127,8 @@ def setup_status(request: Request) -> dict[str, Any]:
 
 @router.post("/setup/start")
 def setup_start(
-    request: EmailRequest, http_request: Request,
+    request: EmailRequest,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ):
     return _call(_service(http_request).setup_start, request.email)
@@ -131,7 +136,9 @@ def setup_start(
 
 @router.post("/setup/finish")
 def setup_finish(
-    request: CeremonyRequest, response: Response, http_request: Request,
+    request: CeremonyRequest,
+    response: Response,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     token = _call(
@@ -170,13 +177,17 @@ def current_admin(
 
 @router.post("/logout")
 def logout(
-    response: Response, request: Request,
+    response: Response,
+    request: Request,
     session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE),
     origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     _call(_service(request).logout, session_token)
     response.delete_cookie(
-        SESSION_COOKIE, path="/", httponly=True, samesite="strict",
+        SESSION_COOKIE,
+        path="/",
+        httponly=True,
+        samesite="strict",
         secure=get_settings().passkey_origin.startswith("https://"),
     )
     return {"status": "ok"}
@@ -206,7 +217,8 @@ def enrollment_finish(
 ) -> dict[str, str]:
     token = _call(
         _service(http_request).enrollment_finish,
-        request.challenge_id, request.credential,
+        request.challenge_id,
+        request.credential,
     )
     _set_session(response, token)
     return {"status": "ok"}
