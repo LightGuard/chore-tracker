@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
-# Preserve the existing integration-test seam without making settings a route dependency.
+# Keep the integration-test seam without a settings route dependency.
 globals()["get_settings"] = None
 
 
