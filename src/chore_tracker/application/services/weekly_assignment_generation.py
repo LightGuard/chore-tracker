@@ -37,8 +37,7 @@ class WeeklyAssignmentPersistence(Protocol):
 
     def generate(
         self, week_start: date, week_end: date, generated_on: date
-    ) -> tuple[WeeklyAssignment, ...]:
-        ...
+    ) -> tuple[WeeklyAssignment, ...]: ...
 
 
 def _week_start(value: date | datetime, timezone: ZoneInfo) -> date:
