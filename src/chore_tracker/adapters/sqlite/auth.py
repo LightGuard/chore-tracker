@@ -55,7 +55,7 @@ class SQLiteAuthPersistence:
                 "SELECT webauthn_user_id FROM administrators WHERE id = ?",
                 (administrator_id,),
             ).fetchone()
-        return row["webauthn_user_id"] if row else None
+        return (row["webauthn_user_id"] if row["webauthn_user_id"] is not None else b"") if row else None
 
     def set_administrator_user_id(self, administrator_id: int, user_id: bytes) -> None:
         with transaction(self.database_path) as db:
