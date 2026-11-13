@@ -150,7 +150,8 @@ def setup_finish(
 
 @router.post("/login/options")
 def login_options(
-    request: EmailRequest, http_request: Request,
+    request: EmailRequest,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
     return _call(_service(http_request).login_options, request.email)
@@ -158,7 +159,9 @@ def login_options(
 
 @router.post("/login/finish")
 def login_finish(
-    request: CeremonyRequest, response: Response, http_request: Request,
+    request: CeremonyRequest,
+    response: Response,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     token = _call(
@@ -195,7 +198,8 @@ def logout(
 
 @router.post("/administrators")
 def create_administrator(
-    request: EmailRequest, http_request: Request,
+    request: EmailRequest,
+    http_request: Request,
     administrator: Annotated[dict[str, Any], Depends(require_admin)],
     origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
@@ -204,7 +208,8 @@ def create_administrator(
 
 @router.post("/enrollment/options")
 def enrollment_options(
-    request: EnrollmentStartRequest, http_request: Request,
+    request: EnrollmentStartRequest,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ) -> dict[str, Any]:
     return _call(_service(http_request).enrollment_options, request.token)
@@ -212,7 +217,9 @@ def enrollment_options(
 
 @router.post("/enrollment/finish")
 def enrollment_finish(
-    request: CeremonyRequest, response: Response, http_request: Request,
+    request: CeremonyRequest,
+    response: Response,
+    http_request: Request,
     origin: None = Depends(require_same_origin),
 ) -> dict[str, str]:
     token = _call(
