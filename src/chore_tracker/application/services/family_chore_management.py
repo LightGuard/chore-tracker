@@ -122,8 +122,10 @@ class FamilyChoreManagementService:
         if "label" in changes:
             changes["label"] = self._clean(changes["label"], "Checklist label", 500)
         item = self._persistence.update_checklist_item(chore_id, item_id, changes)
-        if item is None:
+        if item is None or item == {"missing": "item"}:
             raise ManagementError("checklist_item_missing", "Checklist item was not found")
+        if item == {"missing": "chore"}:
+            raise ManagementError("chore_missing", "Chore was not found")
         if item == {"conflict": "last_active_item"}:
             raise ManagementError(
                 "last_active_item",
