@@ -7,8 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from chore_tracker.adapters.sqlite.auth import SQLiteAuthPersistence
-from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
 from chore_tracker.adapters.sqlite.child_views import SQLiteChildViewsPersistence
+from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
 from chore_tracker.adapters.sqlite.weekly_assignments import (
     SQLiteWeeklyAssignmentPersistence,
 )
