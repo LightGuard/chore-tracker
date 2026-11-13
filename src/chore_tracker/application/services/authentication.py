@@ -61,7 +61,7 @@ def validate_email(email: str) -> str:
 
 
 class AuthenticationService:
-    """Orchestrate WebAuthn ceremonies without HTTP or persistence dependencies."""
+    """Orchestrate WebAuthn use cases without HTTP or concrete SQLite dependencies."""
 
     session_duration = timedelta(days=7)
     challenge_duration = timedelta(minutes=5)
@@ -74,7 +74,7 @@ class AuthenticationService:
         self.persistence = persistence
         self.rp_id = rp_id
         self.origin = origin
-        self.registration_verifier = registration_verifier or verify_registration_response
+        self.registration_verifier = registration_verifier
         self.authentication_verifier = authentication_verifier or verify_authentication_response
 
     def setup_status(self) -> dict[str, bool]:
@@ -121,7 +121,9 @@ class AuthenticationService:
                 "options": options}
 
     def _verify_registration(self, challenge: str, credential: dict[str, Any]):
-        return self.registration_verifier(
+        if self.registration_verifier is not None:
+            return self.registration_verifier(challenge, credential)
+        return verify_registration_response(
             credential=credential, expected_challenge=base64url_to_bytes(challenge),
             expected_rp_id=self.rp_id, expected_origin=self.origin,
             require_user_verification=True,
