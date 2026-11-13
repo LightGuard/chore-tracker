@@ -55,9 +55,7 @@ def _call(operation, *args):
 
 
 @router.get("")
-def list_family_members(
-    request: Request, administrator: Admin
-) -> list[dict[str, Any]]:
+def list_family_members(request: Request, administrator: Admin) -> list[dict[str, Any]]:
     """List all profiles, including inactive profiles, for administrator management."""
     return _call(_service(request).list_family_members)
 
