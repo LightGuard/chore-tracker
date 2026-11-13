@@ -168,7 +168,8 @@ class AuthenticationService:
     def _new_session(self, administrator_id: int) -> str:
         token = _new_token()
         self.persistence.create_session(
-            _digest(token),\n            administrator_id,
+            _digest(token),
+            administrator_id,
             _timestamp(_now() + self.session_duration),
         )
         return token
