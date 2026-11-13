@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from chore_tracker.adapters.sqlite.auth import SQLiteAuthPersistence
+from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
 from chore_tracker.adapters.sqlite.child_views import SQLiteChildViewsPersistence
 from chore_tracker.adapters.sqlite.family_chore_management import (
     SQLiteFamilyChoreManagementPersistence,
@@ -33,6 +34,9 @@ settings = get_settings()
 
 app = FastAPI(title="Chore Tracker API")
 app.state.settings = settings
+app.state.readiness_probe_factory = lambda configured_settings: SQLiteReadinessProbe(
+    configured_settings.database_path
+)
 app.state.authentication_service_factory = lambda configured_settings, **verifiers: (
     AuthenticationService(
         SQLiteAuthPersistence(configured_settings.database_path),
