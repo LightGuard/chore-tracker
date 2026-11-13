@@ -34,13 +34,15 @@ class SQLiteAuthPersistence:
             ).fetchone()
             if row is None:
                 return db.execute(
-                    "INSERT INTO administrators (email, webauthn_user_id) VALUES (?, ?)",
+                    """INSERT INTO administrators
+                       (email, webauthn_user_id) VALUES (?, ?)""",
                     (email, user_id),
                 ).lastrowid
             if row["email"].casefold() != email.casefold():
                 raise ValueError("Initial administrator setup is already claimed")
             enrolled = db.execute(
-                "SELECT 1 FROM administrator_passkey_credentials WHERE administrator_id = ?",
+                """SELECT 1 FROM administrator_passkey_credentials
+                   WHERE administrator_id = ?""",
                 (row["id"],),
             ).fetchone()
             if enrolled:
@@ -134,7 +136,8 @@ class SQLiteAuthPersistence:
             if admin is None:
                 return None, []
             rows = db.execute(
-                """SELECT credential_id, transports FROM administrator_passkey_credentials
+                """SELECT credential_id, transports
+                   FROM administrator_passkey_credentials
                    WHERE administrator_id = ?""",
                 (admin["id"],),
             ).fetchall()
@@ -227,7 +230,8 @@ class SQLiteAuthPersistence:
     def get_invitation(self, token_hash: str, now: str):
         with transaction(self.database_path) as db:
             row = db.execute(
-                """SELECT t.administrator_id, a.email FROM administrator_enrollment_tokens t
+                """SELECT t.administrator_id, a.email
+                   FROM administrator_enrollment_tokens t
                    JOIN administrators a ON a.id = t.administrator_id
                    WHERE t.token_hash = ? AND t.consumed_at IS NULL
                      AND t.expires_at > ?""",
@@ -250,7 +254,8 @@ class SQLiteAuthPersistence:
             changed = db.execute(
                 """UPDATE authentication_challenges SET consumed_at = ?
                    WHERE id = ? AND purpose = 'registration'
-                     AND administrator_id = ? AND consumed_at IS NULL AND expires_at > ?""",
+                     AND administrator_id = ?
+                     AND consumed_at IS NULL AND expires_at > ?""",
                 (now, challenge_id, administrator_id, now),
             ).rowcount
             if changed != 1:
@@ -299,8 +304,8 @@ class SQLiteAuthPersistence:
             try:
                 db.execute(
                     """INSERT INTO administrator_passkey_credentials
-                       (administrator_id, credential_id, public_key, sign_count, transports)
-                       VALUES (?, ?, ?, ?, ?)""",
+                       (administrator_id, credential_id, public_key, sign_count,
+                        transports) VALUES (?, ?, ?, ?, ?)""",
                     (
                         administrator_id,
                         credential_id,
