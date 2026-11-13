@@ -67,10 +67,15 @@ class AuthenticationService:
     challenge_duration = timedelta(minutes=5)
     enrollment_duration = timedelta(hours=24)
 
-    def __init__(self, persistence, *, rp_id: str, origin: str) -> None:
+    def __init__(
+        self, persistence, *, rp_id: str, origin: str,
+        registration_verifier=None, authentication_verifier=None,
+    ) -> None:
         self.persistence = persistence
         self.rp_id = rp_id
         self.origin = origin
+        self.registration_verifier = registration_verifier or verify_registration_response
+        self.authentication_verifier = authentication_verifier or verify_authentication_response
 
     def setup_status(self) -> dict[str, bool]:
         count, enrolled = self.persistence.setup_status()
@@ -116,14 +121,14 @@ class AuthenticationService:
                 "options": options}
 
     def _verify_registration(self, challenge: str, credential: dict[str, Any]):
-        return verify_registration_response(
+        return self.registration_verifier(
             credential=credential, expected_challenge=base64url_to_bytes(challenge),
             expected_rp_id=self.rp_id, expected_origin=self.origin,
             require_user_verification=True,
         )
 
     def _verify_authentication(self, challenge: str, credential: dict[str, Any], stored):
-        return verify_authentication_response(
+        return self.authentication_verifier(
             credential=credential, expected_challenge=base64url_to_bytes(challenge),
             expected_rp_id=self.rp_id, expected_origin=self.origin,
             credential_public_key=stored["public_key"],
