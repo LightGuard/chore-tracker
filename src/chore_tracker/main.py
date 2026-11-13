@@ -10,6 +10,9 @@ from chore_tracker.adapters.sqlite.child_views import SQLiteChildViewsPersistenc
 from chore_tracker.adapters.sqlite.family_chore_management import (
     SQLiteFamilyChoreManagementPersistence,
 )
+from chore_tracker.adapters.sqlite.weekly_assignments import (
+    SQLiteWeeklyAssignmentPersistence,
+)
 from chore_tracker.api.routes.auth import router as auth_router
 from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
@@ -18,6 +21,9 @@ from chore_tracker.api.routes.health import router as health_router
 from chore_tracker.application.services.child_views import ChildViewsService
 from chore_tracker.application.services.family_chore_management import (
     FamilyChoreManagementService,
+)
+from chore_tracker.application.services.weekly_assignment_generation import (
+    WeeklyAssignmentGenerationService,
 )
 from chore_tracker.config import get_settings
 
@@ -37,6 +43,10 @@ app.state.child_views_service_factory = lambda configured_settings: ChildViewsSe
 app.state.child_views_today = lambda: datetime.now(
     ZoneInfo(settings.report_timezone)
 ).date()
+app.state.weekly_assignment_generation_service = WeeklyAssignmentGenerationService(
+    SQLiteWeeklyAssignmentPersistence(settings.database_path),
+    settings.report_timezone,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted({settings.app_origin, settings.passkey_origin}),
