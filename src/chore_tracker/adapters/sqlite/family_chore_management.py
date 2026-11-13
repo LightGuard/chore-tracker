@@ -170,8 +170,10 @@ class SQLiteFamilyChoreManagementPersistence:
         with transaction(self._database_path) as connection:
             chore = self._chore(connection, chore_id)
             current = self._item(connection, chore_id, item_id)
-            if chore is None or current is None:
-                return None
+            if chore is None:
+                return {"missing": "chore"}
+            if current is None:
+                return {"missing": "item"}
             if (
                 chore["is_active"]
                 and current["is_active"]
