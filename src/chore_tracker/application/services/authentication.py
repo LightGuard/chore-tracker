@@ -161,12 +161,16 @@ class AuthenticationService:
                 "Passkey registration could not be verified",
             ) from error
         now = _timestamp(_now())
-        if not self.persistence.finish_registration(
-            challenge_id, challenge["administrator_id"],
-            bytes_to_base64url(verified.credential_id),
-            verified.credential_public_key, verified.sign_count,
-            credential.get("response", {}).get("transports", []), now,
-        ):
+        try:
+            completed = self.persistence.finish_registration(
+                challenge_id, challenge["administrator_id"],
+                bytes_to_base64url(verified.credential_id),
+                verified.credential_public_key, verified.sign_count,
+                credential.get("response", {}).get("transports", []), now,
+            )
+        except ValueError as error:
+            raise AuthenticationError("credential_duplicate", "Passkey is already registered") from error
+        if not completed:
             raise AuthenticationError(
                 "registration_challenge_used",
                 "Registration challenge has already been used",
