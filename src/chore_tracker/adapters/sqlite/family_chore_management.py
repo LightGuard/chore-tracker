@@ -112,9 +112,7 @@ class SQLiteFamilyChoreManagementPersistence:
                 """SELECT id FROM chores
                    ORDER BY name COLLATE NOCASE, id"""
             ).fetchall()
-            return [
-                self._serialize_chore(connection, row["id"]) for row in ids
-            ]
+            return [self._serialize_chore(connection, row["id"]) for row in ids]
 
     def create_chore(self, name: str, description: str):
         with transaction(self._database_path) as connection:
