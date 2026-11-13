@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Response
 
+from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
 from chore_tracker.application.services.health import (
     get_health_status,
     is_database_ready,
@@ -21,7 +22,8 @@ def liveness() -> dict[str, str]:
 @router.get("/health/ready")
 def readiness(response: Response) -> dict[str, str]:
     """Report whether the configured database is ready for application requests."""
-    if not is_database_ready(get_settings().database_path):
+    probe = SQLiteReadinessProbe(get_settings().database_path)
+    if not is_database_ready(probe):
         response.status_code = 503
         return {"status": "not_ready"}
     return {"status": "ok"}
