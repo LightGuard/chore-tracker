@@ -53,7 +53,11 @@ class SQLiteAuthPersistence:
                 "SELECT webauthn_user_id FROM administrators WHERE id = ?",
                 (administrator_id,),
             ).fetchone()
-        return (row["webauthn_user_id"] if row["webauthn_user_id"] is not None else b"") if row else None
+        return (
+            (row["webauthn_user_id"] if row["webauthn_user_id"] is not None else b"")
+            if row
+            else None
+        )
 
     def set_administrator_user_id(self, administrator_id: int, user_id: bytes) -> None:
         with transaction(self.database_path) as db:
@@ -63,8 +67,12 @@ class SQLiteAuthPersistence:
             )
 
     def create_challenge(
-        self, challenge_id: str, challenge: str, purpose: str,
-        administrator_id: int, expires_at: str,
+        self,
+        challenge_id: str,
+        challenge: str,
+        purpose: str,
+        administrator_id: int,
+        expires_at: str,
     ) -> None:
         with transaction(self.database_path) as db:
             db.execute(
@@ -94,16 +102,25 @@ class SQLiteAuthPersistence:
         return changed == 1
 
     def save_credential(
-        self, administrator_id: int, credential_id: str, public_key: bytes,
-        sign_count: int, transports: list[str],
+        self,
+        administrator_id: int,
+        credential_id: str,
+        public_key: bytes,
+        sign_count: int,
+        transports: list[str],
     ) -> None:
         with transaction(self.database_path) as db:
             db.execute(
                 """INSERT INTO administrator_passkey_credentials
                    (administrator_id, credential_id, public_key, sign_count, transports)
                    VALUES (?, ?, ?, ?, ?)""",
-                (administrator_id, credential_id, public_key, sign_count,
-                 json.dumps(transports)),
+                (
+                    administrator_id,
+                    credential_id,
+                    public_key,
+                    sign_count,
+                    json.dumps(transports),
+                ),
             )
 
     def login_credentials(self, email: str):
@@ -122,8 +139,11 @@ class SQLiteAuthPersistence:
                 (admin["id"],),
             ).fetchall()
         return admin["id"], [
-            {"credential_id": row["credential_id"],
-             "transports": json.loads(row["transports"])} for row in rows
+            {
+                "credential_id": row["credential_id"],
+                "transports": json.loads(row["transports"]),
+            }
+            for row in rows
         ]
 
     def authentication_credential(self, administrator_id: int, credential_id: str):
@@ -193,7 +213,9 @@ class SQLiteAuthPersistence:
                     (email, user_id),
                 ).lastrowid
             except Exception as error:
-                raise ValueError("An administrator with that email already exists") from error
+                raise ValueError(
+                    "An administrator with that email already exists"
+                ) from error
             db.execute(
                 """INSERT INTO administrator_enrollment_tokens
                    (token_hash, administrator_id, expires_at)
@@ -214,9 +236,15 @@ class SQLiteAuthPersistence:
         return dict(row) if row else None
 
     def finish_enrollment(
-        self, challenge_id: str, administrator_id: int, credential_id: str,
-        public_key: bytes, sign_count: int, transports: list[str],
-        invitation_token_hash: str, now: str,
+        self,
+        challenge_id: str,
+        administrator_id: int,
+        credential_id: str,
+        public_key: bytes,
+        sign_count: int,
+        transports: list[str],
+        invitation_token_hash: str,
+        now: str,
     ) -> bool:
         with transaction(self.database_path) as db:
             changed = db.execute(
