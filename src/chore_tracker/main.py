@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from chore_tracker.adapters.sqlite.auth import SQLiteAuthPersistence
 from chore_tracker.adapters.sqlite.child_views import SQLiteChildViewsPersistence
 from chore_tracker.adapters.sqlite.family_chore_management import (
     SQLiteFamilyChoreManagementPersistence,
@@ -18,6 +19,7 @@ from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
 from chore_tracker.api.routes.family_members import router as family_members_router
 from chore_tracker.api.routes.health import router as health_router
+from chore_tracker.application.services.authentication import AuthenticationService
 from chore_tracker.application.services.child_views import ChildViewsService
 from chore_tracker.application.services.family_chore_management import (
     FamilyChoreManagementService,
@@ -31,6 +33,14 @@ settings = get_settings()
 
 app = FastAPI(title="Chore Tracker API")
 app.state.settings = settings
+app.state.authentication_service_factory = lambda configured_settings, **verifiers: (
+    AuthenticationService(
+        SQLiteAuthPersistence(configured_settings.database_path),
+        rp_id=configured_settings.passkey_rp_id,
+        origin=configured_settings.passkey_origin,
+        **verifiers,
+    )
+)
 app.state.management_service_factory = lambda: FamilyChoreManagementService(
     SQLiteFamilyChoreManagementPersistence(settings.database_path)
 )
