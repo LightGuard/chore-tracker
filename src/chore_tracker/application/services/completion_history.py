@@ -6,7 +6,9 @@ from typing import Any, Protocol
 
 
 class CompletionHistoryPersistence(Protocol):
-    def get_completion_history(self, family_member_id: int, limit: int, offset: int) -> dict[str, Any] | None: ...
+    def get_completion_history(
+        self, family_member_id: int, limit: int, offset: int
+    ) -> dict[str, Any] | None: ...
 
 
 class FamilyMemberNotFound(Exception):
@@ -22,8 +24,12 @@ class CompletionHistoryService:
     def __init__(self, persistence: CompletionHistoryPersistence) -> None:
         self._persistence = persistence
 
-    def get_completion_history(self, family_member_id: int, limit: int, offset: int) -> dict[str, Any]:
-        result = self._persistence.get_completion_history(family_member_id, limit, offset)
+    def get_completion_history(
+        self, family_member_id: int, limit: int, offset: int
+    ) -> dict[str, Any]:
+        result = self._persistence.get_completion_history(
+            family_member_id, limit, offset
+        )
         if result is None:
             raise FamilyMemberNotFound
         return result
