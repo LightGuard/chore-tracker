@@ -25,7 +25,9 @@ class SQLiteWeeklyAssignmentPersistence:
         self._database_path = database_path
 
     @staticmethod
-    def _load_week_assignments(connection, week_start: date) -> tuple[WeeklyAssignment, ...]:
+    def _load_week_assignments(
+        connection, week_start: date
+    ) -> tuple[WeeklyAssignment, ...]:
         rows = connection.execute(
             """SELECT id, family_member_id, chore_id, week_start, week_end,
                       chore_name_snapshot, chore_description_snapshot
@@ -99,7 +101,9 @@ class SQLiteWeeklyAssignmentPersistence:
                 ).fetchall()
             ]
             chores = [
-                RotationChore(id=row["id"], name=row["name"], is_active=bool(row["is_active"]))
+                RotationChore(
+                    id=row["id"], name=row["name"], is_active=bool(row["is_active"])
+                )
                 for row in connection.execute(
                     """SELECT id, name, is_active FROM chores
                        WHERE is_active = 1 ORDER BY name COLLATE NOCASE, id"""
@@ -112,7 +116,11 @@ class SQLiteWeeklyAssignmentPersistence:
             connection.execute(
                 """INSERT INTO weekly_assignment_generations
                    (week_start, week_end, rotation_anchor) VALUES (?, ?, ?)""",
-                (week_start.isoformat(), week_end.isoformat(), rotation_anchor.isoformat()),
+                (
+                    week_start.isoformat(),
+                    week_end.isoformat(),
+                    rotation_anchor.isoformat(),
+                ),
             )
             for planned in plan:
                 chore = connection.execute(
@@ -125,9 +133,12 @@ class SQLiteWeeklyAssignmentPersistence:
                         chore_name_snapshot, chore_description_snapshot)
                        VALUES (?, ?, ?, ?, ?, ?)""",
                     (
-                        planned.family_member_id, planned.chore_id,
-                        week_start.isoformat(), week_end.isoformat(),
-                        chore["name"], chore["description"],
+                        planned.family_member_id,
+                        planned.chore_id,
+                        week_start.isoformat(),
+                        week_end.isoformat(),
+                        chore["name"],
+                        chore["description"],
                     ),
                 ).lastrowid
                 items = connection.execute(
