@@ -95,9 +95,7 @@ def create_chore(
 
 
 @router.get("/{chore_id}")
-def get_chore(
-    chore_id: int, request: Request, administrator: Admin
-) -> dict[str, Any]:
+def get_chore(chore_id: int, request: Request, administrator: Admin) -> dict[str, Any]:
     return _call(_service(request).get_chore, chore_id)
 
 
@@ -116,9 +114,7 @@ def update_chore(
     )
 
 
-@router.post(
-    "/{chore_id}/checklist-items", status_code=status.HTTP_201_CREATED
-)
+@router.post("/{chore_id}/checklist-items", status_code=status.HTTP_201_CREATED)
 def add_checklist_item(
     chore_id: int,
     body: ChecklistItemCreate,
@@ -169,6 +165,4 @@ def reorder_checklist(
     administrator: Admin,
     origin: SameOrigin,
 ) -> dict[str, Any]:
-    return _call(
-        _service(request).reorder_checklist, chore_id, body.ordered_item_ids
-    )
+    return _call(_service(request).reorder_checklist, chore_id, body.ordered_item_ids)
