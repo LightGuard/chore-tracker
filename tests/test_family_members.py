@@ -10,8 +10,13 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 
 import chore_tracker.api.routes.auth as auth
-import chore_tracker.api.routes.family_members as family_members
 from chore_tracker.adapters.sqlite import connect
+from chore_tracker.adapters.sqlite.family_chore_management import (
+    SQLiteFamilyChoreManagementPersistence,
+)
+from chore_tracker.application.services.family_chore_management import (
+    FamilyChoreManagementService,
+)
 from chore_tracker.main import app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,9 +38,11 @@ def prepare_client(tmp_path, monkeypatch):
         ),
     )
     monkeypatch.setattr(
-        family_members,
-        "get_settings",
-        lambda: SimpleNamespace(database_path=database_path),
+        app.state,
+        "management_service_factory",
+        lambda: FamilyChoreManagementService(
+            SQLiteFamilyChoreManagementPersistence(database_path)
+        ),
     )
     client = TestClient(app)
     started = client.post(
