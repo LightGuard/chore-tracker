@@ -16,11 +16,7 @@ get_settings = None
 
 
 def _settings(request: Request):
-    return (
-        get_settings()
-        if get_settings is not None
-        else request.app.state.settings
-    )
+    return get_settings() if get_settings is not None else request.app.state.settings
 
 
 def _service(request: Request):
