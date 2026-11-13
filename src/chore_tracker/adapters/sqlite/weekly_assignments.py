@@ -71,7 +71,8 @@ class SQLiteWeeklyAssignmentPersistence:
             # Serialize competing generators before checking the unique week record.
             connection.execute("BEGIN IMMEDIATE")
             existing = connection.execute(
-                "SELECT week_start FROM weekly_assignment_generations WHERE week_start = ?",
+                """SELECT week_start FROM weekly_assignment_generations
+                   WHERE week_start = ?""",
                 (week_start.isoformat(),),
             ).fetchone()
             if existing is not None:
@@ -83,7 +84,8 @@ class SQLiteWeeklyAssignmentPersistence:
             if rotation_state is None:
                 rotation_anchor = first_assignment_week(generated_on)
                 connection.execute(
-                    "INSERT INTO assignment_rotation_state (id, first_week_start) VALUES (1, ?)",
+                    """INSERT INTO assignment_rotation_state (id, first_week_start)
+                       VALUES (1, ?)""",
                     (rotation_anchor.isoformat(),),
                 )
             else:
