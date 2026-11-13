@@ -1,5 +1,8 @@
 """FastAPI application entry point."""
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,9 +19,15 @@ settings = get_settings()
 
 app = FastAPI(title="Chore Tracker API")
 app.state.settings = settings
-app.state.child_views_service_factory = lambda database_path: ChildViewsService(
-    SQLiteChildViewsPersistence(database_path)
+app.state.child_views_service = ChildViewsService(
+    SQLiteChildViewsPersistence(settings.database_path)
 )
+app.state.child_views_service_factory = lambda configured_settings: ChildViewsService(
+    SQLiteChildViewsPersistence(configured_settings.database_path)
+)
+app.state.child_views_today = lambda: datetime.now(
+    ZoneInfo(settings.report_timezone)
+).date()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted({settings.app_origin, settings.passkey_origin}),
