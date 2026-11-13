@@ -39,8 +39,17 @@ class ChecklistItemNotFound(CompletionError):
 
 
 class CompletionPersistence(Protocol):
-    def get_daily_completion(self, family_member_id: int, assignment_id: int, completion_date: date) -> dict[str, Any]: ...
-    def set_checklist_item_completion(self, family_member_id: int, assignment_id: int, checklist_item_id: int, completion_date: date, is_completed: bool) -> dict[str, Any]: ...
+    def get_daily_completion(
+        self, family_member_id: int, assignment_id: int, completion_date: date
+    ) -> dict[str, Any]: ...
+    def set_checklist_item_completion(
+        self,
+        family_member_id: int,
+        assignment_id: int,
+        checklist_item_id: int,
+        completion_date: date,
+        is_completed: bool,
+    ) -> dict[str, Any]: ...
 
 
 class CompletionService:
@@ -49,8 +58,25 @@ class CompletionService:
     def __init__(self, persistence: CompletionPersistence) -> None:
         self._persistence = persistence
 
-    def get_daily_completion(self, family_member_id: int, assignment_id: int, completion_date: date) -> dict[str, Any]:
-        return self._persistence.get_daily_completion(family_member_id, assignment_id, completion_date)
+    def get_daily_completion(
+        self, family_member_id: int, assignment_id: int, completion_date: date
+    ) -> dict[str, Any]:
+        return self._persistence.get_daily_completion(
+            family_member_id, assignment_id, completion_date
+        )
 
-    def set_checklist_item_completion(self, family_member_id: int, assignment_id: int, checklist_item_id: int, completion_date: date, is_completed: bool) -> dict[str, Any]:
-        return self._persistence.set_checklist_item_completion(family_member_id, assignment_id, checklist_item_id, completion_date, is_completed)
+    def set_checklist_item_completion(
+        self,
+        family_member_id: int,
+        assignment_id: int,
+        checklist_item_id: int,
+        completion_date: date,
+        is_completed: bool,
+    ) -> dict[str, Any]:
+        return self._persistence.set_checklist_item_completion(
+            family_member_id,
+            assignment_id,
+            checklist_item_id,
+            completion_date,
+            is_completed,
+        )
