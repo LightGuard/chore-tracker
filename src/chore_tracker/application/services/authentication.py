@@ -236,8 +236,11 @@ class AuthenticationService:
         )
         challenge_id = str(uuid.uuid4())
         self.persistence.create_challenge(
-            challenge_id, bytes_to_base64url(options.challenge), "authentication",
-            administrator_id, _timestamp(_now() + self.challenge_duration),
+            challenge_id,
+            bytes_to_base64url(options.challenge),
+            "authentication",
+            administrator_id,
+            _timestamp(_now() + self.challenge_duration),
         )
         return {
             "challenge_id": challenge_id,
