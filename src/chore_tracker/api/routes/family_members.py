@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from chore_tracker.adapters.sqlite import transaction
 from chore_tracker.api.routes.auth import require_admin, require_same_origin
-from chore_tracker.config import get_settings
+from chore_tracker.application.services.family_chore_management import (
+    FamilyChoreManagementService,
+    ManagementError,
+)
 
 router = APIRouter(prefix="/family-members", tags=["family member management"])
 Admin = Annotated[dict[str, Any], Depends(require_admin)]
@@ -32,87 +34,62 @@ class FamilyMemberUpdate(BaseModel):
     is_active: bool | None = None
 
 
-def _clean_display_name(value: str) -> str:
-    cleaned = value.strip()
-    if not cleaned:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Display name must not be blank",
-        )
-    if len(cleaned) > DISPLAY_NAME_MAX_LENGTH:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Display name must be at most {DISPLAY_NAME_MAX_LENGTH} characters",
-        )
-    return cleaned
+def _service(request: Request) -> FamilyChoreManagementService:
+    return request.app.state.management_service_factory()
 
 
-def _family_member(connection, family_member_id: int):
-    row = connection.execute(
-        """SELECT id, display_name, is_active, created_at, updated_at
-           FROM family_members WHERE id = ?""",
-        (family_member_id,),
-    ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Family member was not found")
-    return {**dict(row), "is_active": bool(row["is_active"])}
+def _call(operation, *args):
+    try:
+        return operation(*args)
+    except ManagementError as error:
+        code_status = {
+            "family_member_missing": 404,
+            "blank_value": 422,
+            "value_too_long": 422,
+            "empty_update": 422,
+            "null_field": 422,
+        }
+        raise HTTPException(
+            status_code=code_status.get(error.code, 400), detail=str(error)
+        ) from error
 
 
 @router.get("")
-def list_family_members(administrator: Admin) -> list[dict[str, Any]]:
+def list_family_members(request: Request, administrator: Admin) -> list[dict[str, Any]]:
     """List all profiles, including inactive profiles, for administrator management."""
-    with transaction(get_settings().database_path) as connection:
-        rows = connection.execute(
-            """SELECT id, display_name, is_active, created_at, updated_at
-               FROM family_members
-               ORDER BY display_name COLLATE NOCASE, id"""
-        ).fetchall()
-        return [{**dict(row), "is_active": bool(row["is_active"])} for row in rows]
+    return _call(_service(request).list_family_members)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_family_member(
-    request: FamilyMemberCreate, administrator: Admin, origin: SameOrigin
+    body: FamilyMemberCreate,
+    request: Request,
+    administrator: Admin,
+    origin: SameOrigin,
 ) -> dict[str, Any]:
     """Create a profile. Duplicate display names are permitted."""
-    display_name = _clean_display_name(request.display_name)
-    with transaction(get_settings().database_path) as connection:
-        family_member_id = connection.execute(
-            """INSERT INTO family_members (display_name, is_active)
-               VALUES (?, ?)""",
-            (display_name, int(request.is_active)),
-        ).lastrowid
-        return _family_member(connection, family_member_id)
+    return _call(
+        _service(request).create_family_member, body.display_name, body.is_active
+    )
 
 
 @router.get("/{family_member_id}")
-def get_family_member(family_member_id: int, administrator: Admin) -> dict[str, Any]:
-    with transaction(get_settings().database_path) as connection:
-        return _family_member(connection, family_member_id)
+def get_family_member(
+    family_member_id: int, request: Request, administrator: Admin
+) -> dict[str, Any]:
+    return _call(_service(request).get_family_member, family_member_id)
 
 
 @router.patch("/{family_member_id}")
 def update_family_member(
     family_member_id: int,
-    request: FamilyMemberUpdate,
+    body: FamilyMemberUpdate,
+    request: Request,
     administrator: Admin,
     origin: SameOrigin,
 ) -> dict[str, Any]:
-    changes = request.model_dump(exclude_unset=True)
-    if not changes:
-        raise HTTPException(status_code=422, detail="At least one field is required")
-    if any(value is None for value in changes.values()):
-        raise HTTPException(status_code=422, detail="Fields cannot be null")
-    if "display_name" in changes:
-        changes["display_name"] = _clean_display_name(changes["display_name"])
-
-    with transaction(get_settings().database_path) as connection:
-        _family_member(connection, family_member_id)
-        assignments = ", ".join(f"{field} = ?" for field in changes)
-        connection.execute(
-            f"""UPDATE family_members SET {assignments},
-                updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-                WHERE id = ?""",
-            (*changes.values(), family_member_id),
-        )
-        return _family_member(connection, family_member_id)
+    return _call(
+        _service(request).update_family_member,
+        family_member_id,
+        body.model_dump(exclude_unset=True),
+    )
