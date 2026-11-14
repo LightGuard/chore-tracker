@@ -1,6 +1,6 @@
 """Health and readiness HTTP endpoints."""
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Request, Response
 
 from chore_tracker.application.services.health import (
     get_health_status,
@@ -19,9 +19,10 @@ def liveness() -> dict[str, str]:
 
 @router.get("/health")
 @router.get("/health/ready")
-def readiness(response: Response) -> dict[str, str]:
+def readiness(request: Request, response: Response) -> dict[str, str]:
     """Report whether the configured database is ready for application requests."""
-    if not is_database_ready(get_settings().database_path):
+    probe = request.app.state.readiness_probe_factory(get_settings())
+    if not is_database_ready(probe):
         response.status_code = 503
         return {"status": "not_ready"}
     return {"status": "ok"}
