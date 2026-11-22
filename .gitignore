@@ -9,5 +9,9 @@ htmlcov/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 .secrets/
 data/
+compose.override.yaml
+compose.override.yml
+secrets/

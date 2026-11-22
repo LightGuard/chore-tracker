@@ -75,3 +75,11 @@ jobs:
         working-directory: frontend
         env:
           PYTHON: python
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images and smoke test Compose deployment
+        run: ./scripts/compose-smoke-test.sh
