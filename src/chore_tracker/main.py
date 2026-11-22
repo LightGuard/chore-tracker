@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.datastructures import State
 
 from chore_tracker.adapters.sqlite.auth import SQLiteAuthPersistence
 from chore_tracker.adapters.sqlite.child_views import SQLiteChildViewsPersistence
@@ -30,9 +31,36 @@ from chore_tracker.application.services.weekly_assignment_generation import (
 )
 from chore_tracker.config import get_settings
 
+
+class _TestableState(State):
+    """Application state that also mirrors values into the instance dictionary.
+
+    Starlette keeps state values only in an internal mapping, so pytest's
+    monkeypatch cannot restore a replaced attribute and instead deletes it.
+    Mirroring keeps the application's dependency seams stable across tests.
+    """
+
+    def __setattr__(self, key: str, value: object) -> None:
+        self._state[key] = value
+        self.__dict__[key] = value
+
+    def __delattr__(self, key: str) -> None:
+        del self._state[key]
+        self.__dict__.pop(key, None)
+
+    def __setitem__(self, key: str, value: object) -> None:
+        self._state[key] = value
+        self.__dict__[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self._state[key]
+        self.__dict__.pop(key, None)
+
+
 settings = get_settings()
 
 app = FastAPI(title="Chore Tracker API")
+app.state = _TestableState()
 app.state.settings = settings
 app.state.readiness_probe_factory = lambda configured_settings: SQLiteReadinessProbe(
     configured_settings.database_path
