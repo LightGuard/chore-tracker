@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Container, Reshaped } from "reshaped";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "./config/api";
+import { apiRequest } from "./api/client";
+import { FamilyChorePage } from "./family/FamilyChorePage";
 
 type Administrator = { id: number; email: string };
 type SetupStatus = { setup_required: boolean; enrollment_pending: boolean };
@@ -71,23 +72,6 @@ function serializeCredential(credential: PublicKeyCredential): Record<string, un
     };
   }
   return serialized;
-}
-
-async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null) as { detail?: string } | null;
-    throw new Error(body?.detail ?? `Request failed (${response.status})`);
-  }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 async function registerPasskey(options: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -507,19 +491,6 @@ function AdminPage() {
   );
 }
 
-function ApplicationShell() {
-  return (
-    <Container width="100%">
-      <main className="app-shell">
-        <header>
-          <h1>Chore Tracker</h1>
-          <p>Family chore tracker</p>
-        </header>
-      </main>
-    </Container>
-  );
-}
-
 function NotFound() {
   return (
     <Container width="100%">
@@ -535,7 +506,7 @@ export function App() {
     <Reshaped theme="slate">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ApplicationShell />} />
+          <Route path="/" element={<FamilyChorePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/enroll" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />

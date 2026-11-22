@@ -1,16 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { Button, Reshaped } from "reshaped";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { getApiBaseUrl } from "./config/api";
 
 afterEach(() => {
+  cleanup();
   vi.unstubAllGlobals();
   window.history.pushState({}, "", "/");
 });
 
 describe("application shell", () => {
   it("renders the application heading", () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("[]", { status: 200 })));
+
     const { getByRole } = render(<App />);
 
     expect(
