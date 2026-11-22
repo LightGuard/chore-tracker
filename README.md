@@ -127,6 +127,7 @@ the available settings.
 | `CHORE_TRACKER_EMAIL_TRANSPORT` | `console` | Initial transports: `console` or `smtp` |
 | `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone used for reports and child-facing local dates |
 | `CHORE_TRACKER_REPORT_DELIVERY_TIME` | `03:00` | Monday report delivery time in the reporting timezone (`HH:MM`) |
+| `CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED` | `true` | Run the durable Monday report and assignment rollover from the API process |
 
 The development email transport writes messages to the application console and does
 not send email. To use SMTP, set `CHORE_TRACKER_EMAIL_TRANSPORT=smtp`,
@@ -359,6 +360,44 @@ The reporting API is administrator-only:
 - Both endpoints return HTTP 401 without an administrator session. An unknown week
   returns HTTP 404. Invalid pagination values return HTTP 422. Values are read from
   the persisted report snapshot, never recalculated from current household data.
+
+### Scheduled Monday report and assignment rollover
+
+The API process owns the weekly rollover. On startup it checks the durable
+`weekly_rollover_state` checkpoint and recovers any due Monday runs, then waits until
+the next configured Monday delivery time. The schedule therefore survives application
+restarts and does not depend only on an in-memory timer.
+
+A rollover for assignment week W runs in this order:
+
+1. Generate and commit the report for W-1, the Monday–Sunday week that just ended.
+2. Generate and commit the assignment set for W.
+3. Advance the durable checkpoint to W.
+
+The report and assignment steps each use their own SQLite transaction. If a step
+fails, earlier committed work remains readable, the checkpoint does not advance, and
+the next attempt safely repeats the failed step. Report and assignment generation
+return existing records for an already-processed week rather than creating duplicates
+or replacing an existing report. Overlapping scheduler executions serialize on
+SQLite's write reservation and observe the same idempotent behavior.
+
+On the first run there is no checkpoint, so only the most recent due Monday is
+processed. After later downtime, every unprocessed Monday up to the most recent due
+delivery time is replayed in order. A failed attempt is retried after five minutes
+while the process remains running, and every process restart checks for missed weeks
+again.
+
+The scheduler uses `CHORE_TRACKER_REPORT_TIMEZONE` and
+`CHORE_TRACKER_REPORT_DELIVERY_TIME` (Monday at `03:00` by default). While running,
+it rechecks the wall clock at least hourly so a suspended process or clock adjustment
+cannot skip a due Monday. Set `CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED=false` only when
+another process owns the schedule or a fixture manages its own reports and
+assignments. Operational logs record the reporting week, assignment week, and
+completed/failed outcome without family member names.
+
+Reports are only available to readers after their snapshot transaction commits. A
+failure during the subsequent assignment step keeps the finalized report readable,
+and retrying the rollover returns that same report instead of replacing it.
 
 Chore catalog management is available to authenticated administrators through the
 `/chores` API and the administration page. New chores are created inactive. A chore
