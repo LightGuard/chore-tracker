@@ -198,6 +198,11 @@ npm run dev
 The frontend is served at `http://localhost:5173`. The Vite development server proxies
 requests under `/api` to `http://127.0.0.1:8000` by default.
 
+Open the frontend at `http://localhost:5173`, not `http://127.0.0.1:5173`.
+Administrator state-changing requests validate the browser `Origin`, and the default
+passkey relying-party ID is `localhost`; using the IP address causes an
+`Request origin is not allowed` response and is not valid for passkey registration.
+
 ### Frontend configuration
 
 - `VITE_API_BASE_URL` sets the API base URL compiled into the frontend. It defaults
