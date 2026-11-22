@@ -254,6 +254,136 @@ representative family/chore CRUD, and sign-out against the running application.
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.
 
+## Docker deployment
+
+Production-style images and a Compose deployment are included for local and
+homelab use. The backend image installs the exact versions in `uv.lock`; the
+frontend image installs the exact versions in `package-lock.json` and serves the
+built static application through nginx. The API is not published to the host:
+nginx serves the frontend, proxies `/api` to the API, and exposes the health
+endpoints on the single published port.
+
+The deployment requires Docker Engine with Compose v2 (or a compatible Podman
+and Compose installation).
+
+### Start the deployment
+
+Copy the Docker deployment environment example, review the public origin, and
+start the services:
+
+```bash
+cp .env.docker.example .env.docker
+docker compose --env-file .env.docker up --detach --build
+```
+
+Open `http://localhost:8080`. The default configuration is suitable for local
+Docker use; WebAuthn treats `localhost` as a secure origin.
+
+The one-shot `migrate` service runs `alembic upgrade head` before the API
+starts. The backend waits for that service to complete successfully, the
+frontend waits for the backend readiness check, and the application never runs
+migrations automatically during startup. Check progress with:
+
+```bash
+docker compose --env-file .env.docker ps
+docker compose --env-file .env.docker logs --follow backend
+```
+
+By default the frontend binds to `127.0.0.1:8080`. Set
+`CHORE_TRACKER_BIND_ADDRESS=0.0.0.0` in `.env.docker` to publish on the LAN, and
+set `CHORE_TRACKER_PUBLIC_ORIGIN` to the exact origin browsers use. Put a
+TLS-terminating reverse proxy in front of the deployment for any non-local
+hostname; WebAuthn requires HTTPS outside `localhost`.
+
+### Stop the deployment and keep data
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+This removes the containers and network but keeps the named
+`chore-tracker-data` volume. Starting again with the command above reuses the
+same database. `docker compose --env-file .env.docker down --volumes` also
+deletes the volume and all stored data; use it only when intentionally resetting
+the deployment.
+
+SQLite is stored at `/data/chore-tracker.db` on the volume, never in the image
+or the writable container layer. The `migrate` and `backend` containers run as
+UID/GID `10001` and share the volume. The frontend nginx container runs as its
+unprivileged image user. Only the frontend publishes a host port; the API is
+reachable only through the internal Compose network.
+
+### Runtime configuration and secrets
+
+Application settings are read from `.env.docker` at runtime through the
+Compose `env_file` mechanism. Container-specific values are fixed by
+`compose.yaml`: the API binds `0.0.0.0:8000`, SQLite uses
+`/data/chore-tracker.db`, and the application and passkey origins use
+`CHORE_TRACKER_PUBLIC_ORIGIN`. Other `CHORE_TRACKER_*` settings in the file,
+including SMTP configuration and the reporting timezone, are passed through.
+
+`CHORE_TRACKER_PUBLIC_ORIGIN`, `CHORE_TRACKER_BIND_ADDRESS`,
+`CHORE_TRACKER_HTTP_PORT`, and `CHORE_TRACKER_PASSKEY_RP_ID` are Compose
+deployment values. `VITE_API_BASE_URL` is a public build argument fixed to
+`/api`; never put secrets in `VITE_*` values because they are compiled into
+browser assets.
+
+Secrets are injected at runtime and are not copied into either image. The root
+`.dockerignore` and `frontend/.dockerignore` exclude environment files. Prefer
+a mounted SMTP password file over a password environment variable. Compose
+automatically reads a local `compose.override.yaml`; for example:
+
+```yaml
+services:
+  backend:
+    environment:
+      CHORE_TRACKER_SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+    volumes:
+      - ./secrets/smtp_password:/run/secrets/smtp_password:ro
+```
+
+Create the file with permissions readable by UID `10001`, then start normally
+with the same `--env-file` command. Do not commit the override file or its
+secret. The example file `.env.docker.example` also documents the SMTP settings.
+
+For a production-style deployment, terminate TLS before the frontend, set
+`CHORE_TRACKER_ENVIRONMENT=production`, use HTTPS application and passkey
+origins, set a real passkey relying-party domain, and configure SMTP delivery.
+The application rejects development-only production configuration at startup.
+
+### Health checks
+
+The backend image's Docker `HEALTHCHECK` calls `GET /health/live`, which reports
+process liveness without touching SQLite. Compose overrides the backend check
+with `GET /health/ready` so dependent services wait for an accessible database
+upgraded to the current Alembic head. The frontend health check calls
+`GET /healthz` and does not depend on the API. The published frontend also
+proxies `/health` and `/health/*` to the API for smoke tests and monitoring.
+
+```bash
+curl http://localhost:8080/health/live
+curl http://localhost:8080/health/ready
+curl http://localhost:8080/healthz
+```
+
+Liveness returns HTTP 200 while the process is running. Readiness returns HTTP
+200 with `{"status":"ok"}` only after migrations are current, and HTTP 503 with
+`{"status":"not_ready"}` otherwise.
+
+### Container smoke test
+
+Run the same end-to-end check used by CI:
+
+```bash
+./scripts/compose-smoke-test.sh
+```
+
+The script builds both images, starts an isolated Compose project, verifies
+liveness, readiness, the frontend, and the API proxy, checks that the
+application containers are non-root, writes a sentinel to the volume, restarts
+the deployment, and verifies the sentinel survived. It removes its own volume
+on exit. Set `CHORE_TRACKER_HTTP_PORT` if port 8080 is already in use.
+
 ## Tilt development environment
 
 Tilt starts the API and frontend directly as local processes. It installs the backend
@@ -272,12 +402,12 @@ Tilt exposes the API at `http://127.0.0.1:8000` and the frontend at
 provides frontend hot-module replacement. Stop the environment with `Ctrl+C` or
 `tilt down`.
 
-Both services run on the host through Tilt's local-process resources. Docker and
-Podman are therefore not involved and neither is required. The same `tilt up` setup
-works on machines that have Docker, Podman, or neither installed; no container socket
-or `DOCKER_HOST` setting is needed. The referenced Tilt Podman extension provides
-Podman image builds for container-based workloads, which this local-process setup does
-not use.
+Both services run on the host through Tilt's local-process resources. This is
+separate from the Docker deployment above: Docker and Podman are not involved in
+Tilt and neither is required. The same `tilt up` setup works on machines that have
+Docker, Podman, or neither installed; no container socket or `DOCKER_HOST` setting
+is needed. The referenced Tilt Podman extension provides Podman image builds for
+container-based workloads, which this local-process setup does not use.
 
 ## SQLite persistence and schema migrations
 

@@ -1,0 +1,88 @@
+# Local and homelab deployment. The frontend is the only published service;
+# the API stays on an internal Compose network behind nginx.
+#
+# Runtime configuration is read from the file selected by
+# CHORE_TRACKER_ENV_FILE (default .env) when it exists. Copy
+# .env.docker.example to .env.docker and pass it explicitly:
+#
+#   docker compose --env-file .env.docker up --detach --build
+
+x-backend-environment: &backend-environment
+  CHORE_TRACKER_ENVIRONMENT: ${CHORE_TRACKER_ENVIRONMENT:-development}
+  CHORE_TRACKER_APP_HOST: 0.0.0.0
+  CHORE_TRACKER_APP_PORT: "8000"
+  CHORE_TRACKER_APP_ORIGIN: ${CHORE_TRACKER_PUBLIC_ORIGIN:-http://localhost:8080}
+  CHORE_TRACKER_PASSKEY_ORIGIN: ${CHORE_TRACKER_PUBLIC_ORIGIN:-http://localhost:8080}
+  CHORE_TRACKER_PASSKEY_RP_ID: ${CHORE_TRACKER_PASSKEY_RP_ID:-localhost}
+  CHORE_TRACKER_DATABASE_PATH: /data/chore-tracker.db
+  CHORE_TRACKER_REPORT_TIMEZONE: ${CHORE_TRACKER_REPORT_TIMEZONE:-America/Denver}
+  CHORE_TRACKER_REPORT_DELIVERY_TIME: ${CHORE_TRACKER_REPORT_DELIVERY_TIME:-03:00}
+  CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED: ${CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED:-true}
+
+services:
+  # Apply schema migrations once before the API starts. The application itself
+  # never migrates on startup, and readiness stays at HTTP 503 until this
+  # succeeds.
+  migrate:
+    build:
+      context: .
+    image: chore-tracker-backend:local
+    command: ["alembic", "upgrade", "head"]
+    user: "10001:10001"
+    environment:
+      CHORE_TRACKER_DATABASE_PATH: /data/chore-tracker.db
+    volumes:
+      - chore-tracker-data:/data
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+    image: chore-tracker-backend:local
+    user: "10001:10001"
+    environment:
+      <<: *backend-environment
+    env_file:
+      - path: ${CHORE_TRACKER_ENV_FILE:-.env}
+        required: false
+    volumes:
+      - chore-tracker-data:/data
+    expose:
+      - "8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # Use a shell form so the Python expression stays one argument on every
+      # Compose and container runtime implementation.
+      test:
+        - CMD-SHELL
+        - "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)\""
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    image: chore-tracker-frontend:local
+    ports:
+      - "${CHORE_TRACKER_BIND_ADDRESS:-127.0.0.1}:${CHORE_TRACKER_HTTP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  chore-tracker-data:
