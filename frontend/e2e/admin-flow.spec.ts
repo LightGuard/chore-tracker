@@ -1,4 +1,8 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { cwd, env } from "node:process";
 import {
   addCredentialToNewAuthenticator,
   credentialsFor,
@@ -57,6 +61,46 @@ async function signIn(page: Page, email: string) {
   await expect(
     page.getByRole("heading", { name: `Signed in as ${email}` }),
   ).toBeVisible();
+}
+
+function setEnrollmentTokenExpiry(expiresAt: string) {
+  const frontendDirectory = cwd();
+  const databasePath = resolve(
+    frontendDirectory,
+    ".playwright-data/chore-tracker-e2e.db",
+  );
+  const pythonCandidates = [
+    env.PYTHON,
+    resolve(frontendDirectory, "../.venv/bin/python"),
+    resolve(frontendDirectory, "../.venv/Scripts/python.exe"),
+    "python3",
+  ];
+  const python = pythonCandidates.find(
+    (candidate) =>
+      candidate !== undefined &&
+      (candidate === "python3" || existsSync(candidate)),
+  );
+  if (!python) throw new Error("No Python interpreter available for test setup");
+
+  execFileSync(
+    python,
+    [
+      "-c",
+      `import sqlite3, sys
+connection = sqlite3.connect(sys.argv[1])
+connection.execute(
+    "UPDATE administrator_enrollment_tokens SET expires_at = ? "
+    "WHERE consumed_at IS NULL",
+    (sys.argv[2],),
+)
+connection.commit()
+connection.close()
+`,
+      databasePath,
+      expiresAt,
+    ],
+    { stdio: "pipe" },
+  );
 }
 
 test.describe.serial("administrator passkey and management flow", () => {
@@ -234,6 +278,20 @@ test.describe.serial("administrator passkey and management flow", () => {
     expect(enrollmentUrl).toContain("/admin/enroll#token=");
     await first.context.close();
 
+    setEnrollmentTokenExpiry("2000-01-01T00:00:00Z");
+    const expiredContext = await browser.newContext({ baseURL: BASE_URL });
+    const expiredPage = await expiredContext.newPage();
+    await enableVirtualAuthenticator(expiredPage);
+    await expiredPage.goto(enrollmentUrl);
+    await expiredPage
+      .getByRole("button", { name: "Register passkey" })
+      .click();
+    await expect(
+      expiredPage.getByText("Enrollment token is invalid or expired"),
+    ).toBeVisible();
+    await expiredContext.close();
+
+    setEnrollmentTokenExpiry("2099-01-01T00:00:00Z");
     const secondContext = await browser.newContext({ baseURL: BASE_URL });
     const secondPage = await secondContext.newPage();
     const secondAuthenticator = await enableVirtualAuthenticator(secondPage);
