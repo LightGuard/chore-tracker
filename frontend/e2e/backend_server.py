@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIRECTORY = ROOT / "frontend" / ".playwright-data"
 DATABASE_PATH = DATA_DIRECTORY / "chore-tracker-e2e.db"
 BACKEND_PORT = 8001
-FRONTEND_ORIGIN = "http://127.0.0.1:5174"
+FRONTEND_ORIGIN = "http://localhost:5174"
 REPORT_TIMEZONE = "America/Denver"
 
 
@@ -25,6 +25,7 @@ def configure_environment() -> None:
             "CHORE_TRACKER_APP_PORT": str(BACKEND_PORT),
             "CHORE_TRACKER_APP_ORIGIN": FRONTEND_ORIGIN,
             "CHORE_TRACKER_PASSKEY_ORIGIN": FRONTEND_ORIGIN,
+            "CHORE_TRACKER_PASSKEY_RP_ID": "localhost",
             "CHORE_TRACKER_DATABASE_PATH": str(DATABASE_PATH),
             "CHORE_TRACKER_REPORT_TIMEZONE": REPORT_TIMEZONE,
         }

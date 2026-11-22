@@ -175,8 +175,10 @@ library. React Router provides browser-based client-side routing. The home scree
 `/` lets a child select their profile, work through this week's chore checklist, and
 open their historical daily completion records grouped by week. Profile selection is
 a household convenience, not authentication. The administrator screen is available
-at `/admin` and performs first-run setup, passkey sign-in, and second-administrator
-enrollment.
+at `/admin` and provides first-run passkey setup, passkey sign-in, second-administrator
+enrollment, family-member management, and chore/checklist catalog management. Admin
+management is rendered only for an authenticated administrator, and an expired
+session returns the user to sign-in with an explanation.
 
 ### Requirements
 
@@ -237,7 +239,11 @@ must already be installed in the repository's `.venv`, or `PYTHON` can point at
 another interpreter with the backend dependencies available. The suite covers child
 selection, ordered checklist display, checking and unchecking items, reload
 persistence, the no-assignment state, grouped completion history, empty history,
-history switching when the selected child changes, and a phone-sized viewport.
+history switching when the selected child changes, a phone-sized viewport, and the
+administrator flow. Administrator browser coverage uses Playwright's virtual WebAuthn
+authenticator to exercise real passkey registration, sign-in, second-administrator
+enrollment, invalid and reused invitation handling, protected-screen denial,
+representative family/chore CRUD, and sign-out against the running application.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.
