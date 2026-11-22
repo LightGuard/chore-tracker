@@ -171,7 +171,9 @@ behavior or infrastructure.
 ## Frontend
 
 The frontend is a React, TypeScript, and Vite application using the ReShaped component
-library. React Router provides browser-based client-side routing. The administrator
+library. React Router provides browser-based client-side routing. The home screen at
+`/` lets a child select their profile and work through this week's chore checklist.
+Profile selection is a household convenience, not authentication. The administrator
 screen is available at `/admin` and performs first-run setup, passkey sign-in, and
 second-administrator enrollment.
 
@@ -215,6 +217,28 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+### Browser tests
+
+Playwright covers the primary family flow against the real frontend and backend.
+Install Chromium once, then run the browser suite:
+
+```bash
+npm run test:e2e:install
+npm run test:e2e
+```
+
+The Playwright configuration starts both services itself on isolated ports
+(`5174` for Vite and `8001` for FastAPI), creates a disposable SQLite database at
+`frontend/.playwright-data/chore-tracker-e2e.db`, applies migrations, and seeds the
+current week's assignments. Backend dependencies must already be installed in the
+repository's `.venv`, or `PYTHON` can point at another interpreter with the backend
+dependencies available. The suite covers child selection, ordered checklist display,
+checking and unchecking items, reload persistence, the no-assignment state, and a
+phone-sized viewport.
+
+These browser tests are separate from `npm test`, which runs the component and
+integration-style Vitest suite.
 
 ## Tilt development environment
 

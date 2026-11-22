@@ -106,3 +106,22 @@ body {
 .chore-card li > label {
   margin-right: 0.5rem;
 }
+
+.family-shell {
+  width: min(100%, 44rem);
+}
+
+.family-shell ol {
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}
+
+.family-shell li {
+  padding-block: 0.25rem;
+}
+
+@media (max-width: 40rem) {
+  .app-shell {
+    padding: 1rem;
+  }
+}

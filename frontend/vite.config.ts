@@ -10,7 +10,10 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: env.API_PROXY_TARGET || "http://127.0.0.1:8000",
+          target:
+            process.env.API_PROXY_TARGET ||
+            env.API_PROXY_TARGET ||
+            "http://127.0.0.1:8000",
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
         },
@@ -18,6 +21,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: "jsdom",
+      include: ["src/**/*.{test,spec}.{ts,tsx}"],
       setupFiles: "./src/test/setup.ts",
       css: true,
       restoreMocks: true,
