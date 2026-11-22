@@ -70,6 +70,106 @@ test.describe("family chore flow", () => {
   });
 });
 
+
+  test("renders persisted history and follows the selected child", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await page.getByRole("button", { name: "View history" }).click();
+
+    const history = page.getByRole("region", {
+      name: "Completion history for Alex",
+    });
+    await expect(history).toBeVisible();
+
+    const response = await page.request.get(
+      "/api/family-members/1/completion-history?limit=50&offset=0",
+    );
+    expect(response.ok()).toBeTruthy();
+    const payload = (await response.json()) as {
+      items: Array<{
+        week_start: string;
+        chore_name: string;
+        completion_date: string;
+        completion_status: "complete" | "incomplete" | "not_yet_recorded";
+      }>;
+    };
+    const statusLabels = {
+      complete: "Complete",
+      incomplete: "Incomplete",
+      not_yet_recorded: "Not yet recorded",
+    };
+
+    for (const status of [
+      "complete",
+      "incomplete",
+      "not_yet_recorded",
+    ] as const) {
+      const record = payload.items.find(
+        (item) => item.completion_status === status,
+      );
+      expect(record).toBeTruthy();
+      if (!record) throw new Error(`Missing ${status} history record`);
+      const row = history.locator(
+        `li:has(time[datetime="${record.completion_date}"])`,
+      );
+      await expect(row).toBeVisible();
+      await expect(row.getByText(statusLabels[status])).toBeVisible();
+    }
+
+    const weeks = new Set(payload.items.map((item) => item.week_start));
+    await expect(history.getByText(/^Week of /)).toHaveCount(weeks.size);
+    for (const choreName of new Set(payload.items.map((item) => item.chore_name))) {
+      await expect(
+        history.getByRole("heading", { level: 3, name: choreName }),
+      ).toBeVisible();
+    }
+
+    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    const samHistory = page.getByRole("region", {
+      name: "Completion history for Sam",
+    });
+    await expect(samHistory).toBeVisible();
+    await expect(
+      samHistory.getByRole("heading", { level: 3, name: "Laundry" }),
+    ).toBeVisible();
+    await expect(
+      samHistory.getByRole("heading", { level: 3, name: "Bathroom" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Completion history for Alex" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { level: 3, name: "Yard" }),
+    ).toHaveCount(0);
+  });
+
+  test("shows empty history and replaces it when the selected child changes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByLabel("Child").selectOption({ label: "Riley" });
+    await page.getByRole("button", { name: "View history" }).click();
+
+    const emptyHistory = page.getByRole("region", {
+      name: "Completion history for Riley",
+    });
+    await expect(emptyHistory).toBeVisible();
+    await expect(
+      emptyHistory.getByText("No completion history yet"),
+    ).toBeVisible();
+
+    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    await expect(
+      page.getByRole("region", { name: "Completion history for Sam" }),
+    ).toBeVisible();
+    await expect(emptyHistory).toHaveCount(0);
+    await expect(
+      page.getByText("No completion history yet"),
+    ).toHaveCount(0);
+  });
+
 test.describe("phone-sized layout", () => {
   test.use({
     viewport: { width: 390, height: 844 },

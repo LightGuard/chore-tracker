@@ -45,10 +45,12 @@ def reset_database() -> None:
 
 
 def seed_database() -> None:
-    """Create one current-week assignment per participating child."""
+    """Create current and previous week assignments with varied history statuses."""
     today = datetime.now(ZoneInfo(REPORT_TIMEZONE)).date()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
+    prior_start = week_start - timedelta(days=7)
+    prior_end = week_end - timedelta(days=7)
 
     connection = sqlite3.connect(DATABASE_PATH)
     connection.row_factory = sqlite3.Row
@@ -79,6 +81,62 @@ def seed_database() -> None:
                 )
             return chore_id, item_ids
 
+        def assign(
+            member_name: str,
+            chore_id: int,
+            item_ids: list[int],
+            start,
+            end,
+            name: str,
+            description: str,
+        ):
+            assignment_id = connection.execute(
+                """INSERT INTO weekly_assignments
+                   (family_member_id, chore_id, week_start, week_end,
+                    chore_name_snapshot, chore_description_snapshot)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    member_ids[member_name],
+                    chore_id,
+                    start.isoformat(),
+                    end.isoformat(),
+                    name,
+                    description,
+                ),
+            ).lastrowid
+            snapshot_ids = []
+            for position, item_id in enumerate(item_ids):
+                label = connection.execute(
+                    "SELECT label FROM chore_checklist_items WHERE id = ?",
+                    (item_id,),
+                ).fetchone()["label"]
+                snapshot_ids.append(
+                    connection.execute(
+                        """INSERT INTO assignment_checklist_items
+                           (weekly_assignment_id, source_checklist_item_id,
+                            label_snapshot, position)
+                           VALUES (?, ?, ?, ?)""",
+                        (assignment_id, item_id, label, position),
+                    ).lastrowid
+                )
+            return assignment_id, snapshot_ids
+
+        def record_completions(snapshot_ids, day, completed_positions):
+            for position, snapshot_id in enumerate(snapshot_ids):
+                is_completed = position in completed_positions
+                connection.execute(
+                    """INSERT INTO daily_checklist_completions
+                       (assignment_checklist_item_id, completion_date,
+                        is_completed, completed_at)
+                       VALUES (?, ?, ?, ?)""",
+                    (
+                        snapshot_id,
+                        day.isoformat(),
+                        int(is_completed),
+                        f"{day.isoformat()}T18:00:00Z" if is_completed else None,
+                    ),
+                )
+
         kitchen_id, kitchen_items = create_chore(
             "Kitchen",
             "Wipe and sweep after dinner.",
@@ -89,64 +147,61 @@ def seed_database() -> None:
             "Clean the bathroom.",
             ("Clean sink", "Scrub tub"),
         )
-
-        def assign(member_name: str, chore_id: int, name: str, description: str):
-            return connection.execute(
-                """INSERT INTO weekly_assignments
-                   (family_member_id, chore_id, week_start, week_end,
-                    chore_name_snapshot, chore_description_snapshot)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (
-                    member_ids[member_name],
-                    chore_id,
-                    week_start.isoformat(),
-                    week_end.isoformat(),
-                    name,
-                    description,
-                ),
-            ).lastrowid
-
-        kitchen_assignment = assign(
-            "Alex", kitchen_id, "Kitchen", "Wipe and sweep after dinner."
+        yard_id, yard_items = create_chore(
+            "Yard",
+            "Maintain the yard.",
+            ("Mow lawn", "Rake leaves"),
         )
-        for position, item_id in enumerate(kitchen_items):
-            connection.execute(
-                """INSERT INTO assignment_checklist_items
-                   (weekly_assignment_id, source_checklist_item_id,
-                    label_snapshot, position)
-                   VALUES (?, ?, ?, ?)""",
-                (
-                    kitchen_assignment,
-                    item_id,
-                    connection.execute(
-                        "SELECT label FROM chore_checklist_items WHERE id = ?",
-                        (item_id,),
-                    ).fetchone()["label"],
-                    position,
-                ),
-            )
-
-        bathroom_assignment = assign(
-            "Sam", bathroom_id, "Bathroom", "Clean the bathroom."
+        laundry_id, laundry_items = create_chore(
+            "Laundry",
+            "Wash and fold clothes.",
+            ("Wash clothes", "Fold clothes"),
         )
-        for position, item_id in enumerate(bathroom_items):
-            connection.execute(
-                """INSERT INTO assignment_checklist_items
-                   (weekly_assignment_id, source_checklist_item_id,
-                    label_snapshot, position)
-                   VALUES (?, ?, ?, ?)""",
-                (
-                    bathroom_assignment,
-                    item_id,
-                    connection.execute(
-                        "SELECT label FROM chore_checklist_items WHERE id = ?",
-                        (item_id,),
-                    ).fetchone()["label"],
-                    position,
-                ),
-            )
 
-        # Riley remains active but intentionally has no assignment.
+        # Current week: Alex and Sam have active assignments; Riley does not.
+        assign(
+            "Alex",
+            kitchen_id,
+            kitchen_items,
+            week_start,
+            week_end,
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+        )
+        assign(
+            "Sam",
+            bathroom_id,
+            bathroom_items,
+            week_start,
+            week_end,
+            "Bathroom",
+            "Clean the bathroom.",
+        )
+
+        # Previous week provides complete, incomplete, and unrecorded days.
+        _, yard_snapshots = assign(
+            "Alex",
+            yard_id,
+            yard_items,
+            prior_start,
+            prior_end,
+            "Yard",
+            "Maintain the yard.",
+        )
+        record_completions(yard_snapshots, prior_start + timedelta(days=1), {0, 1})
+        record_completions(yard_snapshots, prior_start + timedelta(days=2), {0})
+
+        _, laundry_snapshots = assign(
+            "Sam",
+            laundry_id,
+            laundry_items,
+            prior_start,
+            prior_end,
+            "Laundry",
+            "Wash and fold clothes.",
+        )
+        record_completions(laundry_snapshots, prior_start + timedelta(days=3), {0, 1})
+
         connection.commit()
     finally:
         connection.close()
