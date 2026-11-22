@@ -316,6 +316,29 @@ assignments. Daily completion is stored per assigned checklist item and calendar
 Weekly report snapshots and per-administrator delivery records provide durable,
 unique delivery state for retries.
 
+### Weekly completion reports
+
+A weekly completion report is generated from the persisted weekly assignment
+snapshots and daily completion records for one Monday–Sunday week.
+`WeeklyReportService` normalizes the requested week, reads every assignment for
+that week (including assignments belonging to later-deactivated family members),
+and writes one `weekly_reports` header, one `weekly_report_entries` row per
+assignment, and seven `weekly_report_days` rows per entry in a single transaction.
+
+The header records the reporting week, generation/finalization timestamps, and
+family-wide completed/incomplete day totals. Entries snapshot the child's display
+name, assigned chore, and weekly totals. Each daily row snapshots `complete` or
+`incomplete`; a day is complete only when the assignment has at least one
+checklist snapshot item and every snapshot item has a persisted completion marked
+complete for that day. Days without completion records are persisted as
+incomplete rather than treated as errors.
+
+Report header, entry, and day rows are immutable at the database level. Only
+finalized reports are readable, and repeated generation for the same week returns
+the existing report without replacing it. Report entries can be read independently
+in bounded pages so the administrator report page can paginate without loading an
+entire report.
+
 Chore catalog management is available to authenticated administrators through the
 `/chores` API and the administration page. New chores are created inactive. A chore
 cannot be activated until it has at least one active checklist item; an active chore
