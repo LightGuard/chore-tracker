@@ -48,6 +48,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "weekly_reports",
             "weekly_report_entries",
             "weekly_report_days",
+            "weekly_rollover_state",
             "report_deliveries",
             "administrator_passkey_credentials",
             "authentication_challenges",
@@ -58,7 +59,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0006_relational_weekly_reports"
+        assert revision == "0007_weekly_rollover_state"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -271,6 +272,69 @@ def test_report_delivery_is_unique_per_administrator_and_report(tmp_path) -> Non
             pass
         else:
             raise AssertionError("Duplicate report delivery state was accepted")
+
+
+def test_weekly_rollover_state_is_singleton_and_monotonic(tmp_path) -> None:
+    database_path = tmp_path / "rollover-state.db"
+    command.upgrade(migration_config(database_path), "head")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO weekly_rollover_state (
+                id, last_completed_week_start, completed_at
+            )
+            VALUES (1, '2026-11-09', '2026-11-09T10:00:00Z')
+            """
+        )
+
+        try:
+            connection.execute(
+                """
+                INSERT INTO weekly_rollover_state (
+                    id, last_completed_week_start, completed_at
+                )
+                VALUES (2, '2026-11-16', '2026-11-16T10:00:00Z')
+                """
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("A second rollover checkpoint row was accepted")
+
+        try:
+            connection.execute(
+                """
+                UPDATE weekly_rollover_state
+                SET last_completed_week_start = '2026-11-02'
+                WHERE id = 1
+                """
+            )
+        except sqlite3.IntegrityError as error:
+            assert "cannot move backwards" in str(error)
+        else:
+            raise AssertionError("The rollover checkpoint was allowed to regress")
+
+        connection.execute(
+            """
+            UPDATE weekly_rollover_state
+            SET last_completed_week_start = '2026-11-16'
+            WHERE id = 1
+            """
+        )
+        assert (
+            connection.execute(
+                "SELECT last_completed_week_start FROM weekly_rollover_state"
+            ).fetchone()[0]
+            == "2026-11-16"
+        )
+
+        try:
+            connection.execute("DELETE FROM weekly_rollover_state")
+        except sqlite3.IntegrityError as error:
+            assert "cannot be deleted" in str(error)
+        else:
+            raise AssertionError("The rollover checkpoint was deleted")
 
 
 def test_assignment_history_is_immutable_and_source_items_match_chore(tmp_path) -> None:
