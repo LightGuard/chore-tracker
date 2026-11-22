@@ -19,18 +19,21 @@ def test_development_defaults_are_safe_and_explicit() -> None:
     assert settings.email_transport is EmailTransport.CONSOLE
     assert settings.report_timezone == "America/Denver"
     assert settings.report_delivery_time == time(3, 0)
+    assert settings.weekly_rollover_enabled is True
 
 
 def test_environment_values_override_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CHORE_TRACKER_APP_PORT", "9000")
     monkeypatch.setenv("CHORE_TRACKER_DATABASE_PATH", "/data/chore-tracker.db")
     monkeypatch.setenv("CHORE_TRACKER_REPORT_DELIVERY_TIME", "04:15")
+    monkeypatch.setenv("CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED", "false")
 
     settings = Settings(_env_file=None, _secrets_dir=None)
 
     assert settings.app_port == 9000
     assert settings.database_path == Path("/data/chore-tracker.db")
     assert settings.report_delivery_time == time(4, 15)
+    assert settings.weekly_rollover_enabled is False
 
 
 def test_invalid_port_is_rejected_without_echoing_input() -> None:

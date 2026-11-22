@@ -28,6 +28,8 @@ def configure_environment() -> None:
             "CHORE_TRACKER_PASSKEY_RP_ID": "localhost",
             "CHORE_TRACKER_DATABASE_PATH": str(DATABASE_PATH),
             "CHORE_TRACKER_REPORT_TIMEZONE": REPORT_TIMEZONE,
+            # The browser fixture seeds reports and current assignments directly.
+            "CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED": "false",
         }
     )
 
