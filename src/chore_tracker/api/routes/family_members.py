@@ -67,7 +67,7 @@ def create_family_member(
     administrator: Admin,
     origin: SameOrigin,
 ) -> dict[str, Any]:
-    """Create a profile. Duplicate display names are permitted."""
+    """Add a profile. Duplicate display names are permitted."""
     return _call(
         _service(request).create_family_member, body.display_name, body.is_active
     )

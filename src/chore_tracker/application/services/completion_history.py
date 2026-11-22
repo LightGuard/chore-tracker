@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from chore_tracker.application.services.completion import CompletionError
+
 
 class CompletionHistoryPersistence(Protocol):
     def get_completion_history(
@@ -11,7 +13,7 @@ class CompletionHistoryPersistence(Protocol):
     ) -> dict[str, Any] | None: ...
 
 
-class FamilyMemberNotFound(Exception):
+class FamilyMemberNotFound(CompletionError):
     """Raised when the requested family member does not exist."""
 
     status_code = 404
