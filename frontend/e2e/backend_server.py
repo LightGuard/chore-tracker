@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -52,13 +52,23 @@ def seed_database() -> None:
     week_end = week_start + timedelta(days=6)
     prior_start = week_start - timedelta(days=7)
     prior_end = week_end - timedelta(days=7)
+    older_start = week_start - timedelta(days=14)
+    older_end = week_end - timedelta(days=14)
 
     connection = sqlite3.connect(DATABASE_PATH)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     try:
         member_ids = {}
-        for display_name in ("Alex", "Sam", "Riley"):
+        for display_name in (
+            "Alex",
+            "Sam",
+            "Riley",
+            "Avery",
+            "Jordan",
+            "Morgan",
+            "Taylor",
+        ):
             member_ids[display_name] = connection.execute(
                 "INSERT INTO family_members (display_name) VALUES (?)",
                 (display_name,),
@@ -203,9 +213,120 @@ def seed_database() -> None:
         )
         record_completions(laundry_snapshots, prior_start + timedelta(days=3), {0, 1})
 
+        _, avery_snapshots = assign(
+            "Avery",
+            kitchen_id,
+            kitchen_items,
+            prior_start,
+            prior_end,
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+        )
+        for day_index in range(7):
+            record_completions(
+                avery_snapshots, prior_start + timedelta(days=day_index), {0, 1, 2}
+            )
+
+        _, jordan_snapshots = assign(
+            "Jordan",
+            bathroom_id,
+            bathroom_items,
+            prior_start,
+            prior_end,
+            "Bathroom",
+            "Clean the bathroom.",
+        )
+        record_completions(jordan_snapshots, prior_start, {0, 1})
+        record_completions(jordan_snapshots, prior_start + timedelta(days=1), {0, 1})
+
+        assign(
+            "Morgan",
+            laundry_id,
+            laundry_items,
+            prior_start,
+            prior_end,
+            "Laundry",
+            "Wash and fold clothes.",
+        )
+
+        _, taylor_snapshots = assign(
+            "Taylor",
+            yard_id,
+            yard_items,
+            prior_start,
+            prior_end,
+            "Yard",
+            "Maintain the yard.",
+        )
+        for day_index in range(5):
+            record_completions(
+                taylor_snapshots, prior_start + timedelta(days=day_index), {0, 1}
+            )
+
+        # Two weeks prior supplies a second, fully complete report for history.
+        _, older_alex_snapshots = assign(
+            "Alex",
+            bathroom_id,
+            bathroom_items,
+            older_start,
+            older_end,
+            "Bathroom",
+            "Clean the bathroom.",
+        )
+        _, older_sam_snapshots = assign(
+            "Sam",
+            kitchen_id,
+            kitchen_items,
+            older_start,
+            older_end,
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+        )
+        _, older_avery_snapshots = assign(
+            "Avery",
+            laundry_id,
+            laundry_items,
+            older_start,
+            older_end,
+            "Laundry",
+            "Wash and fold clothes.",
+        )
+        older_assignments = (
+            (older_alex_snapshots, 2),
+            (older_sam_snapshots, 3),
+            (older_avery_snapshots, 2),
+        )
+        for snapshots, item_count in older_assignments:
+            for day_index in range(7):
+                record_completions(
+                    snapshots,
+                    older_start + timedelta(days=day_index),
+                    set(range(item_count)),
+                )
+
         connection.commit()
     finally:
         connection.close()
+
+    from chore_tracker.adapters.sqlite.weekly_reports import (
+        SQLiteWeeklyReportPersistence,
+    )
+    from chore_tracker.application.services.weekly_reports import (
+        WeeklyReportService,
+    )
+
+    def report_generated_at(week_start):
+        return datetime.combine(
+            week_start + timedelta(days=7),
+            time(3, 0),
+            tzinfo=ZoneInfo(REPORT_TIMEZONE),
+        ).astimezone(UTC)
+
+    service = WeeklyReportService(
+        SQLiteWeeklyReportPersistence(DATABASE_PATH), REPORT_TIMEZONE
+    )
+    service.generate(older_start, generated_at=report_generated_at(older_start))
+    service.generate(prior_start, generated_at=report_generated_at(prior_start))
 
 
 def main() -> None:

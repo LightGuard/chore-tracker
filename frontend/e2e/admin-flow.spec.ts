@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { cwd, env } from "node:process";
 import {
@@ -61,6 +61,16 @@ async function signIn(page: Page, email: string) {
   await expect(
     page.getByRole("heading", { name: `Signed in as ${email}` }),
   ).toBeVisible();
+}
+
+async function captureScreenshot(page: Page, filename: string) {
+  if (env.CAPTURE_SCREENSHOTS !== "1") return;
+  const directory = resolve(cwd(), ".playwright-data/screenshots");
+  mkdirSync(directory, { recursive: true });
+  await page.screenshot({
+    path: resolve(directory, filename),
+    fullPage: true,
+  });
 }
 
 function setEnrollmentTokenExpiry(expiresAt: string) {
@@ -250,6 +260,162 @@ test.describe.serial("administrator passkey and management flow", () => {
 
     expect((await page.request.get("/api/chores")).status()).toBe(401);
     expect((await page.request.get("/api/family-members")).status()).toBe(401);
+
+    await page.goto("/admin/reports");
+    await expect(
+      page.getByRole("region", { name: "Administrator sign in" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Report history" }),
+    ).toHaveCount(0);
+    expect((await page.request.get("/api/reports")).status()).toBe(401);
+    expect((await page.request.get("/api/reports/2026-11-16")).status()).toBe(401);
+
+    await page.goto("/admin/reports/2026-11-16");
+    await expect(
+      page.getByRole("region", { name: "Administrator sign in" }),
+    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "Report detail" })).toHaveCount(
+      0,
+    );
+
+    await context.close();
+  });
+
+  test("opens persisted report history and paginates report entries", async ({
+    browser,
+  }) => {
+    const { context, page } = await authenticatedContext(
+      browser,
+      requireFirstCredential(),
+      FIRST_ADMIN,
+    );
+
+    const reportsResponse = await page.request.get("/api/reports");
+    expect(reportsResponse.ok()).toBeTruthy();
+    const reports = (await reportsResponse.json()) as Array<{
+      week_start: string;
+      week_end: string;
+      generated_at: string;
+    }>;
+    expect(reports).toHaveLength(2);
+    expect(reports[0].week_start > reports[1].week_start).toBe(true);
+
+    await page.getByRole("link", { name: "Reports" }).click();
+    const history = page.getByRole("region", {
+      name: "Report history",
+    });
+    await expect(history).toBeVisible();
+    await expect(
+      history.getByRole("heading", { level: 3 }).first(),
+    ).toBeVisible();
+    await expect(
+      history.locator(`a[href="/admin/reports/${reports[0].week_start}"]`),
+    ).toBeVisible();
+    await captureScreenshot(page, "admin-report-history.png");
+
+    const membersResponse = await page.request.get("/api/family-members");
+    const members = (await membersResponse.json()) as Array<{
+      id: number;
+      display_name: string;
+    }>;
+    const jordan = members.find((member) => member.display_name === "Jordan");
+    expect(jordan).toBeTruthy();
+    if (!jordan) throw new Error("Jordan was not seeded");
+    const renamed = await page.request.patch(`/api/family-members/${jordan.id}`, {
+      headers: {
+        Origin: BASE_URL,
+        "Content-Type": "application/json",
+      },
+      data: { display_name: "Jordan Renamed" },
+    });
+    expect(renamed.ok()).toBeTruthy();
+
+    const firstPageResponse = await page.request.get(
+      `/api/reports/${reports[0].week_start}?limit=5&offset=0`,
+    );
+    expect(firstPageResponse.ok()).toBeTruthy();
+    const firstPage = (await firstPageResponse.json()) as {
+      total: number;
+      entries: Array<{
+        family_member_name: string;
+        chore_name: string;
+        completed_days: number;
+        days: Array<{ date: string; status: "complete" | "incomplete" }>;
+      }>;
+    };
+    expect(firstPage.total).toBe(6);
+    expect(firstPage.entries).toHaveLength(5);
+
+    await page
+      .locator(`a[href="/admin/reports/${reports[0].week_start}"]`)
+      .click();
+    const detail = page.getByRole("region", { name: "Report detail" });
+    await expect(detail).toBeVisible();
+    await expect(
+      detail.getByRole("heading", { level: 2 }),
+    ).toBeVisible();
+    await expect(detail.getByText("of 42 child-day slots")).toBeVisible();
+    await expect(detail.getByText("Showing 1–5 of 6 entries")).toBeVisible();
+
+    const table = detail.getByRole("table", { name: /Report entries for/ });
+    for (const entry of firstPage.entries) {
+      const row = table.getByRole("row", {
+        name: `Report entry for ${entry.family_member_name}`,
+      });
+      await expect(row).toBeVisible();
+      await expect(row.getByText(entry.chore_name, { exact: true })).toBeVisible();
+      await expect(row.locator(".report-total-cell strong")).toHaveText(
+        `${entry.completed_days} / 7`,
+      );
+      for (const day of entry.days) {
+        const label = `${day.date}: ${
+          day.status === "complete" ? "Complete" : "Incomplete"
+        }`;
+        await expect(row.getByLabel(label)).toBeVisible();
+      }
+    }
+    await expect(
+      table.getByRole("row", { name: "Report entry for Jordan" }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("row", { name: "Report entry for Jordan Renamed" }),
+    ).toHaveCount(0);
+    await captureScreenshot(page, "admin-report-detail.png");
+
+    await detail.getByRole("button", { name: "Next" }).click();
+    await expect(detail.getByText("Showing 6–6 of 6 entries")).toBeVisible();
+    const secondPageResponse = await page.request.get(
+      `/api/reports/${reports[0].week_start}?limit=5&offset=5`,
+    );
+    const secondPage = (await secondPageResponse.json()) as {
+      entries: Array<{
+        family_member_name: string;
+        chore_name: string;
+        completed_days: number;
+        days: Array<{ date: string; status: "complete" | "incomplete" }>;
+      }>;
+    };
+    expect(secondPage.entries).toHaveLength(1);
+    for (const entry of secondPage.entries) {
+      const row = table.getByRole("row", {
+        name: `Report entry for ${entry.family_member_name}`,
+      });
+      await expect(row).toBeVisible();
+      await expect(row.getByText(entry.chore_name, { exact: true })).toBeVisible();
+      await expect(row.locator(".report-total-cell strong")).toHaveText(
+        `${entry.completed_days} / 7`,
+      );
+      for (const day of entry.days) {
+        const label = `${day.date}: ${
+          day.status === "complete" ? "Complete" : "Incomplete"
+        }`;
+        await expect(row.getByLabel(label)).toBeVisible();
+      }
+    }
+    await expect(
+      table.getByRole("row", { name: "Report entry for Alex" }),
+    ).toHaveCount(0);
 
     await context.close();
   });
