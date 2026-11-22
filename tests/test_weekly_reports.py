@@ -563,3 +563,26 @@ def test_persisted_report_rows_are_immutable_at_database_level(tmp_path) -> None
                 )
 
     assert _service(database_path).get_report(WEEK_START) == report
+
+
+def test_lists_finalized_report_headers_newest_first(tmp_path) -> None:
+    database_path = _database(tmp_path)
+    _seed_catalog(database_path)
+    previous_start = WEEK_START - timedelta(days=7)
+    _generate_assignments(database_path, previous_start, generated_on=date(2026, 11, 4))
+    _generate_assignments(database_path, WEEK_START, generated_on=date(2026, 11, 4))
+    service = _service(database_path)
+    older = service.generate(previous_start, generated_at=GENERATED_AT)
+    newer = service.generate(WEEK_START, generated_at=GENERATED_AT)
+
+    headers = service.list_reports()
+
+    assert [header.week_start for header in headers] == [WEEK_START, previous_start]
+    assert [header.id for header in headers] == [newer.id, older.id]
+    assert headers[0].summary == newer.summary
+    header = service.get_report_header(WEEK_START)
+    assert header is not None
+    assert header.id == newer.id
+    assert header.week_end == WEEK_END
+    assert header.summary.completed_days == 0
+    assert service.get_report_header(WEEK_START - timedelta(days=14)) is None

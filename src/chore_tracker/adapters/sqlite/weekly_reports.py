@@ -13,6 +13,7 @@ from chore_tracker.application.services.weekly_reports import (
     WeeklyReportDay,
     WeeklyReportEntry,
     WeeklyReportEntryPage,
+    WeeklyReportHeader,
     WeeklyReportIncompleteError,
     WeeklyReportSummary,
     build_weekly_report_draft,
@@ -114,20 +115,9 @@ class SQLiteWeeklyReportPersistence:
             for row, days in grouped.values()
         )
 
-    @classmethod
-    def _load_report_by_id(cls, connection, report_id: int) -> WeeklyReport | None:
-        row = connection.execute(
-            """
-            SELECT id, week_start, week_end, generated_at, family_member_count,
-                   total_days, completed_days, incomplete_days
-            FROM weekly_reports
-            WHERE id = ? AND finalized_at IS NOT NULL
-            """,
-            (report_id,),
-        ).fetchone()
-        if row is None:
-            return None
-        return WeeklyReport(
+    @staticmethod
+    def _header_from_row(row) -> WeeklyReportHeader:
+        return WeeklyReportHeader(
             id=row["id"],
             week_start=date.fromisoformat(row["week_start"]),
             week_end=date.fromisoformat(row["week_end"]),
@@ -138,7 +128,35 @@ class SQLiteWeeklyReportPersistence:
                 completed_days=row["completed_days"],
                 incomplete_days=row["incomplete_days"],
             ),
-            entries=cls._load_entries(connection, row["id"]),
+        )
+
+    @classmethod
+    def _load_header_by_id(
+        cls, connection, report_id: int
+    ) -> WeeklyReportHeader | None:
+        row = connection.execute(
+            """
+            SELECT id, week_start, week_end, generated_at, family_member_count,
+                   total_days, completed_days, incomplete_days
+            FROM weekly_reports
+            WHERE id = ? AND finalized_at IS NOT NULL
+            """,
+            (report_id,),
+        ).fetchone()
+        return None if row is None else cls._header_from_row(row)
+
+    @classmethod
+    def _load_report_by_id(cls, connection, report_id: int) -> WeeklyReport | None:
+        header = cls._load_header_by_id(connection, report_id)
+        if header is None:
+            return None
+        return WeeklyReport(
+            id=header.id,
+            week_start=header.week_start,
+            week_end=header.week_end,
+            generated_at=header.generated_at,
+            summary=header.summary,
+            entries=cls._load_entries(connection, header.id),
         )
 
     @staticmethod
@@ -308,6 +326,32 @@ class SQLiteWeeklyReportPersistence:
             if report is None:
                 raise RuntimeError("The weekly report could not be read after creation")
             return report
+
+    def list(self) -> tuple[WeeklyReportHeader, ...]:
+        with transaction(self._database_path) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, week_start, week_end, generated_at, family_member_count,
+                       total_days, completed_days, incomplete_days
+                FROM weekly_reports
+                WHERE finalized_at IS NOT NULL
+                ORDER BY week_start DESC, id DESC
+                """
+            ).fetchall()
+            return tuple(self._header_from_row(row) for row in rows)
+
+    def get_header(self, week_start: date) -> WeeklyReportHeader | None:
+        with transaction(self._database_path) as connection:
+            row = connection.execute(
+                """
+                SELECT id, week_start, week_end, generated_at, family_member_count,
+                       total_days, completed_days, incomplete_days
+                FROM weekly_reports
+                WHERE week_start = ? AND finalized_at IS NOT NULL
+                """,
+                (week_start.isoformat(),),
+            ).fetchone()
+            return None if row is None else self._header_from_row(row)
 
     def get(self, week_start: date) -> WeeklyReport | None:
         with transaction(self._database_path) as connection:

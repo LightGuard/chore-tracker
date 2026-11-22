@@ -16,11 +16,15 @@ from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
 from chore_tracker.adapters.sqlite.weekly_assignments import (
     SQLiteWeeklyAssignmentPersistence,
 )
+from chore_tracker.adapters.sqlite.weekly_reports import (
+    SQLiteWeeklyReportPersistence,
+)
 from chore_tracker.api.routes.auth import router as auth_router
 from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
 from chore_tracker.api.routes.family_members import router as family_members_router
 from chore_tracker.api.routes.health import router as health_router
+from chore_tracker.api.routes.reports import router as reports_router
 from chore_tracker.application.services.authentication import AuthenticationService
 from chore_tracker.application.services.child_views import ChildViewsService
 from chore_tracker.application.services.family_chore_management import (
@@ -29,6 +33,7 @@ from chore_tracker.application.services.family_chore_management import (
 from chore_tracker.application.services.weekly_assignment_generation import (
     WeeklyAssignmentGenerationService,
 )
+from chore_tracker.application.services.weekly_reports import WeeklyReportService
 from chore_tracker.config import get_settings
 
 
@@ -89,6 +94,10 @@ app.state.weekly_assignment_generation_service = WeeklyAssignmentGenerationServi
     SQLiteWeeklyAssignmentPersistence(settings.database_path),
     settings.report_timezone,
 )
+app.state.report_service_factory = lambda: WeeklyReportService(
+    SQLiteWeeklyReportPersistence(settings.database_path),
+    settings.report_timezone,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted({settings.app_origin, settings.passkey_origin}),
@@ -99,6 +108,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(chores_router)
+app.include_router(reports_router)
 # Register child views before the dynamic /family-members/{family_member_id} route.
 app.include_router(child_views_router)
 app.include_router(family_members_router)
