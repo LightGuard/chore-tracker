@@ -46,6 +46,8 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "assignment_checklist_items",
             "daily_checklist_completions",
             "weekly_reports",
+            "weekly_report_entries",
+            "weekly_report_days",
             "report_deliveries",
             "administrator_passkey_credentials",
             "authentication_challenges",
@@ -56,7 +58,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0005_weekly_assignment_generation"
+        assert revision == "0006_relational_weekly_reports"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -247,8 +249,8 @@ def test_report_delivery_is_unique_per_administrator_and_report(tmp_path) -> Non
         )
         connection.execute(
             """
-            INSERT INTO weekly_reports (week_start, week_end, report_snapshot_json)
-            VALUES ('2026-11-09', '2026-11-15', '{}')
+            INSERT INTO weekly_reports (week_start, week_end)
+            VALUES ('2026-11-09', '2026-11-15')
             """
         )
         connection.execute(
@@ -543,3 +545,58 @@ def test_immutable_history_migration_preserves_existing_assignment_data(
         assert snapshot["label_snapshot"] == "Wipe counters"
         assert completion["completion_date"] == "2026-11-09"
         assert completion["is_completed"] == 1
+
+
+def test_report_migration_preserves_existing_report_and_delivery_rows(
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "report-upgrade.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "0005_weekly_assignment_generation")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO administrators (email) VALUES ('admin@example.test')"
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_reports (week_start, week_end, report_snapshot_json)
+            VALUES ('2026-11-09', '2026-11-15', '{"legacy": true}')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO report_deliveries (report_id, administrator_id)
+            VALUES (1, 1)
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(weekly_reports)")
+        }
+        report = connection.execute(
+            """
+            SELECT id, week_start, week_end, family_member_count,
+                   total_days, completed_days, incomplete_days
+            FROM weekly_reports
+            """
+        ).fetchone()
+        delivery = connection.execute(
+            "SELECT report_id, administrator_id FROM report_deliveries"
+        ).fetchone()
+
+    assert "report_snapshot_json" not in columns
+    assert dict(report) == {
+        "id": 1,
+        "week_start": "2026-11-09",
+        "week_end": "2026-11-15",
+        "family_member_count": 0,
+        "total_days": 0,
+        "completed_days": 0,
+        "incomplete_days": 0,
+    }
+    assert dict(delivery) == {"report_id": 1, "administrator_id": 1}
