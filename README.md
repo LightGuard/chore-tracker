@@ -339,6 +339,27 @@ the existing report without replacing it. Report entries can be read independent
 in bounded pages so the administrator report page can paginate without loading an
 entire report.
 
+Administrators browse persisted reports at `/admin/reports`. The history page lists
+reports newest first with the reporting week, generation timestamp, and family totals.
+Opening a report shows the week summary, each child's assigned chore, all seven daily
+statuses, weekly totals, and Previous/Next pagination when more than five entries
+exist. The history page shows an explicit empty state when no reports have been
+generated. These pages require an administrator session; unauthenticated visitors see
+the administrator sign-in screen.
+
+The reporting API is administrator-only:
+
+- `GET /reports` returns finalized report headers ordered by reporting week, newest
+  first. Each item contains the report ID, Monday–Sunday week, generation timestamp,
+  and family-wide completed/incomplete totals.
+- `GET /reports/{week_start}?limit=25&offset=0` returns one finalized report header
+  plus a bounded page of entries. Each entry contains the child and chore snapshots,
+  weekly totals, and seven `complete` or `incomplete` daily statuses. `limit` ranges
+  from 1 through 100 and `offset` must be non-negative.
+- Both endpoints return HTTP 401 without an administrator session. An unknown week
+  returns HTTP 404. Invalid pagination values return HTTP 422. Values are read from
+  the persisted report snapshot, never recalculated from current household data.
+
 Chore catalog management is available to authenticated administrators through the
 `/chores` API and the administration page. New chores are created inactive. A chore
 cannot be activated until it has at least one active checklist item; an active chore
