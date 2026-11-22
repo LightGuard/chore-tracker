@@ -24,10 +24,10 @@ function installFetch(
   return fetchMock;
 }
 
-function renderAdmin() {
+function renderAdmin(initialEntry = "/admin") {
   return render(
     <Reshaped theme="slate">
-      <MemoryRouter initialEntries={["/admin"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <AdminPage />
       </MemoryRouter>
     </Reshaped>,
@@ -122,6 +122,65 @@ describe("administrator protected screens", () => {
       screen.getByRole("heading", { name: "Chore catalog" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+
+  it("shows weekly report history to an authenticated administrator", async () => {
+    installFetch((url) => {
+      if (url.endsWith("/auth/setup")) {
+        return jsonResponse({
+          setup_required: false,
+          enrollment_pending: false,
+        });
+      }
+      if (url.endsWith("/auth/me")) {
+        return jsonResponse({ id: 1, email: "first@example.test" });
+      }
+      if (url.endsWith("/reports")) {
+        return jsonResponse([]);
+      }
+      return jsonResponse({ detail: "Not found" }, 404);
+    });
+
+    renderAdmin("/admin/reports");
+
+    expect(
+      await screen.findByRole("heading", { name: "Weekly reports" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", {
+        name: "Report history",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Reports" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      screen.queryByRole("heading", { name: "Family members" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Chore catalog" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps weekly report history closed for an unauthenticated visitor", async () => {
+    installFetch((url) => {
+      if (url.endsWith("/auth/setup")) {
+        return jsonResponse({
+          setup_required: false,
+          enrollment_pending: false,
+        });
+      }
+      return jsonResponse({ detail: "Authentication required" }, 401);
+    });
+
+    renderAdmin("/admin/reports");
+
+    expect(
+      await screen.findByRole("heading", { name: "Administrator sign in" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Report history" }),
+    ).not.toBeInTheDocument();
   });
 
   it("returns to sign-in with a session message when a management API expires", async () => {

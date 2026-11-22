@@ -10,10 +10,17 @@ import {
   TextField,
   View,
 } from "reshaped";
-import { useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { ApiError, apiRequest } from "../api/client";
 import { ChoreManager } from "./ChoreManager";
 import { FamilyMemberManager } from "./FamilyMemberManager";
+import { ReportDetail } from "./ReportDetail";
+import { ReportHistory } from "./ReportHistory";
 import { authenticatePasskey, registerPasskey } from "./passkeys";
 
 type Administrator = { id: number; email: string };
@@ -39,6 +46,9 @@ export function AdminPage() {
   const [sessionMessage, setSessionMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { weekStart } = useParams<{ weekStart?: string }>();
+  const reportsView = location.pathname.startsWith("/admin/reports");
   const enrollmentToken = new URLSearchParams(
     window.location.hash.slice(1),
   ).get("token");
@@ -203,11 +213,12 @@ export function AdminPage() {
       <main className="app-shell admin-shell">
         <View gap={1} paddingBlock={3}>
           <Text as="h1" variant="headline-1">
-            Chore Tracker administration
+            {reportsView ? "Weekly reports" : "Chore Tracker administration"}
           </Text>
           <Text color="neutral-faded">
-            Administrator access uses passkeys. Child profiles remain separate
-            and are not signed-in accounts.
+            {reportsView
+              ? "Browse immutable Monday–Sunday completion snapshots generated for the household."
+              : "Administrator access uses passkeys. Child profiles remain separate and are not signed-in accounts."}
           </Text>
         </View>
 
@@ -264,6 +275,8 @@ export function AdminPage() {
               busy={busy}
               invitationEmail={invitationEmail}
               invitationUrl={invitationUrl}
+              reportsView={reportsView}
+              reportWeek={weekStart}
               onInvitationEmailChange={setInvitationEmail}
               onInvitation={handleInvitation}
               onLogout={handleLogout}
@@ -378,17 +391,46 @@ type SignedInProps = {
   busy: boolean;
   invitationEmail: string;
   invitationUrl: string;
+  reportsView: boolean;
+  reportWeek?: string;
   onInvitationEmailChange: (value: string) => void;
   onInvitation: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onLogout: () => Promise<void>;
   onSessionExpired: () => void;
 };
 
+function AdminNavigation({ reportsView }: { reportsView: boolean }) {
+  return (
+    <nav className="admin-nav" aria-label="Administration sections">
+      <NavLink
+        end
+        to="/admin"
+        className={({ isActive }) =>
+          `admin-nav-link${isActive ? " active" : ""}`
+        }
+      >
+        Family &amp; chores
+      </NavLink>
+      <NavLink
+        to="/admin/reports"
+        className={({ isActive }) =>
+          `admin-nav-link${isActive ? " active" : ""}`
+        }
+        aria-current={reportsView ? "page" : undefined}
+      >
+        Reports
+      </NavLink>
+    </nav>
+  );
+}
+
 function SignedInContent({
   administrator,
   busy,
   invitationEmail,
   invitationUrl,
+  reportsView,
+  reportWeek,
   onInvitationEmailChange,
   onInvitation,
   onLogout,
@@ -422,69 +464,85 @@ function SignedInContent({
         </View>
       </Card>
 
-      <FamilyMemberManager onSessionExpired={onSessionExpired} />
-      <ChoreManager onSessionExpired={onSessionExpired} />
+      <AdminNavigation reportsView={reportsView} />
 
-      <Card
-        as="section"
-        padding={5}
-        borderRadius="large"
-        attributes={{ "aria-labelledby": "second-administrator-heading" }}
-      >
-        <View gap={3}>
-          <View gap={1}>
-            <Text
-              as="h2"
-              variant="headline-2"
-              attributes={{ id: "second-administrator-heading" }}
-            >
-              Second administrator
-            </Text>
-            <Text color="neutral-faded">
-              The household supports at most two administrators. Create a
-              one-time enrollment link that expires after 24 hours.
-            </Text>
-          </View>
-          <form onSubmit={(event) => void onInvitation(event)}>
-            <View gap={2}>
-              <FormControl id="invitation-email">
-                <FormControl.Label>Administrator email</FormControl.Label>
-                <TextField
-                  name="email"
-                  value={invitationEmail}
-                  onChange={({ value }) => onInvitationEmailChange(value)}
-                  inputAttributes={{
-                    type: "email",
-                    required: true,
-                  }}
-                />
-              </FormControl>
-              <View direction="row">
-                <Button type="submit" disabled={busy}>
-                  Create administrator invitation
-                </Button>
+      {reportsView ? (
+        reportWeek ? (
+          <ReportDetail
+            key={reportWeek}
+            weekStart={reportWeek}
+            onSessionExpired={onSessionExpired}
+          />
+        ) : (
+          <ReportHistory onSessionExpired={onSessionExpired} />
+        )
+      ) : (
+        <>
+          <FamilyMemberManager onSessionExpired={onSessionExpired} />
+          <ChoreManager onSessionExpired={onSessionExpired} />
+
+          <Card
+            as="section"
+            padding={5}
+            borderRadius="large"
+            attributes={{ "aria-labelledby": "second-administrator-heading" }}
+          >
+            <View gap={3}>
+              <View gap={1}>
+                <Text
+                  as="h2"
+                  variant="headline-2"
+                  attributes={{ id: "second-administrator-heading" }}
+                >
+                  Second administrator
+                </Text>
+                <Text color="neutral-faded">
+                  The household supports at most two administrators. Create a
+                  one-time enrollment link that expires after 24 hours.
+                </Text>
               </View>
+              <form onSubmit={(event) => void onInvitation(event)}>
+                <View gap={2}>
+                  <FormControl id="invitation-email">
+                    <FormControl.Label>Administrator email</FormControl.Label>
+                    <TextField
+                      name="email"
+                      value={invitationEmail}
+                      onChange={({ value }) => onInvitationEmailChange(value)}
+                      inputAttributes={{
+                        type: "email",
+                        required: true,
+                      }}
+                    />
+                  </FormControl>
+                  <View direction="row">
+                    <Button type="submit" disabled={busy}>
+                      Create administrator invitation
+                    </Button>
+                  </View>
+                </View>
+              </form>
+              {invitationUrl && (
+                <View gap={2}>
+                  <Alert color="positive" title="Enrollment link created">
+                    Send this one-time link to the second administrator. It can be
+                    used once.
+                  </Alert>
+                  <FormControl id="enrollment-link">
+                    <FormControl.Label>Enrollment link</FormControl.Label>
+                    <TextField
+                      name="enrollment_link"
+                      value={invitationUrl}
+                      onChange={() => undefined}
+                      inputAttributes={{ readOnly: true }}
+                    />
+                  </FormControl>
+                </View>
+              )}
             </View>
-          </form>
-          {invitationUrl && (
-            <View gap={2}>
-              <Alert color="positive" title="Enrollment link created">
-                Send this one-time link to the second administrator. It can be
-                used once.
-              </Alert>
-              <FormControl id="enrollment-link">
-                <FormControl.Label>Enrollment link</FormControl.Label>
-                <TextField
-                  name="enrollment_link"
-                  value={invitationUrl}
-                  onChange={() => undefined}
-                  inputAttributes={{ readOnly: true }}
-                />
-              </FormControl>
-            </View>
-          )}
-        </View>
-      </Card>
+          </Card>
+        </>
+      )}
     </View>
   );
 }

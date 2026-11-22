@@ -20,6 +20,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<FamilyChorePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/reports" element={<AdminPage />} />
+          <Route path="/admin/reports/:weekStart" element={<AdminPage />} />
           <Route path="/admin/enroll" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
