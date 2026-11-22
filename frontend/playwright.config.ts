@@ -14,7 +14,7 @@ export default defineConfig({
   },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: `http://127.0.0.1:${FRONTEND_PORT}`,
+    baseURL: `http://localhost:${FRONTEND_PORT}`,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -32,8 +32,8 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: `npm run dev -- --host 127.0.0.1 --port ${FRONTEND_PORT} --strictPort`,
-      url: `http://127.0.0.1:${FRONTEND_PORT}`,
+      command: `npm run dev -- --host localhost --port ${FRONTEND_PORT} --strictPort`,
+      url: `http://localhost:${FRONTEND_PORT}`,
       reuseExistingServer: false,
       timeout: 120_000,
       env: {
