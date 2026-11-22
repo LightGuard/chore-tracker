@@ -118,3 +118,64 @@ export function reorderChecklist(
     body: JSON.stringify({ ordered_item_ids: orderedItemIds }),
   });
 }
+
+export type WeeklyReportSummary = {
+  family_member_count: number;
+  total_days: number;
+  completed_days: number;
+  incomplete_days: number;
+};
+
+export type WeeklyReportListItem = {
+  id: number;
+  week_start: string;
+  week_end: string;
+  generated_at: string;
+  summary: WeeklyReportSummary;
+};
+
+export type ReportDayStatus = "complete" | "incomplete";
+
+export type WeeklyReportDay = {
+  date: string;
+  status: ReportDayStatus;
+};
+
+export type WeeklyReportEntry = {
+  id: number;
+  family_member_name: string;
+  chore_name: string;
+  chore_description: string;
+  completed_days: number;
+  incomplete_days: number;
+  days: WeeklyReportDay[];
+};
+
+export type WeeklyReportDetail = WeeklyReportListItem & {
+  entries: WeeklyReportEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export function listReports(): Promise<WeeklyReportListItem[]> {
+  return apiRequest<WeeklyReportListItem[]>("/reports");
+}
+
+export function getReport(
+  weekStart: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<WeeklyReportDetail> {
+  const params = new URLSearchParams({
+    limit: String(options.limit ?? 25),
+    offset: String(options.offset ?? 0),
+  });
+  return apiRequest<WeeklyReportDetail>(
+    `/reports/${encodeURIComponent(weekStart)}?${params}`,
+    { signal: options.signal },
+  );
+}
