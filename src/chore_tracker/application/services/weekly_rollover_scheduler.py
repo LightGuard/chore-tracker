@@ -14,6 +14,10 @@ from chore_tracker.application.services.weekly_rollover import (
 
 logger = logging.getLogger(__name__)
 DEFAULT_RETRY_DELAY_SECONDS = 300.0
+# Re-check the wall clock at least hourly so process suspension, clock changes,
+# and delayed wake-ups cannot skip a due Monday until the next restart.
+MAX_SLEEP_SECONDS = 3600.0
+MIN_SLEEP_SECONDS = 1.0
 
 
 class WeeklyRolloverRunner(Protocol):
@@ -63,8 +67,13 @@ class WeeklyRolloverScheduler:
                     await self._sleep(self._retry_delay_seconds)
                     continue
 
-                delay = max(
-                    0.0, (self._rollover.next_run_at(now) - now).total_seconds()
+                next_now = self._clock()
+                next_delay = (
+                    self._rollover.next_run_at(next_now) - next_now
+                ).total_seconds()
+                delay = min(
+                    MAX_SLEEP_SECONDS,
+                    max(MIN_SLEEP_SECONDS, next_delay),
                 )
                 await self._sleep(delay)
         except asyncio.CancelledError:
