@@ -131,7 +131,7 @@ class WeeklyReportPersistence(Protocol):
     def get(self, week_start: date) -> WeeklyReport | None: ...
 
     def get_entries(
-        self, report_id: int, limit: int, offset: int
+        self, week_start: date, limit: int, offset: int
     ) -> WeeklyReportEntryPage | None: ...
 
 
@@ -295,10 +295,9 @@ class WeeklyReportService:
         offset: int = 0,
     ) -> WeeklyReportEntryPage | None:
         _validate_page(limit, offset)
-        report = self._persistence.get(_normalize_week(week, self._timezone))
-        if report is None:
-            return None
-        return self._persistence.get_entries(report.id, limit, offset)
+        return self._persistence.get_entries(
+            _normalize_week(week, self._timezone), limit, offset
+        )
 
 
 def generate_weekly_report(
