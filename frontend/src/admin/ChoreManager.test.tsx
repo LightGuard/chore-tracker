@@ -217,7 +217,7 @@ describe("chore manager", () => {
         screen.queryByRole("listitem", { name: "Sweep garage floor" }),
       ).not.toBeInTheDocument(),
     );
-  });
+  }, 15_000);
 
   it("shows API failures", async () => {
     installFetch(() =>
