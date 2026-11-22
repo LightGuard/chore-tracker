@@ -63,6 +63,7 @@ class Settings(BaseSettings):
 
     report_timezone: str = "America/Denver"
     report_delivery_time: time = time(hour=3, minute=0)
+    weekly_rollover_enabled: bool = True
 
     @model_validator(mode="before")
     @classmethod

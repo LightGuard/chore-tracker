@@ -1,5 +1,8 @@
 """FastAPI application entry point."""
 
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -19,6 +22,9 @@ from chore_tracker.adapters.sqlite.weekly_assignments import (
 from chore_tracker.adapters.sqlite.weekly_reports import (
     SQLiteWeeklyReportPersistence,
 )
+from chore_tracker.adapters.sqlite.weekly_rollover import (
+    SQLiteWeeklyRolloverPersistence,
+)
 from chore_tracker.api.routes.auth import router as auth_router
 from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
@@ -34,7 +40,11 @@ from chore_tracker.application.services.weekly_assignment_generation import (
     WeeklyAssignmentGenerationService,
 )
 from chore_tracker.application.services.weekly_reports import WeeklyReportService
-from chore_tracker.config import get_settings
+from chore_tracker.application.services.weekly_rollover import WeeklyRolloverService
+from chore_tracker.application.services.weekly_rollover_scheduler import (
+    WeeklyRolloverScheduler,
+)
+from chore_tracker.config import Settings, get_settings
 
 
 class _TestableState(State):
@@ -64,9 +74,56 @@ class _TestableState(State):
 
 settings = get_settings()
 
-app = FastAPI(title="Chore Tracker API")
+
+def create_weekly_rollover_scheduler(
+    configured_settings: Settings,
+) -> WeeklyRolloverScheduler:
+    """Compose the scheduler from configured persistence and reporting services."""
+    timezone_name = configured_settings.report_timezone
+    return WeeklyRolloverScheduler(
+        WeeklyRolloverService(
+            reports=WeeklyReportService(
+                SQLiteWeeklyReportPersistence(configured_settings.database_path),
+                timezone_name,
+            ),
+            assignments=WeeklyAssignmentGenerationService(
+                SQLiteWeeklyAssignmentPersistence(configured_settings.database_path),
+                timezone_name,
+            ),
+            persistence=SQLiteWeeklyRolloverPersistence(
+                configured_settings.database_path
+            ),
+            timezone_name=timezone_name,
+            delivery_time=configured_settings.report_delivery_time,
+        )
+    )
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    """Run scheduler catch-up on startup and stop it cleanly on shutdown."""
+    configured_settings = application.state.settings
+    scheduler_task: asyncio.Task[None] | None = None
+    if configured_settings.weekly_rollover_enabled:
+        scheduler = application.state.weekly_rollover_scheduler_factory(
+            configured_settings
+        )
+        scheduler_task = asyncio.create_task(
+            scheduler.run_forever(), name="weekly-rollover"
+        )
+    try:
+        yield
+    finally:
+        if scheduler_task is not None:
+            scheduler_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await scheduler_task
+
+
+app = FastAPI(title="Chore Tracker API", lifespan=lifespan)
 app.state = _TestableState()
 app.state.settings = settings
+app.state.weekly_rollover_scheduler_factory = create_weekly_rollover_scheduler
 app.state.readiness_probe_factory = lambda configured_settings: SQLiteReadinessProbe(
     configured_settings.database_path
 )
