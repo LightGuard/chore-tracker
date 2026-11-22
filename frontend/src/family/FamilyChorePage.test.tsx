@@ -244,6 +244,75 @@ describe("family chore page", () => {
     expect(await screen.findByText("This profile is inactive")).toBeInTheDocument();
   });
 
+  it("only shows history for the selected child and updates on selection", async () => {
+    function historyRecord(assignmentId: number, choreName: string) {
+      return {
+        assignment_id: assignmentId,
+        week_start: "2026-11-16",
+        week_end: "2026-11-22",
+        chore_name: choreName,
+        chore_description: "",
+        completion_date: "2026-11-20",
+        completion_status: "complete",
+      };
+    }
+
+    const fetchMock = installFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/family-members/active")) return jsonResponse(MEMBERS);
+      if (url.includes("/family-members/1/completion-history")) {
+        return jsonResponse({
+          items: [historyRecord(10, "Kitchen")],
+          total: 7,
+          limit: 50,
+          offset: 0,
+        });
+      }
+      if (url.includes("/family-members/2/completion-history")) {
+        return jsonResponse({
+          items: [historyRecord(20, "Bathroom")],
+          total: 7,
+          limit: 50,
+          offset: 0,
+        });
+      }
+      return jsonResponse({ detail: "Not found" }, 404);
+    });
+
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText("Child"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "View history" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Completion history for Alex" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "Kitchen daily records" }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Child"), {
+      target: { value: "2" },
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "Completion history for Sam" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "Bathroom daily records" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: "Kitchen daily records" }),
+    ).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes("/family-members/2/completion-history"),
+      ),
+    ).toBe(true);
+  });
+
   it("keeps the checkbox unchanged when saving completion fails", async () => {
     installFetch(async (input, init) => {
       const url = String(input);

@@ -31,6 +31,25 @@ export type ChecklistCompletionResult = {
   is_complete: boolean;
 };
 
+export type CompletionStatus = "complete" | "incomplete" | "not_yet_recorded";
+
+export type CompletionHistoryRecord = {
+  assignment_id: number;
+  week_start: string;
+  week_end: string;
+  chore_name: string;
+  chore_description: string;
+  completion_date: string;
+  completion_status: CompletionStatus;
+};
+
+export type CompletionHistoryPage = {
+  items: CompletionHistoryRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 export function getActiveFamilyMembers(
   signal?: AbortSignal,
 ): Promise<FamilyMember[]> {
@@ -44,6 +63,24 @@ export function getCurrentAssignment(
   return apiRequest<CurrentAssignment>(
     `/family-members/${familyMemberId}/current-assignment`,
     { signal },
+  );
+}
+
+export function getCompletionHistory(
+  familyMemberId: number,
+  options: {
+    limit?: number;
+    offset?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<CompletionHistoryPage> {
+  const params = new URLSearchParams({
+    limit: String(options.limit ?? 50),
+    offset: String(options.offset ?? 0),
+  });
+  return apiRequest<CompletionHistoryPage>(
+    `/family-members/${familyMemberId}/completion-history?${params}`,
+    { signal: options.signal },
   );
 }
 
