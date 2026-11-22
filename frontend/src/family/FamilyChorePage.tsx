@@ -13,6 +13,7 @@ import {
   View,
 } from "reshaped";
 import { ApiError } from "../api/client";
+import { FamilyCompletionHistory } from "./FamilyCompletionHistory";
 import {
   getActiveFamilyMembers,
   getCurrentAssignment,
@@ -67,6 +68,7 @@ export function FamilyChorePage() {
 
   const [savingItemId, setSavingItemId] = useState<number | null>(null);
   const [saveError, setSaveError] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -365,6 +367,37 @@ export function FamilyChorePage() {
                     </View>
                   </View>
                 </Card>
+              )}
+
+              {selectedMemberId && (
+                <View gap={3} paddingTop={4}>
+                  <View
+                    direction="row"
+                    align="center"
+                    justify="space-between"
+                    gap={2}
+                    wrap
+                  >
+                    <Text as="h2" variant="headline-3">
+                      Past chores
+                    </Text>
+                    <Button
+                      variant="outline"
+                      onClick={() => setHistoryOpen((open) => !open)}
+                    >
+                      {historyOpen ? "Hide history" : "View history"}
+                    </Button>
+                  </View>
+                  {historyOpen && (
+                    <FamilyCompletionHistory
+                      key={selectedMemberId}
+                      familyMemberId={Number(selectedMemberId)}
+                      displayName={
+                        selectedMember?.display_name ?? "this child"
+                      }
+                    />
+                  )}
+                </View>
               )}
             </View>
           )}
