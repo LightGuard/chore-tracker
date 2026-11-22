@@ -73,6 +73,17 @@ class WeeklyReport:
 
 
 @dataclass(frozen=True, slots=True)
+class WeeklyReportHeader:
+    """A finalized report header without its entries."""
+
+    id: int
+    week_start: date
+    week_end: date
+    generated_at: datetime
+    summary: WeeklyReportSummary
+
+
+@dataclass(frozen=True, slots=True)
 class WeeklyReportEntryPage:
     """A stable page of report entries ordered for administrator display."""
 
@@ -127,6 +138,10 @@ class WeeklyReportPersistence(Protocol):
     def generate(
         self, week_start: date, week_end: date, generated_at: datetime
     ) -> WeeklyReport: ...
+
+    def list(self) -> tuple[WeeklyReportHeader, ...]: ...
+
+    def get_header(self, week_start: date) -> WeeklyReportHeader | None: ...
 
     def get(self, week_start: date) -> WeeklyReport | None: ...
 
@@ -286,6 +301,12 @@ class WeeklyReportService:
 
     def get_report(self, week: date | datetime) -> WeeklyReport | None:
         return self._persistence.get(_normalize_week(week, self._timezone))
+
+    def list_reports(self) -> tuple[WeeklyReportHeader, ...]:
+        return self._persistence.list()
+
+    def get_report_header(self, week: date | datetime) -> WeeklyReportHeader | None:
+        return self._persistence.get_header(_normalize_week(week, self._timezone))
 
     def get_report_entries(
         self,
