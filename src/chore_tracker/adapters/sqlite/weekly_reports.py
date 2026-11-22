@@ -324,19 +324,20 @@ class SQLiteWeeklyReportPersistence:
             return self._load_report_by_id(connection, row["id"])
 
     def get_entries(
-        self, report_id: int, limit: int, offset: int
+        self, week_start: date, limit: int, offset: int
     ) -> WeeklyReportEntryPage | None:
         with transaction(self._database_path) as connection:
             report = connection.execute(
                 """
                 SELECT id
                 FROM weekly_reports
-                WHERE id = ? AND finalized_at IS NOT NULL
+                WHERE week_start = ? AND finalized_at IS NOT NULL
                 """,
-                (report_id,),
+                (week_start.isoformat(),),
             ).fetchone()
             if report is None:
                 return None
+            report_id = report["id"]
             total = connection.execute(
                 "SELECT COUNT(*) FROM weekly_report_entries WHERE report_id = ?",
                 (report_id,),
