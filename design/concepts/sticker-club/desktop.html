@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Club — desktop</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --cream: #fff9ec; --paper: #fffdf6; --ink: #202033; --blue: #2f53ff; --sky: #dce6ff;
+  --yellow: #ffd447; --coral: #ff6b4a; --mint: #7be0b0; --lilac: #c9b8ff; --muted: #6d6b80;
+  --round: "Arial Rounded MT Bold", "Avenir Next", sans-serif; --sans: "Avenir Next", "Helvetica Neue", sans-serif;
+}
+body.desk {
+  font-family: var(--sans); color: var(--ink); background-color: var(--cream);
+  background-image: radial-gradient(#e7dcc3 1.15px, transparent 1.15px); background-size: 24px 24px;
+  position: relative;
+}
+.dnav { height: 74px; padding: 0 54px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,249,236,.88); border-bottom: 2px solid var(--ink); }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo .badge { width: 36px; height: 36px; background: var(--yellow); border: 2px solid var(--ink); border-radius: 10px; display: grid; place-items: center; transform: rotate(-5deg); box-shadow: 2px 2px 0 var(--ink); }
+.logo .badge svg { width: 18px; height: 18px; }
+.logo .word { font-family: var(--round); font-size: 18px; }
+.logo .word span { color: var(--blue); }
+.dnav nav { display: flex; gap: 9px; align-items: center; }
+.dnav nav a { font-family: var(--round); font-size: 11px; color: var(--muted); text-decoration: none; padding: 9px 14px; border-radius: 99px; border: 2px solid transparent; }
+.dnav nav a.active { color: var(--ink); background: var(--yellow); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.dnav .right { display: flex; align-items: center; gap: 12px; }
+.stars-pill { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px; background: var(--paper); border: 2px solid var(--ink); border-radius: 99px; box-shadow: 2px 2px 0 var(--ink); font-family: var(--round); font-size: 13px; }
+.stars-pill svg { width: 16px; height: 16px; color: var(--yellow); }
+.davatar { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--ink); background: #ffe1c4; display: grid; place-items: center; font-size: 20px; box-shadow: 2px 2px 0 var(--ink); }
+
+.dmain { width: 1280px; margin: 0 auto; padding-top: 30px; }
+.dhero { display: flex; align-items: flex-end; justify-content: space-between; }
+.kicker { font-size: 9.5px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; color: var(--muted); }
+.dhero h1 { font-family: var(--round); font-size: 50px; line-height: 1; letter-spacing: -.02em; margin-top: 7px; }
+.dhero h1 em { font-style: normal; color: var(--blue); position: relative; }
+.dhero h1 em::after { content: ""; position: absolute; left: 2%; right: 0; bottom: -5px; height: 7px; background: var(--yellow); border-radius: 50%; transform: rotate(-1deg); z-index: -1; }
+.dhero p { font-size: 13.5px; font-weight: 600; color: var(--muted); margin-top: 12px; }
+.dhero p b { color: var(--ink); }
+.hero-stat { display: flex; align-items: center; gap: 14px; background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; box-shadow: 4px 4px 0 var(--ink); padding: 12px 18px; margin-bottom: 4px; }
+.hero-stat .big { font-family: var(--round); font-size: 40px; line-height: .9; }
+.hero-stat .copy { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
+.hero-stat .copy b { display: block; color: var(--ink); font-size: 11px; letter-spacing: .02em; text-transform: none; }
+.hero-stat .star { width: 38px; height: 38px; color: var(--yellow); filter: drop-shadow(0 2px 0 rgba(32,32,51,.25)); }
+
+.dgrid { display: grid; grid-template-columns: 1fr 346px; gap: 20px; margin-top: 22px; }
+.chart { background: var(--paper); border: 2px solid var(--ink); border-radius: 22px; box-shadow: 5px 5px 0 var(--ink); padding: 21px 22px 16px; }
+.chart-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.chart-head h2 { font-family: var(--round); font-size: 22px; letter-spacing: -.01em; }
+.chart-head p { font-size: 10.5px; font-weight: 600; color: var(--muted); margin-top: 3px; }
+.chart-head .total-chip { display: flex; align-items: center; gap: 5px; font-family: var(--round); font-size: 11px; background: var(--sky); border: 2px solid var(--ink); border-radius: 99px; padding: 5px 10px; transform: rotate(1.5deg); }
+.chart-head .total-chip svg { width: 13px; height: 13px; color: #e4b400; }
+
+.grid-head, .chart-row { display: grid; grid-template-columns: 208px repeat(7, 1fr) 86px; align-items: center; }
+.grid-head { height: 42px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); margin-top: 6px; }
+.grid-head .gname { font-size: 8.5px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+.dayh { text-align: center; position: relative; }
+.dayh span { display: block; font-size: 7.5px; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+.dayh b { display: block; font-family: var(--round); font-size: 13px; color: var(--ink); margin-top: 1px; }
+.dayh.today { background: var(--sky); border-left: 2px solid var(--ink); border-right: 2px solid var(--ink); height: 42px; display: flex; flex-direction: column; justify-content: center; }
+.dayh.today::before { content: "TODAY"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%) rotate(-2deg); background: var(--blue); color: #fff; font-family: var(--round); font-size: 6.5px; letter-spacing: .12em; padding: 2px 5px; border: 1.5px solid var(--ink); border-radius: 3px; }
+.grid-head .gtotal { text-align: center; font-size: 8px; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+
+.chart-row { height: 78px; border-bottom: 1.5px solid #e8dcc4; }
+.chart-row:last-of-type { border-bottom: 2px solid var(--ink); }
+.who { display: flex; align-items: center; gap: 10px; }
+.who .av { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; font-size: 21px; flex: none; }
+.who .nm { font-family: var(--round); font-size: 14px; }
+.who .ch { font-size: 9.5px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+.cell { height: 78px; display: grid; place-items: center; position: relative; }
+.cell.today { background: #f0f4ff; border-left: 2px solid var(--ink); border-right: 2px solid var(--ink); }
+.star-sticker { width: 36px; height: 36px; filter: drop-shadow(2px 2px 0 rgba(32,32,51,.28)); }
+.star-sticker svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.star-sticker.none { filter: none; opacity: .9; }
+.star-sticker.partial { filter: drop-shadow(1px 1px 0 rgba(32,32,51,.2)); }
+.cell .empty { width: 29px; height: 29px; border-radius: 50%; border: 1.5px dashed #cbbda1; }
+.totals { text-align: center; }
+.totals b { font-family: var(--round); font-size: 15px; }
+.totals span { display: block; font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+.totals .tb { width: 48px; height: 5px; border-radius: 3px; background: #ede2ca; margin: 6px auto 0; overflow: hidden; }
+.totals .tb i { display: block; height: 100%; background: var(--blue); border-radius: 3px; }
+.chart-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 11px; }
+.legend { display: flex; align-items: center; gap: 15px; font-size: 9px; font-weight: 700; color: var(--muted); }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend .mini { width: 15px; height: 15px; }
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed #cbbda1; }
+.chart-foot .note { font-family: var(--round); font-size: 9.5px; color: var(--blue); }
+
+.side { display: flex; flex-direction: column; gap: 16px; }
+.jar-card { background: var(--paper); border: 2px solid var(--ink); border-radius: 22px; box-shadow: 5px 5px 0 var(--ink); padding: 18px 18px 16px; height: 340px; }
+.jar-head { display: flex; align-items: baseline; justify-content: space-between; }
+.jar-head h3 { font-family: var(--round); font-size: 19px; }
+.jar-head span { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.jar-wrap { position: relative; height: 200px; margin-top: 8px; display: flex; justify-content: center; }
+.jar { position: relative; width: 178px; height: 188px; }
+.jar .lid { position: absolute; left: 27px; right: 27px; top: 0; height: 19px; background: var(--blue); border: 2px solid var(--ink); border-radius: 7px 7px 3px 3px; z-index: 3; }
+.jar .glass { position: absolute; left: 12px; right: 12px; top: 16px; bottom: 0; background: #eef4ff; border: 2px solid var(--ink); border-radius: 12px 12px 28px 28px; overflow: hidden; }
+.jar .glass::before { content: ""; position: absolute; inset: 8px 10px 10px; border-radius: 8px 8px 22px 22px; background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(220,230,255,.25)); }
+.jar .star { position: absolute; width: 24px; height: 24px; z-index: 2; color: var(--yellow); filter: drop-shadow(1px 1px 0 rgba(32,32,51,.35)); }
+.jar .label { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-family: var(--round); font-size: 13px; color: var(--ink); z-index: 2; background: rgba(255,255,255,.65); padding: 2px 0; }
+.jar-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.jar-foot .amt { font-family: var(--round); font-size: 22px; }
+.jar-foot .amt span { font-size: 11px; color: var(--muted); }
+.jar-foot .reward { font-size: 9.5px; font-weight: 700; color: var(--muted); text-align: right; line-height: 1.4; }
+.jar-foot .reward b { display: block; color: var(--ink); font-family: var(--round); font-size: 11px; }
+.jar-bar { height: 9px; border: 2px solid var(--ink); border-radius: 99px; background: #fff; margin-top: 9px; overflow: hidden; }
+.jar-bar i { display: block; height: 100%; width: 76%; background: var(--yellow); border-right: 2px solid var(--ink); }
+
+.hero-card { background: #e9fff5; border: 2px solid var(--ink); border-radius: 20px; box-shadow: 5px 5px 0 var(--ink); padding: 15px 17px; display: flex; align-items: center; gap: 14px; height: 138px; }
+.hero-card .hs { width: 66px; height: 66px; flex: none; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--ink); margin: 3px 5px 3px 3px; transform: rotate(-6deg); }
+.hero-card .hs svg { width: 32px; height: 32px; color: var(--blue); }
+.hero-card .copy .k { font-size: 7.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.hero-card .copy h4 { font-family: var(--round); font-size: 17px; margin-top: 2px; }
+.hero-card .copy p { font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.hero-card .copy .who { font-family: var(--round); font-size: 10px; color: var(--ink); margin-top: 3px; }
+
+.goal {
+  display: grid; grid-template-columns: 40px 260px 1fr 86px 160px; align-items: center; gap: 16px;
+  margin-top: 16px; padding: 12px 18px; background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); height: 64px;
+}
+.goal-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); display: grid; place-items: center; }
+.goal-icon svg { width: 17px; height: 17px; color: var(--blue); }
+.goal-copy { display: flex; align-items: baseline; gap: 10px; }
+.goal-copy strong { font-family: var(--round); font-size: 14px; }
+.goal-copy span { font-size: 10px; font-weight: 600; color: var(--muted); }
+.goal-track { height: 12px; border: 2px solid var(--ink); border-radius: 99px; background: #fff; overflow: hidden; }
+.goal-track i { display: block; height: 100%; width: 76%; background: var(--yellow); border-right: 2px solid var(--ink); }
+.goal-num { font-family: var(--round); font-size: 15px; text-align: right; white-space: nowrap; }
+.goal-num span { font-family: var(--sans); font-size: 10px; font-weight: 700; color: var(--muted); }
+.goal-note { font-family: var(--round); font-size: 9.5px; color: var(--blue); text-align: right; }
+.dfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 14px; border-top: 2px solid var(--ink); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.dfoot b { color: var(--ink); }
+.dfoot .link { color: var(--blue); font-family: var(--round); letter-spacing: 0; text-transform: none; font-size: 11px; }
+
+/* confetti bits */
+.bit { position: absolute; pointer-events: none; }
+</style>
+</head>
+<body class="desk">
+  <header class="dnav">
+    <div class="logo">
+      <span class="badge"><svg viewBox="0 0 24 24" fill="#202033"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span>
+      <span class="word">CHORE <span>CLUB</span></span>
+    </div>
+    <nav>
+      <a href="#">Today</a>
+      <a class="active" href="#">Sticker chart</a>
+      <a href="#">Rewards</a>
+      <a href="#">Family</a>
+    </nav>
+    <div class="right">
+      <span class="stars-pill"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg> 12</span>
+      <span class="davatar">🦊</span>
+    </div>
+  </header>
+
+  <main class="dmain">
+    <div class="dhero">
+      <div>
+        <div class="kicker">Week 48 &middot; Nov 23&ndash;29</div>
+        <h1>This week&rsquo;s <em>sticker chart</em></h1>
+        <p>Every full star is a finished chore day. <b>38 stickers</b> between the four of you so far.</p>
+      </div>
+      <div class="hero-stat">
+        <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        <div class="big">38</div>
+        <div class="copy">stickers earned<b>3 days in a row</b></div>
+      </div>
+    </div>
+
+    <div class="dgrid">
+      <section class="chart">
+        <div class="chart-head">
+          <div>
+            <h2>The family chart</h2>
+            <p>Tap a sticker to see what was done that day.</p>
+          </div>
+          <span class="total-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg> 38 this week</span>
+        </div>
+
+        <div class="grid-head">
+          <span class="gname">Family member</span>
+          <span class="dayh"><span>MON</span><b>23</b></span>
+          <span class="dayh"><span>TUE</span><b>24</b></span>
+          <span class="dayh today"><span>WED</span><b>25</b></span>
+          <span class="dayh"><span>THU</span><b>26</b></span>
+          <span class="dayh"><span>FRI</span><b>27</b></span>
+          <span class="dayh"><span>SAT</span><b>28</b></span>
+          <span class="dayh"><span>SUN</span><b>29</b></span>
+          <span class="gtotal">TOTAL</span>
+        </div>
+
+        <!-- Alex -->
+        <div class="chart-row">
+          <div class="who"><span class="av" style="background:#ffe1c4">🦊</span><div><div class="nm">Alex</div><div class="ch">Kitchen</div></div></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell today"><span class="star-sticker partial"><svg viewBox="0 0 24 24" stroke="#202033" stroke-width="1.4" stroke-linejoin="round"><defs><linearGradient id="halfA" x1="0" y1="0" x2="1" y2="0"><stop offset="50%" stop-color="#ffd447"/><stop offset="50%" stop-color="#fffdf6"/></linearGradient></defs><path fill="url(#halfA)" d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="totals"><b>2</b><span>of 7</span><div class="tb"><i style="width:28%"></i></div></div>
+        </div>
+
+        <!-- Sam -->
+        <div class="chart-row">
+          <div class="who"><span class="av" style="background:#d9ecff">🐼</span><div><div class="nm">Sam</div><div class="ch">Bathroom</div></div></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="star-sticker partial"><svg viewBox="0 0 24 24" stroke="#202033" stroke-width="1.4" stroke-linejoin="round"><defs><linearGradient id="halfB" x1="0" y1="0" x2="1" y2="0"><stop offset="50%" stop-color="#ffd447"/><stop offset="50%" stop-color="#fffdf6"/></linearGradient></defs><path fill="url(#halfB)" d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell today"><span class="star-sticker partial"><svg viewBox="0 0 24 24" stroke="#202033" stroke-width="1.4" stroke-linejoin="round"><defs><linearGradient id="halfC" x1="0" y1="0" x2="1" y2="0"><stop offset="35%" stop-color="#ffd447"/><stop offset="35%" stop-color="#fffdf6"/></linearGradient></defs><path fill="url(#halfC)" d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="totals"><b>1</b><span>of 7</span><div class="tb"><i style="width:14%"></i></div></div>
+        </div>
+
+        <!-- Riley -->
+        <div class="chart-row">
+          <div class="who"><span class="av" style="background:#d9ffe9">🐸</span><div><div class="nm">Riley</div><div class="ch">Yard</div></div></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell today"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="totals"><b>3</b><span>of 7</span><div class="tb"><i style="width:43%"></i></div></div>
+        </div>
+
+        <!-- Avery -->
+        <div class="chart-row">
+          <div class="who"><span class="av" style="background:#ede1ff">🐯</span><div><div class="nm">Avery</div><div class="ch">Laundry</div></div></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="star-sticker"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell today"><span class="star-sticker partial"><svg viewBox="0 0 24 24" stroke="#202033" stroke-width="1.4" stroke-linejoin="round"><defs><linearGradient id="halfD" x1="0" y1="0" x2="1" y2="0"><stop offset="50%" stop-color="#ffd447"/><stop offset="50%" stop-color="#fffdf6"/></linearGradient></defs><path fill="url(#halfD)" d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="cell"><span class="empty"></span></div>
+          <div class="totals"><b>2</b><span>of 7</span><div class="tb"><i style="width:28%"></i></div></div>
+        </div>
+
+        <div class="chart-foot">
+          <div class="legend">
+            <span><svg class="mini" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>Finished</span>
+            <span><svg class="mini" viewBox="0 0 24 24" stroke="#202033" stroke-width="1.3" stroke-linejoin="round"><defs><linearGradient id="legendHalf" x1="0" y1="0" x2="1" y2="0"><stop offset="50%" stop-color="#ffd447"/><stop offset="50%" stop-color="#fffdf6"/></linearGradient></defs><path fill="url(#legendHalf)" d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>Partly</span>
+            <span><i class="dot"></i>Not yet</span>
+          </div>
+          <span class="note">Best day: Monday &middot; 4 stars</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="jar-card">
+          <div class="jar-head"><h3>Sticker jar</h3><span>House total</span></div>
+          <div class="jar-wrap">
+            <div class="jar">
+              <div class="lid"></div>
+              <div class="glass"></div>
+              <svg class="star" style="left:24px;bottom:32px;transform:rotate(-14deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:48px;bottom:54px;transform:rotate(10deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:78px;bottom:36px;transform:rotate(-4deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:102px;bottom:70px;transform:rotate(16deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:124px;bottom:42px;transform:rotate(-10deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:60px;bottom:92px;transform:rotate(22deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:96px;bottom:104px;transform:rotate(-18deg)" viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:32px;bottom:68px;transform:rotate(7deg)" viewBox="0 0 24 24" fill="#FF6B4A" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <svg class="star" style="left:86px;bottom:78px;transform:rotate(30deg);color:#7be0b0" viewBox="0 0 24 24" fill="currentColor" stroke="#202033" stroke-width="1.2"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+              <div class="label">38 stickers</div>
+            </div>
+          </div>
+          <div class="jar-foot">
+            <div class="amt">38<span> / 50</span></div>
+            <div class="reward">Next reward<b>Movie night</b></div>
+          </div>
+          <div class="jar-bar"><i></i></div>
+        </section>
+
+        <section class="hero-card">
+          <div class="hs"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></div>
+          <div class="copy">
+            <div class="k">Sticker of the week</div>
+            <h4>Riley &rsquo;s perfect start</h4>
+            <p>Three full days in a row &mdash; the yard has never looked better.</p>
+            <div class="who">🐸 Riley &middot; 3 perfect days</div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="goal">
+      <span class="goal-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span>
+      <div class="goal-copy"><strong>Family goal</strong><span>Movie night when the jar hits 50</span></div>
+      <div class="goal-track"><i></i></div>
+      <div class="goal-num">38 <span>/ 50</span></div>
+      <div class="goal-note">12 stickers to go</div>
+    </section>
+
+    <footer class="dfoot">
+      <span>Week of <b>Nov 23&ndash;29</b> &middot; stickers reset Monday</span>
+      <span class="link">Open the family view &rarr;</span>
+    </footer>
+  </main>
+</body>
+</html>

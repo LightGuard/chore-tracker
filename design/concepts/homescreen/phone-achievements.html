@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Homescreen — achievements</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --bg: #080d18; --bg2: #0d1526; --panel: #111b2f; --panel2: #17233b; --ink: #f4f7ff;
+  --muted: #95a4bf; --faint: #64738e; --line: rgba(255,255,255,.11);
+  --blue: #6f9dff; --cyan: #5ce0e3; --gold: #f2c85b; --purple: #b49bff;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body {
+  font-family: var(--sans); color: var(--ink); background: var(--bg);
+  background-image:
+    radial-gradient(420px 320px at 50% 8%, rgba(55,86,152,.3) 0%, rgba(55,86,152,0) 70%),
+    radial-gradient(320px 260px at 100% 94%, rgba(242,200,91,.07) 0%, rgba(242,200,91,0) 70%);
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 18px 72px; }
+.back { width: 29px; height: 29px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); }
+.back svg { width: 13px; height: 13px; }
+.top { display: flex; align-items: center; justify-content: space-between; height: 38px; margin-top: 7px; }
+.title { font-family: var(--mono); font-size: 7px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+.avatar { width: 29px; height: 29px; border-radius: 50%; background: #2f6b47; border: 2px solid #fff; display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+
+.head { margin-top: 14px; display: flex; align-items: flex-end; justify-content: space-between; }
+.head .k { font-family: var(--mono); font-size: 6px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+.head h1 { font-size: 30px; font-weight: 500; letter-spacing: -.035em; line-height: 1; margin-top: 5px; }
+.head p { font-size: 9px; color: var(--muted); margin-top: 6px; max-width: 250px; line-height: 1.45; }
+.summary { text-align: right; flex: none; padding-left: 10px; }
+.summary b { font-size: 25px; font-weight: 500; letter-spacing: -.04em; line-height: .8; }
+.summary b span { font-size: 11px; color: var(--faint); }
+.summary em { display: block; font-family: var(--mono); font-size: 5.5px; letter-spacing: .08em; color: var(--faint); text-transform: uppercase; font-style: normal; margin-top: 4px; }
+.summarybar { height: 4px; background: #1c2942; border-radius: 2px; margin-top: 7px; overflow: hidden; width: 92px; }
+.summarybar i { display: block; height: 100%; width: 50%; background: var(--gold); }
+
+.nextup {
+  position: relative; margin-top: 13px; display: flex; align-items: center; gap: 10px;
+  padding: 10px 11px; border: 1px solid rgba(242,200,91,.5); border-radius: 11px;
+  background: linear-gradient(155deg, rgba(242,200,91,.1), rgba(17,27,47,.65));
+}
+.medal { width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; background: radial-gradient(circle at 35% 28%, #ffe7a1, #f2c85b 55%, #a97a1f); color: #3a2607; box-shadow: 0 3px 9px rgba(0,0,0,.25); }
+.medal svg { width: 19px; height: 19px; }
+.nucopy { flex: 1; min-width: 0; }
+.nucopy .k { font-family: var(--mono); font-size: 5.5px; letter-spacing: .12em; color: var(--gold); text-transform: uppercase; }
+.nucopy b { display: block; font-size: 11px; font-weight: 600; margin-top: 1px; }
+.nucopy p { font-size: 8px; color: var(--muted); margin-top: 2px; }
+.nubar { height: 3px; background: #2a2415; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.nubar i { display: block; height: 100%; width: 66%; background: var(--gold); }
+.nupct { font-family: var(--mono); font-size: 6px; color: var(--gold); white-space: nowrap; }
+
+.sectionhead { display: flex; align-items: baseline; justify-content: space-between; margin-top: 15px; }
+.sectionhead .l { font-family: var(--mono); font-size: 6px; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
+.sectionhead .r { font-family: var(--mono); font-size: 5.5px; color: var(--faint); letter-spacing: .06em; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 7px; }
+.card { position: relative; min-height: 104px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; background: linear-gradient(160deg, rgba(23,35,59,.82), rgba(13,21,38,.9)); }
+.card.unlocked { border-color: rgba(242,200,91,.25); }
+.card .medal { width: 30px; height: 30px; }
+.card .medal svg { width: 15px; height: 15px; }
+.card.locked .medal { background: #1a2740; color: #61708b; border: 1px solid #2b3a58; box-shadow: none; }
+.card b { display: block; font-size: 9.5px; font-weight: 600; margin-top: 6px; }
+.card p { font-size: 6.5px; line-height: 1.35; color: var(--muted); margin-top: 2px; }
+.card .status { font-family: var(--mono); font-size: 5.2px; letter-spacing: .05em; color: var(--gold); text-transform: uppercase; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+.card.locked .status { color: var(--faint); }
+.card.locked { opacity: .72; }
+.card .mini { height: 2px; background: #22314c; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.card .mini i { display: block; height: 100%; background: var(--gold); }
+.newtag { position: absolute; top: -5px; right: 7px; background: var(--gold); color: #2b1c03; font-family: var(--mono); font-size: 4.5px; letter-spacing: .07em; padding: 1px 3px; border-radius: 2px; }
+.lock { position: absolute; top: 9px; right: 8px; color: var(--faint); }
+.lock svg { width: 10px; height: 10px; }
+.note { text-align: center; font-size: 6px; line-height: 1.5; color: var(--faint); margin-top: 11px; letter-spacing: .02em; }
+
+.dock { position: absolute; left: 0; right: 0; bottom: 0; height: 66px; display: flex; align-items: center; justify-content: space-around; padding: 0 14px; background: linear-gradient(180deg, rgba(8,13,24,.2), rgba(8,13,24,.96) 50%); border-top: 1px solid rgba(255,255,255,.07); z-index: 5; }
+.ditem { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--faint); font-size: 4.8px; letter-spacing: .08em; text-transform: uppercase; }
+.ditem .di { width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center; border: 1px solid transparent; }
+.ditem .di svg { width: 14px; height: 14px; }
+.ditem.active { color: var(--ink); }
+.ditem.active .di { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); color: var(--cyan); }
+.ditem.active::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--cyan); }
+.homebar { background: rgba(255,255,255,.7); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">8:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <div class="top">
+      <span class="back"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 2.5 4 7l4.5 4.5M4 7h8"/></svg></span>
+      <span class="title">Achievements</span>
+      <span class="avatar">A</span>
+    </div>
+
+    <section class="head">
+      <div><div class="k">Alex&rsquo;s trophy shelf</div><h1>Little wins.</h1><p>Earned from finished lists and complete days &mdash; no coins, no shop.</p></div>
+      <div class="summary"><b>6<span>/12</span></b><em>Unlocked</em><div class="summarybar"><i></i></div></div>
+    </section>
+
+    <section class="nextup">
+      <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c1 4-1.2 5.8-2.2 8.2-.6 1.5.2 3 1.8 3.4 0-2 1.2-3 2.2-4 1.3 1.5 3 2.7 3 5.2a6.6 6.6 0 0 1-13.2 0c0-4.4 3-7 5.2-9.8 1-1.2 1.4-2.2 3.2-3Z"/></svg></span>
+      <div class="nucopy"><div class="k">Next up</div><b>On a Roll</b><p>Two days in a row. One more for three.</p><div class="nubar"><i></i></div></div>
+      <span class="nupct">2 / 3</span>
+    </section>
+
+    <div class="sectionhead"><span class="l">All achievements</span><span class="r">6 of 12 shown</span></div>
+    <div class="grid">
+      <div class="card unlocked">
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5L19.5 6.5"/></svg></span>
+        <b>First Clear</b><p>Complete every item on your list.</p><span class="status">Unlocked &middot; Nov 23</span>
+      </div>
+      <div class="card unlocked">
+        <span class="newtag">NEW</span>
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M3.5 11 12 3.5l8.5 7.5v8H3.5v-8Z"/><path d="M9 19v-5h6v5"/></svg></span>
+        <b>Full House</b><p>All four finish on the same day.</p><span class="status">Unlocked &middot; Nov 23</span>
+      </div>
+      <div class="card unlocked">
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 3.5 9.8 14.1"/><path d="M10.1 13.4 6 17.5c-.8.8-.8 2 0 2.8l.5.5c.8.8 2 .8 2.8 0l4.1-4.1-3.3-3.3Z"/></svg></span>
+        <b>Clean Sweep</b><p>Finish all three kitchen items.</p><span class="status">Unlocked &middot; Nov 24</span>
+      </div>
+      <div class="card unlocked">
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c1 4-1.2 5.8-2.2 8.2-.6 1.5.2 3 1.8 3.4 0-2 1.2-3 2.2-4 1.3 1.5 3 2.7 3 5.2a6.6 6.6 0 0 1-13.2 0c0-4.4 3-7 5.2-9.8 1-1.2 1.4-2.2 3.2-3Z"/></svg></span>
+        <b>On a Roll</b><p>Three complete days in a row.</p><span class="status">2 of 3 days</span><div class="mini"><i style="width:66%"></i></div>
+      </div>
+      <div class="card locked">
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h10v4a5 5 0 0 1-10 0v-4Z"/><path d="M7 5H3.5v2a4 4 0 0 0 4 4M17 5h3.5v2a4 4 0 0 1-4 4"/><path d="M12 12v4M8 20.5h8M9 16.5h6v4H9z"/></svg></span>
+        <b>Perfect Week</b><p>Seven complete days in one week.</p><span class="status">Best 5 of 7</span><div class="mini"><i style="width:71%"></i></div>
+      </div>
+      <div class="card locked">
+        <span class="lock"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="6" width="8" height="6" rx="1"/><path d="M4.4 6V4.4a2.6 2.6 0 0 1 5.2 0V6"/></svg></span>
+        <span class="medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>
+        <b>Weekend Warrior</b><p>Finish both weekend days.</p><span class="status">Up next</span>
+      </div>
+    </div>
+
+    <p class="note">Achievements are earned from your completion history.<br>No XP, no currency &mdash; just the little wins.</p>
+  </div>
+
+  <nav class="dock">
+    <span class="ditem"><span class="di"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.5 8.5 9 2.5l6.5 6v6.5h-13V8.5Z"/><path d="M7 15v-4.5h4V15"/></svg></span>Home</span>
+    <span class="ditem"><span class="di"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 3.5h10M4 7.5h10M4 11.5h6M4 15h6"/></svg></span>Quests</span>
+    <span class="ditem active"><span class="di"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M9 2 15.5 5.3v6.2L9 16 2.5 11.5V5.3L9 2Z"/><path d="m6.2 9 2 2 3.6-4"/></svg></span>Achievements</span>
+    <span class="ditem"><span class="di"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="6.5" cy="6.2" r="2.4"/><path d="M2.2 15c0-2.4 1.9-4.2 4.3-4.2s4.3 1.8 4.3 4.2"/><circle cx="13" cy="6.6" r="1.8"/><path d="M12.2 11c1.9.2 3.4 1.7 3.4 4"/></svg></span>Family</span>
+    <span class="ditem"><span class="di"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="9" cy="9" r="2.4"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M13.8 4.2l-1.4 1.4M5.6 12.4l-1.4 1.4"/></svg></span>Settings</span>
+  </nav>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

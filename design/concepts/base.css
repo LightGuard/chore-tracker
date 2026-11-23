@@ -1,0 +1,22 @@
+/* Shared design-mockup scaffold. Standalone concept art — not app code. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 390px; height: 844px; overflow: hidden; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button { font: inherit; color: inherit; background: none; border: 0; }
+ul, ol { list-style: none; }
+svg { display: block; }
+
+.phone { position: relative; width: 390px; height: 844px; overflow: hidden; }
+.statusbar {
+  height: 47px; padding: 13px 24px 0; display: flex; align-items: flex-start;
+  justify-content: space-between; position: relative; z-index: 5;
+}
+.statusbar .time { font-size: 14px; font-weight: 650; letter-spacing: .01em; }
+.statusbar svg { width: 64px; height: 12px; margin-top: 3px; }
+.homebar {
+  position: absolute; left: 50%; bottom: 8px; width: 128px; height: 5px;
+  transform: translateX(-50%); border-radius: 99px; z-index: 20;
+}
+
+/* Desktop scaffold */
+.desk { width: 1440px; height: 900px; overflow: hidden; }

@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chore Tracker — design archive</title>
+<style>
+:root {
+  --paper: #f1eee7; --card: #faf7f0; --ink: #1c1a17; --muted: #6f675b; --faint: #9b9285;
+  --line: #d2c9ba; --soft: #e7e0d3; --dark: #1b3a2f; --gold: #c9a24a;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --mono: Menlo, "SF Mono", monospace;
+  --serif: "Iowan Old Style", Baskerville, Georgia, serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+img { display: block; }
+.wrap { width: min(1360px, calc(100% - 64px)); margin: 0 auto; }
+
+.topbar { position: sticky; top: 0; z-index: 30; background: rgba(241,238,231,.9); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.topbar .in { height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.wordmark { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; white-space: nowrap; }
+.wordmark::before { content: ""; width: 7px; height: 7px; background: var(--dark); display: block; }
+.toplinks { display: flex; align-items: center; gap: 22px; }
+.toplinks a { font-family: var(--mono); font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; color: var(--muted); border-bottom: 1px solid transparent; padding-bottom: 2px; }
+.toplinks a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.toplinks .live { display: flex; align-items: center; gap: 5px; color: var(--dark); }
+.toplinks .live::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #4e9b6b; box-shadow: 0 0 0 3px rgba(78,155,107,.12); }
+
+.hero { padding: 44px 0 24px; border-bottom: 1px solid var(--line); }
+.kicker { font-family: var(--mono); font-size: 8px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.hero h1 { font-family: var(--serif); font-size: clamp(42px, 5.5vw, 72px); font-weight: 400; letter-spacing: -.04em; line-height: .92; margin-top: 10px; }
+.hero h1 em { font-style: italic; color: var(--dark); }
+.hero .sub { max-width: 720px; font-size: 14px; line-height: 1.55; color: var(--muted); margin-top: 14px; }
+.hero .sub b { color: var(--ink); font-weight: 600; }
+.hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 34px; }
+.hero-stats { display: flex; gap: 0; border: 1px solid var(--line); background: rgba(250,247,240,.5); border-radius: 12px; overflow: hidden; flex: none; }
+.hstat { padding: 10px 16px; border-left: 1px solid var(--line); min-width: 78px; }
+.hstat:first-child { border-left: 0; }
+.hstat b { display: block; font-family: var(--serif); font-size: 22px; font-weight: 400; line-height: 1; }
+.hstat span { display: block; font-family: var(--mono); font-size: 5.8px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 4px; }
+
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 0 14px; flex-wrap: wrap; }
+.filters { display: flex; gap: 7px; flex-wrap: wrap; }
+.filter { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 99px; padding: 7px 11px; font-family: var(--mono); font-size: 6.5px; letter-spacing: .08em; text-transform: uppercase; }
+.filter:hover { color: var(--ink); border-color: #ab9f8c; }
+.filter.active { background: var(--dark); color: #f8f1e2; border-color: var(--dark); }
+.count { font-family: var(--mono); font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.count b { color: var(--ink); font-weight: 500; }
+
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding-bottom: 40px; }
+.card { position: relative; display: block; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 15px; padding: 0 0 14px; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -30px rgba(40,32,22,.55); }
+.card::before { content: ""; display: block; height: 3px; background: var(--accent); }
+.card .inner { display: grid; grid-template-columns: 168px 1fr; gap: 15px; padding: 14px 14px 0; }
+.thumbwrap { background: var(--tint); border: 1px solid var(--line); border-radius: 11px; padding: 9px 9px 0; height: 342px; overflow: hidden; }
+.thumbwrap img { width: 100%; height: auto; border-radius: 13px 13px 0 0; border: 1px solid rgba(0,0,0,.16); border-bottom: 0; box-shadow: 0 18px 32px -28px rgba(0,0,0,.5); }
+.cardcopy { min-width: 0; padding-top: 2px; }
+.cmeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 6px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+.cmeta b { color: var(--ink); font-weight: 500; }
+.card h2 { font-family: var(--display); font-weight: var(--weight); font-size: 27px; line-height: .95; letter-spacing: -.02em; margin-top: 13px; }
+.card .tagline { font-size: 10.5px; line-height: 1.45; color: var(--muted); margin-top: 8px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.tag { font-family: var(--mono); font-size: 5.3px; letter-spacing: .06em; text-transform: uppercase; padding: 3px 5px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); white-space: nowrap; }
+.tag.existing { color: #376246; border-color: #b9ceb9; background: #edf5ea; }
+.tag.layer { color: #7c5a14; border-color: #ddc28b; background: #fbf2dc; }
+.tag.round { color: var(--muted); background: rgba(255,255,255,.35); }
+.card .open { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 6px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.card .open svg { width: 11px; height: 11px; transition: transform .18s ease; }
+.card:hover .open { color: var(--ink); }
+.card:hover .open svg { transform: translateX(3px); }
+.card .dots { display: flex; gap: 4px; margin-top: 10px; }
+.card .dots i { width: 11px; height: 11px; border: 1px solid rgba(0,0,0,.12); display: block; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding: 16px 0 30px; font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.foot b { color: var(--ink); font-weight: 500; }
+
+/* modal */
+.modal-back { position: fixed; inset: 0; z-index: 80; background: rgba(20,17,13,.62); backdrop-filter: blur(5px); display: none; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; }
+.modal-back.open { display: flex; }
+.modal { width: min(1480px, 100%); background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.4); overflow: hidden; margin: auto; }
+.modal-head { position: sticky; top: 0; z-index: 5; background: rgba(241,238,231,.96); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 15px 22px; display: flex; align-items: center; gap: 14px; }
+.modal-number { font-family: var(--mono); font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.modal-title { font-family: var(--display); font-weight: var(--weight); font-size: 27px; line-height: 1; letter-spacing: -.02em; }
+.modal-tag { font-family: var(--mono); font-size: 5.8px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 3px 5px; white-space: nowrap; }
+.modal-actions { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+.iconbtn { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 50%; background: transparent; display: grid; place-items: center; color: var(--muted); }
+.iconbtn:hover { color: var(--ink); border-color: #ab9f8c; }
+.iconbtn svg { width: 13px; height: 13px; }
+.modal-body { padding: 20px 22px 24px; }
+.modal-tagline { font-size: 12px; line-height: 1.5; color: var(--muted); max-width: 820px; margin: 0 0 14px; }
+.board-stage { position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--soft); }
+.board-stage > img { width: 100%; height: auto; display: block; }
+.hotspot { position: absolute; display: block; border: 1.5px solid transparent; background: transparent; border-radius: 6px; z-index: 2; }
+.hotspot:hover, .hotspot:focus-visible { border-color: #1c1a17; background: rgba(255,255,255,.14); outline: 0; }
+.hotspot .hlabel { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: #1c1a17; color: #f8f1e2; font-family: var(--mono); font-size: 5.5px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 5px; border-radius: 3px; white-space: nowrap; opacity: 0; transition: opacity .15s ease; }
+.hotspot:hover .hlabel, .hotspot:focus-visible .hlabel { opacity: 1; }
+.board-hint { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 7px; font-family: var(--mono); font-size: 6px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+.board-hint a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+.board-hint a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+.screens { display: grid; grid-template-columns: 1fr 1fr 1.8fr; gap: 12px; margin-top: 17px; }
+.screens.four { grid-template-columns: 1fr 1fr; }
+.screens.four .screen:nth-child(3) { grid-column: 1 / -1; }
+.screens.four .screen:nth-child(3) .scimg { height: 260px; }
+.screen { display: block; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px; overflow: hidden; }
+.screen:hover { border-color: #ab9f8c; }
+.screen .scimg { display: flex; align-items: center; justify-content: center; height: 230px; background: #e7e0d3; border-radius: 6px; overflow: hidden; }
+.screen .scimg img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border: 1px solid rgba(0,0,0,.15); box-shadow: 0 12px 24px -22px rgba(0,0,0,.45); }
+.screen .scimg.phone img { border-radius: 10px; }
+.screen .cap { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; font-family: var(--mono); font-size: 6px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.screen .cap b { color: var(--ink); font-weight: 500; }
+.screen .cap svg { width: 10px; height: 10px; color: var(--faint); }
+
+.detailgrid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 22px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dblock h3 { font-family: var(--mono); font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.dblock p { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 7px; max-width: 480px; }
+.dblock p b { color: var(--ink); font-weight: 600; }
+.palette { display: flex; gap: 6px; margin-top: 10px; }
+.palette i { width: 26px; height: 26px; border: 1px solid rgba(0,0,0,.14); }
+.dlinks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; font-family: var(--mono); font-size: 6px; letter-spacing: .08em; text-transform: uppercase; }
+.dlinks a { text-decoration: none; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+.dlinks a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* lightbox */
+.lightbox { position: fixed; inset: 0; z-index: 120; background: rgba(10,9,7,.94); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 28px; }
+.lightbox.open { display: flex; }
+.lightbox .lbimg { max-width: 92vw; max-height: 82vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 40px 100px rgba(0,0,0,.55); }
+.lbcap { display: flex; align-items: center; gap: 16px; margin-top: 12px; font-family: var(--mono); font-size: 7px; letter-spacing: .1em; text-transform: uppercase; color: #cfc7bb; }
+.lbcap a { color: #f2c85b; text-decoration: none; }
+.lbclose { position: fixed; top: 20px; right: 22px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; display: grid; place-items: center; }
+.lbclose:hover { background: rgba(255,255,255,.1); }
+.lbclose svg { width: 15px; height: 15px; }
+
+@media (max-width: 1080px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .screens { grid-template-columns: 1fr 1fr; }
+  .screens .screen:last-child { grid-column: 1 / -1; }
+  .screens .screen:last-child .scimg { height: 260px; }
+  .detailgrid { grid-template-columns: 1fr 1fr; }
+  .detailgrid .dblock:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .wrap { width: calc(100% - 32px); }
+  .topbar .in { height: 52px; }
+  .toplinks a:not(.live) { display: none; }
+  .hero { padding-top: 28px; }
+  .hero-row { display: block; }
+  .hero-stats { margin-top: 18px; display: inline-flex; }
+  .grid { grid-template-columns: 1fr; }
+  .card .inner { grid-template-columns: 132px 1fr; }
+  .thumbwrap { height: 278px; }
+  .card h2 { font-size: 24px; }
+  .modal-back { padding: 0; }
+  .modal { border-radius: 0; min-height: 100vh; }
+  .modal-head { padding: 12px 14px; }
+  .modal-title { font-size: 22px; }
+  .modal-tag { display: none; }
+  .modal-body { padding: 14px; }
+  .screens { grid-template-columns: 1fr 1fr; }
+  .screens .screen .scimg { height: 200px; }
+  .detailgrid { grid-template-columns: 1fr; gap: 16px; }
+  .board-hint { display: block; line-height: 1.6; }
+}
+</style>
+</head>
+<body>
+  <header class="topbar"><div class="wrap in">
+    <a class="wordmark" href="#top">Chore Tracker / Design archive</a>
+    <nav class="toplinks">
+      <a href="#top">All directions</a>
+      <a href="boards/00-overview.png" target="_blank" rel="noopener">Static overview</a>
+      <a href="README.md" target="_blank" rel="noopener">Notes</a>
+      <span class="live">Local</span>
+    </nav>
+  </div></header>
+
+  <main id="top">
+    <section class="wrap hero">
+      <div class="hero-row">
+        <div>
+          <div class="kicker">Eleven directions &middot; eleven boards</div>
+          <h1>Find the <em>one.</em></h1>
+          <p class="sub">Every direction is here, including the four that were missing from the old overview and the two stress-test iterations. <b>Click any card</b> to open its board, then click the phone or desktop areas to inspect a screen full-size.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat"><b>11</b><span>Directions</span></div>
+          <div class="hstat"><b>04</b><span>Tracks</span></div>
+          <div class="hstat"><b>24</b><span>Phones</span></div>
+          <div class="hstat"><b>11</b><span>Desktops</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="toolbar">
+        <div class="filters" id="filters">
+          <button class="filter active" data-filter="all">All 11</button>
+          <button class="filter" data-filter="initial">Initial five</button>
+          <button class="filter" data-filter="focused">Focused</button>
+          <button class="filter" data-filter="round3">Round 3</button>
+          <button class="filter" data-filter="iteration">Iterations</button>
+          <button class="filter" data-filter="layer">Adds a layer</button>
+        </div>
+        <div class="count" id="count"><b>11</b> directions shown</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <div class="wrap foot"><span><b>Chore Tracker</b> &middot; nine directions</span><span>No app code changed &middot; design-only artifacts</span></div>
+  </main>
+
+  <div class="modal-back" id="modalBack">
+    <article class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-head">
+        <span class="modal-number" id="modalNo">01 / Initial five</span>
+        <h2 class="modal-title" id="modalTitle">Homestead</h2>
+        <span class="modal-tag" id="modalTag">Existing data</span>
+        <div class="modal-actions">
+          <button class="iconbtn" id="prevBtn" aria-label="Previous direction"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 2.5 4 7l4.5 4.5"/></svg></button>
+          <button class="iconbtn" id="nextBtn" aria-label="Next direction"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5 10 7l-4.5 4.5"/></svg></button>
+          <button class="iconbtn" id="closeBtn" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 3 8 8M11 3l-8 8"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <p class="modal-tagline" id="modalTagline"></p>
+        <div class="board-stage" id="boardStage">
+          <img id="boardImg" alt="">
+          <div id="hotspots"></div>
+        </div>
+        <div class="board-hint"><span>Hover or focus the board to reveal clickable screen areas.</span><a id="boardLink" href="#" target="_blank" rel="noopener">Open board full-size</a></div>
+        <div class="screens" id="screens"></div>
+        <div class="detailgrid">
+          <div class="dblock"><h3>Why it works</h3><p id="why"></p></div>
+          <div class="dblock"><h3>Built from what exists</h3><p id="from"></p><div class="palette" id="palette"></div></div>
+          <div class="dblock"><h3>Best for</h3><p id="best"></p><div class="dlinks" id="links"></div></div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="lightbox" id="lightbox">
+    <button class="lbclose" id="lbClose" aria-label="Close image"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 3 8 8M11 3l-8 8"/></svg></button>
+    <img class="lbimg" id="lbImg" alt="">
+    <div class="lbcap"><span id="lbCap"></span><a id="lbOpen" href="#" target="_blank" rel="noopener">Open original &rarr;</a></div>
+  </div>
+
+<script>
+const CONCEPTS = [
+  { id:'homestead', no:'01', name:'Homestead', round:'Initial five', group:'initial', layer:'existing', display:'"Iowan Old Style", Baskerville, Georgia, serif', weight:'400', accent:'#b9552f', tint:'#f6f0e2',
+    tagline:'A warm household ledger. Paper, ink, and a stamped finish — familiar enough to leave on the kitchen counter.',
+    why:'One-tap name pills, a paper chore card with a visible 2/3, and a stamped all-done state. The week strip sits inside thumb reach.',
+    from:'Profiles, the weekly chore and checklist, and per-day completion. No new data.',
+    best:'A cozy, low-key household. The easiest lift from the current UI.',
+    tags:['Existing data','Round 01'], palette:['#f6f0e2','#2b241b','#b9552f','#67724b','#d9a441'],
+    board:'boards/01-homestead-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/01-homestead-phone.png', kind:'phone'},
+      {label:'Phone · All done', short:'All done', src:'shots/01-homestead-phone-done.png', kind:'phone'},
+      {label:'Desktop · Household board', short:'Desktop', src:'shots/01-homestead-desktop.png', kind:'desktop'}
+    ]},
+  { id:'sticker-club', no:'02', name:'Sticker Club', round:'Initial five', group:'initial', layer:'new', display:'"Arial Rounded MT Bold", "Avenir Next", sans-serif', weight:'400', accent:'#2f53ff', tint:'#fff8e8',
+    tagline:'A collectible sticker chart. Chunky cards, animal avatars, and a real reason to finish the list.',
+    why:'Four animal avatars replace the select, the chore is a trading card, and the all-done screen pays off with a sticker and a streak.',
+    from:'The core flow is existing. The reward layer — star economy, sticker book, family goal jar — is post-MVP.',
+    best:'Younger kids and reward-driven households. The most playful of the initial five.',
+    tags:['Adds reward layer','Post-MVP'], palette:['#fff9ec','#202033','#2f53ff','#ffd447','#7be0b0'],
+    board:'boards/02-sticker-club-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/02-sticker-club-phone.png', kind:'phone'},
+      {label:'Phone · Sticker unlocked', short:'Sticker', src:'shots/02-sticker-club-phone-done.png', kind:'phone'},
+      {label:'Desktop · Weekly sticker chart', short:'Desktop', src:'shots/02-sticker-club-desktop.png', kind:'desktop'}
+    ]},
+  { id:'still', no:'03', name:'Still', round:'Initial five', group:'initial', layer:'existing', display:'"Avenir Next", "Helvetica Neue", sans-serif', weight:'300', accent:'#2f4a3b', tint:'#eef2e9',
+    tagline:'A calm focus mode. One chore, one ring, and a lot of breathing room.',
+    why:'The current task is the only thing above the fold; 64px checklist rows and a quiet all-clear keep the interaction obvious.',
+    from:'Profiles, chore and checklist, per-day completion, and the existing weekly report.',
+    best:'Kids who find noisy dashboards stressful — and parents who want a calmer report.',
+    tags:['Existing data','Round 01'], palette:['#f3f5ef','#22302a','#2f4a3b','#a9bfa8','#c99f8b'],
+    board:'boards/03-still-board.png',
+    screens:[
+      {label:'Phone · One thing left', short:'Phone', src:'shots/03-still-phone.png', kind:'phone'},
+      {label:'Phone · All clear', short:'All clear', src:'shots/03-still-phone-done.png', kind:'phone'},
+      {label:'Desktop · Weekly report', short:'Desktop', src:'shots/03-still-desktop.png', kind:'desktop'}
+    ]},
+  { id:'quest', no:'04', name:'Quest', round:'Initial five', group:'initial', layer:'new', display:'"Avenir Next Condensed", "Avenir Next", sans-serif', weight:'700', accent:'#c9f45d', tint:'#101820',
+    tagline:'A co-op game HUD. XP, streaks, and a family leaderboard make chores feel like a daily run.',
+    why:'A daily quest card, hex objective checks, player cards and a command center. Built for older kids and teens.',
+    from:'The chores and checklists exist. XP, levels, streaks and the leaderboard are an exploratory game layer, post-MVP.',
+    best:'Older kids and teens who respond to streaks and friendly competition.',
+    tags:['Adds game layer','Post-MVP'], palette:['#080b10','#f2f6f0','#c9f45d','#58e7d6','#ffa24c'],
+    board:'boards/04-quest-board.png',
+    screens:[
+      {label:'Phone · Daily quest', short:'Phone', src:'shots/04-quest-phone.png', kind:'phone'},
+      {label:'Phone · Choose player', short:'Players', src:'shots/04-quest-phone-select.png', kind:'phone'},
+      {label:'Desktop · Family command', short:'Desktop', src:'shots/04-quest-desktop.png', kind:'desktop'}
+    ]},
+  { id:'ledger', no:'05', name:'Ledger', round:'Initial five', group:'initial', layer:'existing', display:'"Bodoni 72", Didot, "Times New Roman", serif', weight:'400', accent:'#1e3bff', tint:'#f7f3e8',
+    tagline:'A family broadsheet. Oversized type, strict rules, and data that feels composed, not counted.',
+    why:'The chore and 67% are editorial display type; numbered rows and DONE/OPEN labels make state legible without color.',
+    from:'The archive is existing history; the desktop is the existing weekly report, restyled.',
+    best:'A design-forward household and the strongest fit for the admin weekly report.',
+    tags:['Existing data','Round 01'], palette:['#f7f3e8','#111110','#1e3bff','#e6fa4a','#d8d1c2'],
+    board:'boards/05-ledger-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/05-ledger-phone.png', kind:'phone'},
+      {label:'Phone · Archive', short:'Archive', src:'shots/05-ledger-phone-archive.png', kind:'phone'},
+      {label:'Desktop · Weekly report', short:'Desktop', src:'shots/05-ledger-desktop.png', kind:'desktop'}
+    ]},
+  { id:'matchday', no:'06', name:'Matchday', round:'Focused iteration', group:'focused', layer:'existing', display:'"Avenir Next Condensed", "Avenir Next", sans-serif', weight:'700', accent:'#1e6b3f', tint:'#f3ead7',
+    tagline:'A household sports club, not a reward system. Team sheet, scoreboard, full-time whistle.',
+    why:'A one-tap squad strip, a fixture card with the 2/3 score, and a full-time flag payoff. The form guide is existing day completion.',
+    from:'Party = profiles; score = today’s checklist; form = existing daily completion. No XP, goals, or leaderboard.',
+    best:'A mixed-age house that wants playful, teen-safe energy without a reward economy.',
+    tags:['Existing data','Round 02'], palette:['#f7f0df','#12140f','#1e6b3f','#ff5a2b','#f4c84b'],
+    board:'boards/06-matchday-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/06-matchday-phone.png', kind:'phone'},
+      {label:'Phone · Full time', short:'Full time', src:'shots/06-matchday-phone-fulltime.png', kind:'phone'},
+      {label:'Desktop · Clubhouse board', short:'Desktop', src:'shots/06-matchday-desktop.png', kind:'desktop'}
+    ]},
+  { id:'checkpoint', no:'07', name:'Checkpoint', round:'Focused iteration', group:'focused', layer:'existing', display:'"Avenir Next Condensed", "Avenir Next", sans-serif', weight:'700', accent:'#2b3bff', tint:'#e8e6df',
+    tagline:'Sticker Club’s playfulness, Quest’s momentum, none of the new systems. Three checkpoints and a clear day.',
+    why:'A blue top band makes today feel like an event; three checkpoint rows are the whole interaction, with a week log below.',
+    from:'2/3 and the step boxes are the checklist; 2/7 and the week log are existing day completion. No new persisted fields.',
+    best:'A mixed-age house that wants the most personality without changing what the app tracks.',
+    tags:['Existing data','Round 02'], palette:['#2b3bff','#d7f24d','#f8f2e6','#12110d','#ff5a2b'],
+    board:'boards/07-checkpoint-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/07-checkpoint-phone.png', kind:'phone'},
+      {label:'Phone · Week log', short:'Week log', src:'shots/07-checkpoint-phone-week.png', kind:'phone'},
+      {label:'Desktop · Weekly report', short:'Desktop', src:'shots/07-checkpoint-desktop.png', kind:'desktop'}
+    ]},
+  { id:'wayfinder', no:'08', name:'Wayfinder', round:'Round 3 · revised', group:'round3', layer:'existing', display:'"Iowan Old Style", Baskerville, Georgia, serif', weight:'400', accent:'#245c3e', tint:'#f2e3c8',
+    tagline:'A storybook guild board. Bright quest cards, illustrated covers, sticker stamps, and a moss-sprite guide.',
+    why:'Shield medallions switch profiles; the quest scroll turns the checklist into an illustrated icon trail; stamps and the mascot make completion playful.',
+    from:'Party = profiles; quest = weekly chore; objectives = checklist; trail = daily completion. No XP, items, goals, or leaderboards.',
+    best:'Adventure/tabletop-loving families. The most fantasy play without new reward mechanics.',
+    tags:['Existing data','Round 03'], palette:['#f8ebd1','#241b12','#245c3e','#f4b63e','#e85c3a'],
+    board:'boards/08-wayfinder-board.png',
+    screens:[
+      {label:'Phone · Today', short:'Phone', src:'shots/08-wayfinder-phone.png', kind:'phone'},
+      {label:'Phone · Quest complete', short:'Complete', src:'shots/08-wayfinder-phone-complete.png', kind:'phone'},
+      {label:'Desktop · Guild board', short:'Desktop', src:'shots/08-wayfinder-desktop.png', kind:'desktop'}
+    ]},
+  { id:'homescreen', no:'09', name:'Homescreen', round:'Round 3 · achievements', group:'round3', layer:'new', display:'"Avenir Next", Avenir, sans-serif', weight:'600', accent:'#5ce0e3', tint:'#0d1526',
+    tagline:'A family console home. Chores as game tiles, profiles up top, and achievements for the little wins.',
+    why:'A tall selected tile, a row of other quests, an achievement shelf, and a console dock. The phone gets a portrait version.',
+    from:'Tiles are the existing chores; profiles are the existing family. Achievements are the one new layer, derived from completion history; unlock persistence is post-MVP.',
+    best:'A family that wants a game-console feel and explicit achievements. The most openly gamified direction.',
+    tags:['Adds achievements','Post-MVP'], palette:['#080d18','#f4f7ff','#5ce0e3','#f2c85b','#e07a4a'],
+    board:'boards/09-homescreen-board.png',
+    screens:[
+      {label:'Phone · Home', short:'Home', src:'shots/09-homescreen-phone.png', kind:'phone'},
+      {label:'Phone · Achievements', short:'Trophies', src:'shots/09-homescreen-phone-achievements.png', kind:'phone'},
+      {label:'Desktop · Dock mode', short:'Desktop', src:'shots/09-homescreen-desktop.png', kind:'desktop'}
+    ]},
+  { id:'sticker-club-v2', no:'10', name:'Sticker Club v2', round:'Stress-test iteration', group:'iteration', layer:'new', display:'"Arial Rounded MT Bold", "Avenir Next", sans-serif', weight:'400', accent:'#2f53ff', tint:'#fff9ec',
+    tagline:'No person, chore, or subtype pictograms. Seven kids, six jobs, one fixed scroll window.',
+    why:'Seven 46px name tags fit one row. Six jobs sit in a 190px window: the fourth clips, long labels wrap, and the rail carries the position into the scrolled state.',
+    from:'7 profiles and 6 checklist items are a deliberate stress test. The data model is unchanged; sticker rewards remain post-MVP.',
+    best:'A younger, reward-driven house with seven kids and genuinely long lists.',
+    tags:['Type-only','7-kid stress test','Post-MVP'], palette:['#fff9ec','#202033','#2f53ff','#ffd447','#ff6b4a'],
+    board:'boards/10-sticker-club-v2-board.png',
+    screens:[
+      {label:'Phone · Top of list', short:'Phone', src:'shots/10-sticker-club-v2-phone.png', kind:'phone'},
+      {label:'Phone · Scrolled', short:'Scrolled', src:'shots/10-sticker-club-v2-phone-scroll.png', kind:'phone'},
+      {label:'Desktop · 7 kids', short:'Desktop', src:'shots/10-sticker-club-v2-desktop.png', kind:'desktop'},
+      {label:'Phone · Sticker earned', short:'Done', src:'shots/10-sticker-club-v2-phone-done.png', kind:'phone'}
+    ]},
+  { id:'quest-light', no:'11', name:'Quest Light', round:'Stress-test iteration', group:'iteration', layer:'new', display:'"Avenir Next Condensed", "Avenir Next", sans-serif', weight:'700', accent:'#0e9aa8', tint:'#eefacb',
+    tagline:'The dark HUD in daylight. Seven players, six objectives, and the same fixed scroll window.',
+    why:'Seven two-letter player cards fit the full 354px width. Six objectives sit in a 190px window; the fourth clips, the rail moves, and the scrolled state surfaces 03–06 without moving the HUD.',
+    from:'Seven players and six objectives are the stress test. Light mode is a token swap; the original Quest game layer remains post-MVP.',
+    best:'Older kids and teens who want game energy in daylight.',
+    tags:['Light mode','7-kid stress test','Post-MVP'], palette:['#f2efe6','#12160f','#c9f45d','#0e9aa8','#df6b2c'],
+    board:'boards/11-quest-light-board.png',
+    screens:[
+      {label:'Phone · Top of list', short:'Phone', src:'shots/11-quest-light-phone.png', kind:'phone'},
+      {label:'Phone · Scrolled', short:'Scrolled', src:'shots/11-quest-light-phone-scroll.png', kind:'phone'},
+      {label:'Desktop · 7 players', short:'Desktop', src:'shots/11-quest-light-desktop.png', kind:'desktop'},
+      {label:'Phone · Quest clear', short:'Clear', src:'shots/11-quest-light-phone-done.png', kind:'phone'}
+    ]}
+];
+
+const HOTSPOTS = [
+  {index:0, left:2.78, top:20.17, width:17.67, height:58.8},
+  {index:1, left:20.44, top:20.17, width:17.67, height:58.8},
+  {index:2, left:40.89, top:20.17, width:56.55, height:54.36}
+];
+
+const grid = document.getElementById('grid');
+const count = document.getElementById('count');
+const filters = document.getElementById('filters');
+let current = null;
+let activeFilter = 'all';
+let lastFocus = null;
+
+function fontStyle(value) { return String(value).replace(/"/g, "'"); }
+
+function esc(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function cardHTML(c) {
+  const tags = c.tags.map(function(t) {
+    var cls = c.layer === 'new' && t !== 'Round 01' && t !== 'Round 02' && t !== 'Round 03' ? 'layer' : t.indexOf('Round') === 0 ? 'round' : 'existing';
+    return '<span class="tag ' + cls + '">' + esc(t) + '</span>';
+  }).join('');
+  var dots = c.palette.map(function(hex) { return '<i style="background:' + hex + '"></i>'; }).join('');
+  return '<button class="card" data-id="' + c.id + '" data-group="' + c.group + '" data-layer="' + c.layer + '" style="--accent:' + c.accent + ';--tint:' + c.tint + ';--display:' + fontStyle(c.display) + ';--weight:' + c.weight + '">' +
+    '<div class="inner">' +
+      '<div class="thumbwrap"><img loading="lazy" src="' + c.screens[0].src + '" alt="' + esc(c.name) + ' phone screen"></div>' +
+      '<div class="cardcopy">' +
+        '<div class="cmeta"><span><b>' + c.no + '</b> / ' + esc(c.round) + '</span><span>Phone</span></div>' +
+        '<h2>' + esc(c.name) + '</h2>' +
+        '<p class="tagline">' + esc(c.tagline) + '</p>' +
+        '<div class="tags">' + tags + '</div>' +
+        '<div class="dots">' + dots + '</div>' +
+        '<div class="open"><span>Open board</span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7h9M8 3.5 11.5 7 8 10.5"/></svg></div>' +
+      '</div>' +
+    '</div>' +
+  '</button>';
+}
+
+function render() {
+  grid.innerHTML = CONCEPTS.map(cardHTML).join('');
+  applyFilter(activeFilter);
+  grid.querySelectorAll('.card').forEach(function(card) {
+    card.addEventListener('click', function() { openDetail(card.getAttribute('data-id'), card); });
+  });
+}
+
+function applyFilter(filter) {
+  activeFilter = filter;
+  var shown = 0;
+  grid.querySelectorAll('.card').forEach(function(card) {
+    var group = card.getAttribute('data-group');
+    var layer = card.getAttribute('data-layer');
+    var match = filter === 'all' || (filter === 'initial' && group === 'initial') || (filter === 'focused' && group === 'focused') || (filter === 'round3' && group === 'round3') || (filter === 'iteration' && group === 'iteration') || (filter === 'layer' && layer === 'new');
+    card.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+  count.innerHTML = '<b>' + shown + '</b> direction' + (shown === 1 ? '' : 's') + ' shown';
+  filters.querySelectorAll('.filter').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
+  });
+}
+
+filters.addEventListener('click', function(event) {
+  var btn = event.target.closest('.filter');
+  if (!btn) return;
+  applyFilter(btn.getAttribute('data-filter'));
+});
+
+function openDetail(id, trigger) {
+  var index = CONCEPTS.findIndex(function(c) { return c.id === id; });
+  if (index < 0) return;
+  current = index;
+  lastFocus = trigger || null;
+  var c = CONCEPTS[index];
+  var modal = document.querySelector('.modal');
+  modal.style.setProperty('--display', c.display);
+  modal.style.setProperty('--weight', c.weight);
+  document.getElementById('modalNo').textContent = c.no + ' / ' + c.round;
+  document.getElementById('modalTitle').textContent = c.name;
+  document.getElementById('modalTag').textContent = c.tags[0];
+  document.getElementById('modalTagline').textContent = c.tagline;
+  document.getElementById('boardImg').src = c.board;
+  document.getElementById('boardImg').alt = c.name + ' concept board';
+  document.getElementById('boardLink').href = c.board;
+  document.getElementById('why').innerHTML = esc(c.why);
+  document.getElementById('from').innerHTML = esc(c.from);
+  document.getElementById('best').innerHTML = esc(c.best);
+  document.getElementById('palette').innerHTML = c.palette.map(function(hex) { return '<i style="background:' + hex + '"></i>'; }).join('');
+  document.getElementById('links').innerHTML = '<a href="' + c.board + '" target="_blank" rel="noopener">Board PNG</a><a href="' + c.board.replace('.png', '.html') + '" target="_blank" rel="noopener">Board HTML</a><a href="' + c.screens[2].src + '" target="_blank" rel="noopener">Desktop PNG</a>';
+
+  var screens = document.getElementById('screens');
+  screens.className = 'screens' + (c.screens.length === 4 ? ' four' : '');
+  screens.innerHTML = c.screens.map(function(s, i) {
+    return '<button class="screen" data-i="' + i + '"><div class="scimg ' + s.kind + '"><img src="' + s.src + '" alt="' + esc(c.name) + ' ' + esc(s.label) + '"></div><div class="cap"><span>' + esc(s.label) + '</span><b>' + (s.kind === 'desktop' ? '1440 × 900' : '390 × 844') + '</b></div></button>';
+  }).join('');
+  screens.querySelectorAll('.screen').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var s = c.screens[Number(btn.getAttribute('data-i'))];
+      openLightbox(s.src, c.name + ' · ' + s.label);
+    });
+  });
+
+  var hotspots = document.getElementById('hotspots');
+  hotspots.innerHTML = HOTSPOTS.map(function(h) {
+    var s = c.screens[h.index];
+    return '<button class="hotspot" aria-label="Open ' + esc(s.label) + '" data-i="' + h.index + '" style="left:' + h.left + '%;top:' + h.top + '%;width:' + h.width + '%;height:' + h.height + '%"><span class="hlabel">' + esc(s.short) + '</span></button>';
+  }).join('');
+  hotspots.querySelectorAll('.hotspot').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var s = c.screens[Number(btn.getAttribute('data-i'))];
+      openLightbox(s.src, c.name + ' · ' + s.label);
+    });
+  });
+
+  document.getElementById('modalBack').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  history.replaceState(null, '', '#' + c.id);
+  document.getElementById('closeBtn').focus();
+}
+
+function closeDetail() {
+  document.getElementById('modalBack').classList.remove('open');
+  document.body.style.overflow = '';
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  current = null;
+  if (lastFocus) lastFocus.focus();
+}
+
+function step(delta) {
+  if (current === null) return;
+  var next = (current + delta + CONCEPTS.length) % CONCEPTS.length;
+  openDetail(CONCEPTS[next].id, null);
+}
+
+document.getElementById('closeBtn').addEventListener('click', closeDetail);
+document.getElementById('prevBtn').addEventListener('click', function() { step(-1); });
+document.getElementById('nextBtn').addEventListener('click', function() { step(1); });
+document.getElementById('modalBack').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeDetail(); });
+
+function openLightbox(src, caption) {
+  var lb = document.getElementById('lightbox');
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lbImg').alt = caption;
+  document.getElementById('lbCap').textContent = caption;
+  document.getElementById('lbOpen').href = src;
+  lb.classList.add('open');
+  document.getElementById('lbClose').focus();
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lbImg').src = '';
+}
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lightbox').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeLightbox(); });
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('lightbox').classList.contains('open')) closeLightbox();
+    else if (document.getElementById('modalBack').classList.contains('open')) closeDetail();
+  }
+  if (document.getElementById('modalBack').classList.contains('open') && !document.getElementById('lightbox').classList.contains('open')) {
+    if (e.key === 'ArrowLeft') step(-1);
+    if (e.key === 'ArrowRight') step(1);
+  }
+});
+
+function openFromHash() {
+  var raw = location.hash.slice(1);
+  if (!raw) return;
+  var id = decodeURIComponent(raw);
+  if (!CONCEPTS.some(function(c) { return c.id === id; })) return;
+  if (current === null || CONCEPTS[current].id !== id) openDetail(id, null);
+}
+
+render();
+openFromHash();
+window.addEventListener('hashchange', openFromHash);
+</script>
+</body>
+</html>

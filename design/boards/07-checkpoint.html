@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkpoint — concept board</title>
+<style>:root { --accent: #2b3bff; --display: "Avenir Next Condensed", "Avenir Next", sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1800px; height: 1170px; overflow: hidden; }
+body {
+  font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif; color: #1c1a17;
+  background-color: #f1eee7;
+  background-image:
+    radial-gradient(700px 500px at 94% -10%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 65%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.026) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.02) 0 1px, transparent 1px 30px);
+  position: relative;
+}
+body::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent); }
+.wrap { position: relative; padding: 40px 50px 0; height: 1170px; }
+.topline { display: flex; align-items: center; justify-content: space-between; font-family: Menlo, "SF Mono", monospace; font-size: 9.5px; letter-spacing: .17em; text-transform: uppercase; color: #8a8378; }
+.topline b { color: #1c1a17; font-weight: 500; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-top: 26px; }
+.headleft { min-width: 0; }
+h1 { font-family: var(--display); font-size: 68px; line-height: .88; letter-spacing: -.01em; font-weight: 700; }
+h1 em { font-style: normal; color: var(--accent); }
+.tagline { font-size: 18px; line-height: 1.5; color: #5c564d; margin-top: 13px; max-width: 810px; }
+.palette { flex: none; padding-bottom: 2px; }
+.pallabel { font-family: Menlo, monospace; font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: #8a8378; margin-bottom: 8px; text-align: right; }
+.swatches { display: flex; gap: 8px; }
+.sw { width: 44px; }
+.sw i { display: block; width: 44px; height: 38px; border: 1px solid rgba(0,0,0,.15); }
+.sw span { display: block; font-family: Menlo, monospace; font-size: 5.6px; letter-spacing: .01em; color: #8a8378; margin-top: 5px; text-align: center; }
+.sw em { display: block; font-family: Menlo, monospace; font-size: 5.2px; letter-spacing: .01em; color: #aaa397; text-align: center; font-style: normal; margin-top: 2px; }
+.rule { height: 1px; background: #c9c2b5; margin-top: 22px; }
+.main { display: grid; grid-template-columns: 656px 1fr; gap: 30px; margin-top: 16px; }
+.phones { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+figure { margin: 0; min-width: 0; }
+.cap { display: flex; align-items: baseline; justify-content: space-between; font-family: Menlo, monospace; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: #8a8378; margin-bottom: 7px; }
+.cap b { color: #1c1a17; font-weight: 500; }
+.phoneimg { display: block; width: 100%; height: auto; border-radius: 25px; border: 1px solid rgba(0,0,0,.22); box-shadow: 0 26px 44px -34px rgba(0,0,0,.6); background: #000; }
+.deskfig { min-width: 0; }
+.deskimg { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid rgba(0,0,0,.18); box-shadow: 0 30px 60px -48px rgba(0,0,0,.6); }
+.desknote { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding-top: 10px; border-top: 1px solid #c9c2b5; }
+.desknote span { font-family: Menlo, monospace; font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: #8a8378; white-space: nowrap; padding-top: 2px; }
+.desknote p { font-size: 13px; line-height: 1.45; color: #5c564d; }
+.footer { display: grid; grid-template-columns: 1.02fr 1.08fr 0.9fr; gap: 40px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #c9c2b5; }
+.footer h2 { display: flex; align-items: center; gap: 7px; font-family: Menlo, monospace; font-size: 8px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; color: #6e675c; }
+.footer h2::before { content: ""; width: 5px; height: 5px; background: var(--accent); display: block; }
+.footer ul { list-style: none; margin-top: 8px; }
+.footer li { position: relative; padding-left: 12px; font-size: 12.5px; line-height: 1.45; color: #4e4a42; margin-top: 5px; }
+.footer li::before { content: ""; position: absolute; left: 0; top: 7px; width: 4px; height: 1px; background: var(--accent); }
+.footer .best p { font-size: 12.5px; line-height: 1.5; color: #4e4a42; margin-top: 8px; }
+.tag { display: inline-block; margin-top: 10px; padding: 5px 8px; border: 1px solid #1c1a17; font-family: Menlo, monospace; font-size: 6.5px; letter-spacing: .11em; text-transform: uppercase; color: #1c1a17; }
+.footline { position: absolute; left: 50px; right: 50px; bottom: 22px; display: flex; align-items: center; justify-content: space-between; font-family: Menlo, monospace; font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: #9a9387; border-top: 1px solid #d5cec1; padding-top: 8px; }
+.footline b { color: #1c1a17; font-weight: 500; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline"><span>Chore Tracker / Iteration 02 &middot; two new directions</span><span>Option <b>02</b> / 02</span></div>
+  <div class="head">
+    <div class="headleft">
+      <h1>Checkpoint</h1>
+      <p class="tagline">Sticker Club&rsquo;s playfulness, Quest&rsquo;s momentum, none of the new systems. Three checkpoints and a clear day &mdash; the only score is the list.</p>
+    </div>
+    <div class="palette">
+      <div class="pallabel">Palette / CSS tokens</div>
+      <div class="swatches"><div class="sw"><i style="background:#2B3BFF"></i><span>#2B3BFF</span><em>Blue</em></div><div class="sw"><i style="background:#D7F24D"></i><span>#D7F24D</span><em>Acid</em></div><div class="sw"><i style="background:#F8F2E6"></i><span>#F8F2E6</span><em>Cream</em></div><div class="sw"><i style="background:#12110D"></i><span>#12110D</span><em>Ink</em></div><div class="sw"><i style="background:#FF5A2B"></i><span>#FF5A2B</span><em>Orange</em></div></div>
+    </div>
+  </div>
+  <div class="rule"></div>
+
+  <div class="main">
+    <div class="phones">
+      <figure>
+        <div class="cap"><span>Phone &middot; today</span><b>390 × 844</b></div>
+        <img class="phoneimg" src="../shots/07-checkpoint-phone.png" alt="Checkpoint phone screen">
+      </figure>
+      <figure>
+        <div class="cap"><span>Phone &middot; week log</span><b>390 × 844</b></div>
+        <img class="phoneimg" src="../shots/07-checkpoint-phone-week.png" alt="Checkpoint second phone screen">
+      </figure>
+    </div>
+    <figure class="deskfig">
+      <div class="cap"><span>Desktop &middot; weekly report</span><b>1440 × 900</b></div>
+      <img class="deskimg" src="../shots/07-checkpoint-desktop.png" alt="Checkpoint desktop screen">
+      <div class="desknote"><span>Desktop note</span><p>The admin report keeps the blue/acid language: 21/28 up front, then the week by player.</p></div>
+    </figure>
+  </div>
+
+  <div class="footer">
+    <div>
+      <h2>Why it works on a phone</h2>
+      <ul><li>A full-bleed blue top band makes today feel like an event; the cream sheet holds the work.</li><li>Three checkpoint rows are the whole interaction; the week log is one glance.</li><li>The bottom &ldquo;still open&rdquo; strip is a shortcut to the last checklist item.</li></ul>
+    </div>
+    <div>
+      <h2>Built from what exists</h2>
+      <ul><li>2/3 and the step boxes are the checklist; 2/7 and the week log are existing day completion.</li><li>No XP, sticker collection, goals, currency, or leaderboard. Nothing new to persist.</li><li>The report reuses the existing immutable snapshot and its 21/28 math.</li></ul>
+    </div>
+    <div class="best">
+      <h2>CSS + best fit</h2>
+      <ul><li>Flat blue/acid blocks, square checks, condensed type, and one hand-drawn note.</li><li>No image assets or icon package; the sheet overlap is a negative margin and a radius.</li><li>The playfulness is in the composition, not in extra reward mechanics.</li></ul>
+      <p>A mixed-age house that wants the most personality without changing what the app tracks.</p>
+      <span class="tag">Phone-first &middot; no new systems</span>
+    </div>
+  </div>
+
+  <div class="footline"><span>Concept 07 &mdash; <b>Checkpoint</b></span><span>React 19 · Reshaped · CSS</span></div>
+</div>
+</body>
+</html>

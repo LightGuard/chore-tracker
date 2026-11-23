@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkpoint — phone</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --blue: #2b3bff; --acid: #d7f24d; --orange: #ff5a2b; --cream: #f8f2e6;
+  --paper: #fffbf2; --ink: #12110d; --muted: #7b7466; --line: #d7cdb9;
+  --cond: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif; --mono: Menlo, "SF Mono", monospace;
+  --hand: "Bradley Hand", "Chalkboard SE", cursive;
+}
+body { font-family: var(--sans); color: var(--ink); background: var(--cream); }
+.phone { background: var(--cream); }
+.topband { position: relative; padding: 0 18px 34px; background: var(--blue); overflow: hidden; }
+.topband::before { content: ""; position: absolute; width: 300px; height: 300px; border: 1px solid rgba(248,242,230,.13); border-radius: 50%; right: -150px; top: -120px; }
+.topband::after {
+  content: ""; position: absolute; width: 84px; height: 84px; right: 18px; top: 76px;
+  background-image: radial-gradient(rgba(248,242,230,.25) 1px, transparent 1px);
+  background-size: 7px 7px; opacity: .35; transform: rotate(8deg);
+}
+.statusbar { color: var(--cream); padding: 13px 6px 0; position: relative; z-index: 2; }
+.mono { font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
+
+.header { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; height: 34px; margin-top: 10px; }
+.brand { display: flex; align-items: center; gap: 8px; }
+.logo { width: 28px; height: 28px; background: var(--acid); color: var(--ink); border: 1.5px solid var(--ink); display: grid; place-items: center; transform: rotate(-4deg); box-shadow: 2px 2px 0 rgba(18,17,13,.65); }
+.logo svg { width: 15px; height: 15px; }
+.brandname { font-family: var(--cond); font-size: 18px; font-weight: 800; letter-spacing: .12em; color: var(--cream); }
+.brandname span { color: var(--acid); }
+.daytag { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; color: rgba(248,242,230,.7); text-align: right; line-height: 1.6; }
+.daytag b { display: block; color: var(--cream); font-weight: 500; }
+
+.nav { position: relative; z-index: 2; display: flex; gap: 16px; margin-top: 11px; }
+.nav a { font-family: var(--mono); font-size: 6.2px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(248,242,230,.55); text-decoration: none; padding-bottom: 3px; border-bottom: 1.5px solid transparent; }
+.nav a.active { color: var(--acid); border-bottom-color: var(--acid); }
+
+.people { position: relative; z-index: 2; display: flex; gap: 8px; margin-top: 13px; }
+.person { width: 81px; height: 44px; border: 1px solid rgba(248,242,230,.45); background: transparent; color: var(--cream); display: flex; align-items: center; gap: 7px; padding: 0 8px; transform: rotate(-1.2deg); }
+.person:nth-child(even) { transform: rotate(1deg); }
+.person .pi { font-family: var(--cond); font-size: 17px; font-weight: 800; line-height: 1; }
+.person .pn { font-family: var(--mono); font-size: 5.8px; letter-spacing: .08em; opacity: .8; }
+.person.active { background: var(--acid); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 rgba(18,17,13,.6); transform: rotate(1.5deg); }
+
+.hero { position: relative; z-index: 2; margin-top: 19px; }
+.hero .k { font-family: var(--mono); font-size: 6.2px; font-weight: 600; letter-spacing: .15em; color: var(--acid); text-transform: uppercase; }
+.hero h1 { font-family: var(--cond); font-size: 61px; font-weight: 800; line-height: .84; letter-spacing: .005em; color: var(--cream); margin-top: 7px; }
+.hero .desc { font-size: 11.5px; color: rgba(248,242,230,.72); margin-top: 6px; }
+.progress { display: flex; align-items: flex-end; gap: 9px; margin-top: 17px; }
+.steps { display: flex; gap: 6px; }
+.step { width: 41px; height: 41px; border: 1.5px solid rgba(248,242,230,.48); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--cream); }
+.step .sn { font-family: var(--mono); font-size: 5px; letter-spacing: .05em; opacity: .7; }
+.step .sm { font-family: var(--cond); font-size: 17px; font-weight: 800; line-height: .9; }
+.step.done { background: var(--acid); color: var(--ink); border-color: var(--ink); }
+.step.open { border-style: dashed; color: rgba(248,242,230,.7); }
+.count { margin-left: auto; display: flex; align-items: baseline; gap: 3px; font-family: var(--cond); font-size: 39px; font-weight: 800; line-height: .8; color: var(--acid); }
+.count span { font-family: var(--mono); font-size: 5.8px; font-weight: 500; letter-spacing: .1em; color: rgba(248,242,230,.65); margin-left: 3px; }
+
+.sheet {
+  position: relative; z-index: 3; margin: -22px 18px 0; background: var(--cream);
+  border: 1.5px solid var(--ink); border-radius: 21px; overflow: hidden;
+  padding: 16px 18px 0; min-height: 350px; display: flex; flex-direction: column;
+}
+.sheet::before { content: ""; position: absolute; left: 14px; right: 14px; top: 7px; border-top: 1px dashed #c9bfae; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px; border-bottom: 1.5px solid var(--ink); margin-top: 2px; }
+.sheet-head .mono { font-size: 6px; color: var(--muted); }
+
+.check-row { position: relative; display: flex; align-items: center; gap: 9px; height: 58px; border-bottom: 1.5px dashed #cec5b4; }
+.check-row:last-of-type { border-bottom-style: solid; border-bottom-color: var(--line); }
+.sq { width: 29px; height: 29px; flex: none; border: 2px solid var(--ink); background: var(--paper); display: grid; place-items: center; color: transparent; }
+.sq svg { width: 13px; height: 13px; }
+.check-row.done .sq { background: var(--acid); color: var(--ink); }
+.cn { font-family: var(--mono); font-size: 6.2px; color: var(--blue); letter-spacing: .04em; }
+.cl { flex: 1; font-size: 15.5px; font-weight: 500; letter-spacing: -.005em; }
+.check-row.done .cl { color: var(--muted); }
+.cs { font-family: var(--mono); font-size: 5.5px; font-weight: 600; letter-spacing: .1em; color: var(--blue); }
+.check-row.open { background: #fff3e7; box-shadow: -3px 0 0 var(--orange); padding-left: 8px; margin-left: -8px; border-bottom-color: #e7d4be; }
+.check-row.open .cs { color: var(--orange); }
+.check-row.open .sq { border-color: var(--ink); }
+.check-row .next-tag { position: absolute; right: 0; top: -1px; background: var(--orange); color: var(--cream); font-family: var(--mono); font-size: 4.8px; letter-spacing: .1em; padding: 1px 4px; }
+.check-row.done:first-of-type .next-tag { display: none; }
+
+.week { margin-top: 13px; }
+.weekhead { display: flex; align-items: center; justify-content: space-between; }
+.weekhead .mono { font-size: 5.8px; color: var(--muted); }
+.weekdays { display: flex; justify-content: space-between; margin-top: 6px; }
+.wd { width: 38px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wd span { font-family: var(--mono); font-size: 5.5px; letter-spacing: .06em; color: var(--muted); }
+.wd i { width: 22px; height: 22px; display: grid; place-items: center; border: 1.4px solid var(--line); background: var(--paper); }
+.wd.done i { background: var(--blue); border-color: var(--blue); }
+.wd.done i::after { content: ""; width: 7px; height: 4px; border-left: 1.4px solid var(--cream); border-bottom: 1.4px solid var(--cream); transform: rotate(-45deg) translate(0,-1px); }
+.wd.today i { border: 2px solid var(--orange); background: var(--paper); box-shadow: 0 0 0 3px rgba(255,90,43,.1); }
+.wd.today i::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); }
+.wd.today span { color: var(--orange); }
+.wd.future i { border-style: dashed; border-color: #d8cebb; }
+
+.note { font-family: var(--hand); font-size: 14.5px; line-height: 1.2; color: var(--orange); text-align: center; margin-top: 12px; transform: rotate(-1deg); }
+.sheetcta { margin: auto -18px 0; margin-top: auto; height: 50px; background: var(--orange); color: var(--cream); border-top: 1.5px solid var(--ink); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex: none; }
+.sheetcta .k { font-family: var(--mono); font-size: 5.4px; font-weight: 600; letter-spacing: .12em; color: rgba(248,242,230,.82); }
+.sheetcta .act { display: flex; align-items: center; gap: 8px; font-family: var(--cond); font-size: 14px; font-weight: 800; letter-spacing: .06em; }
+.sheetcta .act svg { width: 12px; height: 12px; }
+
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 68px; padding: 8px 30px 0; background: var(--ink); display: flex; justify-content: space-between; z-index: 10; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--mono); font-size: 5.8px; letter-spacing: .13em; color: rgba(248,242,230,.5); padding: 4px 11px; }
+.tab svg { width: 16px; height: 16px; }
+.tab.active { color: var(--ink); background: var(--acid); }
+.homebar { background: rgba(248,242,230,.8); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="topband">
+    <div class="statusbar">
+      <span class="time">8:41</span>
+      <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+        <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+        <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+      </svg>
+    </div>
+
+    <header class="header">
+      <div class="brand">
+        <span class="logo">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M3 4.2v13"/><path d="M3.6 4.6h11.2v7.8H3.6z"/><path d="M7 8.5l1.6 1.6 2.8-3"/>
+          </svg>
+        </span>
+        <span class="brandname">CHECK<span>POINT</span></span>
+      </div>
+      <div class="daytag">DAY <b>48</b></div>
+    </header>
+
+    <nav class="nav" aria-label="App sections">
+      <a class="active" href="#">Today</a>
+      <a href="#">Week</a>
+      <a href="#">Log</a>
+    </nav>
+
+    <nav class="people" aria-label="Choose a player">
+      <button class="person active"><span class="pi">A</span><span class="pn">ALEX</span></button>
+      <button class="person"><span class="pi">S</span><span class="pn">SAM</span></button>
+      <button class="person"><span class="pi">R</span><span class="pn">RILEY</span></button>
+      <button class="person"><span class="pi">A</span><span class="pn">AVERY</span></button>
+    </nav>
+
+    <section class="hero">
+      <div class="k">Today&rsquo;s checkpoints</div>
+      <h1>KITCHEN</h1>
+      <p class="desc">Wipe and sweep after dinner.</p>
+      <div class="progress">
+        <div class="steps" aria-label="2 of 3 checkpoints cleared">
+          <span class="step done"><span class="sn">01</span><span class="sm">&#10003;</span></span>
+          <span class="step done"><span class="sn">02</span><span class="sm">&#10003;</span></span>
+          <span class="step open"><span class="sn">03</span><span class="sm">&ndash;</span></span>
+        </div>
+        <div class="count">2<span>/3</span><span>cleared</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-head"><span class="mono">Checkpoints</span><span class="mono">Status</span></div>
+
+    <div class="check-row done">
+      <span class="sq"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+      <span class="cn">01</span>
+      <span class="cl">Wipe counters</span>
+      <span class="cs">CLEARED</span>
+    </div>
+    <div class="check-row done">
+      <span class="sq"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+      <span class="cn">02</span>
+      <span class="cl">Sweep floor</span>
+      <span class="cs">CLEARED</span>
+    </div>
+    <div class="check-row open">
+      <span class="next-tag">NEXT</span>
+      <span class="sq"></span>
+      <span class="cn">03</span>
+      <span class="cl">Take out trash</span>
+      <span class="cs">OPEN</span>
+    </div>
+
+    <div class="week">
+      <div class="weekhead"><span class="mono">Week log</span><span class="mono">2 / 7 days</span></div>
+      <div class="weekdays" aria-label="Week of November 23">
+        <div class="wd done"><span>M</span><i></i></div>
+        <div class="wd done"><span>T</span><i></i></div>
+        <div class="wd today"><span>W</span><i></i></div>
+        <div class="wd future"><span>T</span><i></i></div>
+        <div class="wd future"><span>F</span><i></i></div>
+        <div class="wd future"><span>S</span><i></i></div>
+        <div class="wd future"><span>S</span><i></i></div>
+      </div>
+    </div>
+
+    <p class="note">One checkpoint left. You&rsquo;re close.</p>
+    <div class="sheetcta">
+      <span class="k">STILL OPEN</span>
+      <span class="act">TAKE OUT TRASH
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="App sections">
+    <button class="tab active">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.2 15.4V3.4"/><path d="M3.8 3.9h10.4v7.3H3.8z"/><path d="m7 8 1.6 1.6 2.7-3"/></svg>
+      TODAY
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.6" y="3.6" width="12.8" height="11.8" rx="1.5"/><path d="M2.6 7.2h12.8M6.3 2v3M11.7 2v3"/></svg>
+      WEEK
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h12M3 9h12M3 13.5h7.5"/></svg>
+      LOG
+    </button>
+  </nav>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

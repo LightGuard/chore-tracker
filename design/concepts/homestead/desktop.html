@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Homestead — desktop</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f6f0e2;
+  --card: #fcf8ee;
+  --ink: #2b241b;
+  --muted: #7c7060;
+  --faint: #a29683;
+  --line: #dcd0ba;
+  --terra: #b9552f;
+  --terra-deep: #8f3f22;
+  --olive: #67724b;
+  --gold: #c99538;
+  --serif: "Iowan Old Style", Baskerville, "Palatino Linotype", Georgia, serif;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --hand: "Bradley Hand", "Chalkboard SE", cursive;
+}
+body.desk {
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(1100px 700px at 8% -12%, #fcf8ee 0%, rgba(252,248,238,0) 60%),
+    radial-gradient(900px 650px at 100% 108%, #eee3cf 0%, rgba(238,227,207,0) 62%),
+    var(--paper);
+  position: relative;
+}
+body.desk::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .55;
+  background-image: repeating-linear-gradient(0deg, rgba(90,70,40,.03) 0 1px, transparent 1px 3px);
+}
+.kicker { font-size: 10px; font-weight: 650; letter-spacing: .19em; text-transform: uppercase; color: var(--olive); }
+
+.dnav {
+  position: relative; height: 72px; padding: 0 56px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--line);
+}
+.dbrand { display: flex; align-items: center; gap: 12px; }
+.dbrand .mark { width: 34px; height: 34px; border: 1px solid var(--ink); border-radius: 50%; display: grid; place-items: center; }
+.dbrand .mark svg { width: 16px; height: 16px; }
+.dbrand .name { font-size: 11px; font-weight: 650; letter-spacing: .22em; }
+.dbrand .sub { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--faint); padding-left: 4px; }
+.dnav nav { display: flex; gap: 30px; }
+.dnav nav a { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 8px 0; position: relative; }
+.dnav nav a.active { color: var(--ink); }
+.dnav nav a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--terra); }
+.dnav .right { display: flex; align-items: center; gap: 16px; font-size: 11px; color: var(--muted); }
+.dnav .right .week-label { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--faint); }
+.dnav .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--olive); color: #f8f2e4; display: grid; place-items: center; font-size: 11px; font-weight: 650; letter-spacing: .04em; }
+
+.dmain { position: relative; width: 1280px; margin: 0 auto; padding-top: 30px; }
+.dhero { display: flex; align-items: flex-end; justify-content: space-between; }
+.dhero h1 { font-family: var(--serif); font-size: 54px; font-weight: 500; line-height: 1.02; letter-spacing: -.02em; margin-top: 8px; }
+.dhero h1 em { font-style: italic; color: var(--terra); }
+.lede { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--muted); margin-top: 9px; }
+.dscore { display: flex; align-items: flex-end; gap: 14px; padding-bottom: 6px; text-align: right; }
+.dscore .num { font-family: var(--serif); font-size: 70px; line-height: .82; letter-spacing: -.05em; }
+.dscore .num span { font-size: 24px; color: var(--faint); letter-spacing: 0; }
+.dscore .label { font-size: 9.5px; font-weight: 650; letter-spacing: .17em; text-transform: uppercase; color: var(--muted); line-height: 1.55; padding-bottom: 2px; }
+.dscore .label b { display: block; color: var(--olive); font-weight: 650; }
+
+.board-head { display: flex; align-items: baseline; justify-content: space-between; margin-top: 26px; }
+.board-head h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.board-head .hint { font-family: var(--hand); font-size: 16px; color: var(--faint); transform: rotate(-.5deg); }
+
+.members { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 11px; }
+.member {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px 18px 0; height: 328px; position: relative;
+  box-shadow: 0 1px 0 rgba(80,60,30,.06), 0 16px 30px -30px rgba(60,40,20,.55);
+  display: flex; flex-direction: column;
+}
+.member.you { border-color: #cbb894; }
+.member.you::before { content: "TODAY"; position: absolute; top: -8px; right: 14px; background: var(--terra); color: #fbf5e7; font-size: 7.5px; font-weight: 700; letter-spacing: .14em; padding: 3px 7px; border-radius: 2px; }
+.mtop { display: flex; align-items: center; gap: 10px; }
+.mavatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-size: 15px; font-weight: 600; color: #fbf6ea; }
+.mname { font-size: 14px; font-weight: 650; letter-spacing: .01em; }
+.msub { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
+.mstate { margin-left: auto; font-size: 8px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; padding: 4px 7px; border-radius: 99px; white-space: nowrap; }
+.mstate.open { color: #8f5a1f; background: #f4e5c9; }
+.mstate.done { color: var(--olive); background: #e9e4cf; }
+.mchore { font-family: var(--serif); font-size: 30px; font-weight: 500; letter-spacing: -.02em; margin-top: 15px; line-height: 1; }
+.mdesc { font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+.mseg { display: flex; gap: 3px; margin-top: 14px; }
+.mseg i { flex: 1; height: 4px; border-radius: 2px; background: #e6dac4; }
+.mseg i.on { background: var(--terra); }
+.mcount { display: flex; justify-content: space-between; align-items: baseline; margin-top: 7px; font-size: 9.5px; color: var(--muted); }
+.mcount b { color: var(--ink); font-family: var(--serif); font-size: 13px; font-weight: 600; }
+.mlist { margin-top: 8px; border-top: 1px dotted var(--line); }
+.mlist li { display: flex; align-items: center; gap: 9px; min-height: 32px; border-bottom: 1px dotted var(--line); font-size: 12.5px; }
+.mbox { width: 17px; height: 17px; flex: none; border: 1.3px solid var(--ink); border-radius: 3px; display: grid; place-items: center; }
+.mbox svg { width: 9px; height: 9px; color: var(--card); }
+.mlist li.done .mbox { background: var(--terra); border-color: var(--terra); }
+.mlist li.done span:last-child { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(185,85,47,.45); }
+.mweek { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 10px; }
+.mweek > span { font-size: 8px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--faint); }
+.mdots { display: flex; gap: 4px; }
+.mdots i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); display: block; }
+.mdots i.full { background: var(--terra); border-color: var(--terra); }
+.mdots i.part { background: var(--gold); border-color: var(--gold); }
+.mdots i.now { border: 1.4px solid var(--terra); box-shadow: 0 0 0 2px rgba(185,85,47,.09); }
+.mdots i.future { border-style: dashed; border-color: #ded2bc; }
+.mfoot { margin-top: 4px; padding: 9px 0 11px; font-family: var(--hand); font-size: 14.5px; color: var(--faint); border-top: 1px dotted var(--line); }
+.mfoot strong { color: var(--terra); font-weight: 400; }
+
+.dlow { display: grid; grid-template-columns: 1.95fr 1fr; gap: 16px; margin-top: 16px; }
+.week-card, .note-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 17px 20px; height: 230px; }
+.card-title { display: flex; align-items: baseline; justify-content: space-between; }
+.card-title h3 { font-family: var(--serif); font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.card-title a { font-size: 9.5px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--terra); text-decoration: none; }
+.wgrid { display: grid; grid-template-columns: 124px repeat(7, 1fr); align-items: center; margin-top: 9px; row-gap: 3px; }
+.wgrid .dhead { font-size: 8px; font-weight: 700; letter-spacing: .12em; color: var(--faint); text-align: center; }
+.wgrid .dhead b { display: block; font-family: var(--serif); font-size: 12px; letter-spacing: 0; font-weight: 600; color: var(--muted); margin-top: 1px; }
+.wgrid .dhead.today { color: var(--terra); }
+.wgrid .dhead.today b { color: var(--terra); }
+.wname { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; }
+.wname .wa { width: 21px; height: 21px; border-radius: 50%; display: grid; place-items: center; color: #fbf6ea; font-size: 9px; font-family: var(--serif); }
+.wcell { display: flex; justify-content: center; }
+.wdot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; }
+.wdot.full { background: var(--terra); border-color: var(--terra); }
+.wdot.full::after { content: ""; width: 8px; height: 4px; border-left: 1.5px solid #fbf5e7; border-bottom: 1.5px solid #fbf5e7; transform: rotate(-45deg) translate(1px,-1px); }
+.wdot.part { border-color: var(--gold); background: #f7efd9; position: relative; }
+.wdot.part::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.wdot.now { border: 1.5px solid var(--terra); box-shadow: 0 0 0 3px rgba(185,85,47,.1); }
+.wdot.now::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--terra); }
+.wdot.future { border-style: dashed; border-color: #ded2bc; }
+.legend { display: flex; gap: 16px; align-items: center; margin-top: 4px; font-size: 9px; color: var(--faint); letter-spacing: .03em; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: block; border: 1px solid var(--line); }
+.legend i.full { background: var(--terra); border-color: var(--terra); }
+.legend i.part { background: var(--gold); border-color: var(--gold); }
+.legend i.none { border-style: dashed; }
+
+.note-card { background: #fbf2dd; position: relative; overflow: hidden; }
+.note-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 25px, rgba(185,85,47,.1) 25px 26px); }
+.note-card .card-title { position: relative; z-index: 1; }
+.note-card h3 { font-family: var(--hand); font-size: 23px; font-weight: 400; color: var(--terra-deep); }
+.note-copy { position: relative; z-index: 1; font-family: var(--hand); font-size: 16.5px; line-height: 26px; color: #544836; margin-top: 10px; transform: rotate(-.4deg); }
+.note-copy b { color: var(--terra); font-weight: 400; }
+.note-sign { position: relative; z-index: 1; font-family: var(--hand); font-size: 14px; color: var(--faint); text-align: right; margin-top: 2px; }
+
+.tabbar { display: none; }
+.homebar { display: none; }
+</style>
+</head>
+<body class="desk">
+  <header class="dnav">
+    <div class="dbrand">
+      <span class="mark">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2.6 7.2 8 2.7l5.4 4.5v5.5a.7.7 0 0 1-.7.7H3.3a.7.7 0 0 1-.7-.7V7.2Z"/>
+          <path d="M6.3 13.4V9.5h3.4v3.9"/>
+        </svg>
+      </span>
+      <span class="name">OUR HOUSE</span>
+      <span class="sub">the week at a glance</span>
+    </div>
+    <nav>
+      <a class="active" href="#">Today</a>
+      <a href="#">This week</a>
+      <a href="#">Reports</a>
+      <a href="#">Family</a>
+    </nav>
+    <div class="right">
+      <span class="week-label">Week 48 &middot; Nov 23&ndash;29</span>
+      <span class="avatar">JP</span>
+    </div>
+  </header>
+
+  <main class="dmain">
+    <div class="dhero">
+      <div>
+        <div class="kicker">Wednesday, November 25</div>
+        <h1>This week at <em>the house</em></h1>
+        <p class="lede">Everyone&rsquo;s chores, on one page. Seven done today, four to go.</p>
+      </div>
+      <div class="dscore">
+        <div class="num">7<span> / 11</span></div>
+        <div class="label">tasks done today<b>2-day streak</b></div>
+      </div>
+    </div>
+
+    <div class="board-head">
+      <h2>Today&rsquo;s board</h2>
+      <span class="hint">tap a name to open their week</span>
+    </div>
+
+    <section class="members">
+      <article class="member you">
+        <div class="mtop">
+          <div class="mavatar" style="background:#b9552f">A</div>
+          <div><div class="mname">Alex</div><div class="msub">Kitchen</div></div>
+          <span class="mstate open">2 of 3</span>
+        </div>
+        <div class="mchore">Kitchen</div>
+        <div class="mdesc">Wipe and sweep after dinner.</div>
+        <div class="mseg"><i class="on"></i><i class="on"></i><i></i></div>
+        <div class="mcount"><span>Today</span><b>2 / 3</b></div>
+        <ul class="mlist">
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Wipe counters</span></li>
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Sweep floor</span></li>
+          <li><span class="mbox"></span><span>Take out trash</span></li>
+        </ul>
+        <div class="mweek"><span>This week</span><div class="mdots"><i class="full"></i><i class="full"></i><i class="now"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+        <div class="mfoot"><strong>One left.</strong> Trash before 8.</div>
+      </article>
+
+      <article class="member">
+        <div class="mtop">
+          <div class="mavatar" style="background:#67724b">S</div>
+          <div><div class="mname">Sam</div><div class="msub">Bathroom</div></div>
+          <span class="mstate open">1 of 2</span>
+        </div>
+        <div class="mchore">Bathroom</div>
+        <div class="mdesc">Clean the bathroom.</div>
+        <div class="mseg"><i class="on"></i><i></i></div>
+        <div class="mcount"><span>Today</span><b>1 / 2</b></div>
+        <ul class="mlist">
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Clean sink</span></li>
+          <li><span class="mbox"></span><span>Scrub tub</span></li>
+        </ul>
+        <div class="mweek"><span>This week</span><div class="mdots"><i class="full"></i><i class="part"></i><i class="now"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+        <div class="mfoot">Sink is sparkling.</div>
+      </article>
+
+      <article class="member">
+        <div class="mtop">
+          <div class="mavatar" style="background:#44566b">R</div>
+          <div><div class="mname">Riley</div><div class="msub">Yard</div></div>
+          <span class="mstate done">All done</span>
+        </div>
+        <div class="mchore">Yard</div>
+        <div class="mdesc">Maintain the yard.</div>
+        <div class="mseg"><i class="on"></i><i class="on"></i></div>
+        <div class="mcount"><span>Today</span><b>2 / 2</b></div>
+        <ul class="mlist">
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Mow lawn</span></li>
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Rake leaves</span></li>
+        </ul>
+        <div class="mweek"><span>This week</span><div class="mdots"><i class="full"></i><i class="full"></i><i class="full"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+        <div class="mfoot"><strong>Finished at 4:10.</strong></div>
+      </article>
+
+      <article class="member">
+        <div class="mtop">
+          <div class="mavatar" style="background:#8e6d3f">A</div>
+          <div><div class="mname">Avery</div><div class="msub">Laundry</div></div>
+          <span class="mstate done">All done</span>
+        </div>
+        <div class="mchore">Laundry</div>
+        <div class="mdesc">Wash and fold clothes.</div>
+        <div class="mseg"><i class="on"></i><i class="on"></i></div>
+        <div class="mcount"><span>Today</span><b>2 / 2</b></div>
+        <ul class="mlist">
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Wash clothes</span></li>
+          <li class="done"><span class="mbox"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span><span>Fold clothes</span></li>
+        </ul>
+        <div class="mweek"><span>This week</span><div class="mdots"><i class="full"></i><i class="full"></i><i class="now"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+        <div class="mfoot">Basket&rsquo;s already empty.</div>
+      </article>
+    </section>
+
+    <div class="dlow">
+      <section class="week-card">
+        <div class="card-title">
+          <h3>The week so far</h3>
+          <a href="#">Open weekly report &rarr;</a>
+        </div>
+        <div class="wgrid">
+          <span></span>
+          <span class="dhead">MON<b>23</b></span>
+          <span class="dhead">TUE<b>24</b></span>
+          <span class="dhead today">WED<b>25</b></span>
+          <span class="dhead">THU<b>26</b></span>
+          <span class="dhead">FRI<b>27</b></span>
+          <span class="dhead">SAT<b>28</b></span>
+          <span class="dhead">SUN<b>29</b></span>
+
+          <span class="wname"><span class="wa" style="background:#b9552f">A</span>Alex</span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot now"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+
+          <span class="wname"><span class="wa" style="background:#67724b">S</span>Sam</span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot part"></i></span>
+          <span class="wcell"><i class="wdot now"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+
+          <span class="wname"><span class="wa" style="background:#44566b">R</span>Riley</span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+
+          <span class="wname"><span class="wa" style="background:#8e6d3f">A</span>Avery</span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot full"></i></span>
+          <span class="wcell"><i class="wdot now"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+          <span class="wcell"><i class="wdot future"></i></span>
+        </div>
+        <div class="legend">
+          <span><i class="full"></i>Complete</span>
+          <span><i class="part"></i>Partly done</span>
+          <span><i class="none"></i>No record yet</span>
+        </div>
+      </section>
+
+      <section class="note-card">
+        <div class="card-title"><h3>From the kitchen</h3></div>
+        <p class="note-copy"><b>Riley</b> finished the yard at 4:10 &mdash; nice work.<br>Recycling goes out <b>Thursday</b>, not Friday.</p>
+        <p class="note-sign">&mdash; Mom</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
