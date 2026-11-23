@@ -107,6 +107,11 @@ def test_theme_catalog_is_public_and_lists_available_themes(tmp_path, monkeypatc
             "name": "Quest",
             "preview_image": "/theme-previews/quest.png",
         },
+        {
+            "id": "sticker-club-v2",
+            "name": "Sticker Club v2",
+            "preview_image": "/theme-previews/sticker-club-v2.png",
+        },
     ]
 
 
