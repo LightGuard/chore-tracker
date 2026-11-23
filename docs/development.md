@@ -148,6 +148,10 @@ source .venv/bin/activate
 tilt up
 ```
 
+If you prefer not to activate the environment, set `PYTHON` to the project
+interpreter before running Tilt; the Tiltfile uses it for dependency
+installation, migrations, and the API process.
+
 Tilt exposes the API at `http://127.0.0.1:8000` and the frontend at
 `http://localhost:5173`. Uvicorn reloads files under `src/` (not the frontend
 tree or virtual environment when run from the repository root), and Vite
