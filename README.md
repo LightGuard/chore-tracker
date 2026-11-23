@@ -521,6 +521,10 @@ The backend, frontend, and browser commands documented above are the same comman
 used by those jobs. The browser artifact is uploaded even when tests pass; on failure
 it contains the retained traces and screenshots needed to diagnose the run.
 
+Version tags are a separate workflow: pushing one builds both images and publishes
+them to GitHub Container Registry. See
+[Publishing release images](#publishing-release-images).
+
 ## Docker deployment
 
 Production-style images and a Compose deployment are included for local and
@@ -650,6 +654,64 @@ liveness, readiness, the frontend, and the API proxy, checks that the
 application containers are non-root, writes a sentinel to the volume, restarts
 the deployment, and verifies the sentinel survived. It removes its own volume
 on exit. Set `CHORE_TRACKER_HTTP_PORT` if port 8080 is already in use.
+
+### Publishing release images
+
+Pushing a version tag builds both Dockerfiles and publishes them to the GitHub
+Container Registry. The
+[publish workflow](.github/workflows/publish-images.yml) runs for tags such as
+`v1.2.3`, which match `v*.*.*`:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+It publishes two images for `linux/amd64` and `linux/arm64`:
+
+- `ghcr.io/lightguard/chore-tracker-backend` from `Dockerfile`
+- `ghcr.io/lightguard/chore-tracker-frontend` from `frontend/Dockerfile`
+
+Each image gets the exact version as its tag (`1.2.3`), a moving minor tag
+(`1.2`), and `latest`. A prerelease tag such as `v1.2.3-rc.1` is published as
+`1.2.3-rc.1` only, so `latest` and the moving minor tag never point at an
+unfinished build. Because the tag push is the only trigger, publishing a GitHub
+Release for that tag does not build a second time; re-run the workflow from the
+Actions tab to rebuild an existing tag.
+
+The workflow authenticates with the repository `GITHUB_TOKEN` and needs no
+repository secrets. Publishing from a workflow links each package to this
+repository automatically, so both images appear under **Packages** in the
+repository sidebar and inherit its permissions. Package visibility is separate
+from repository visibility and starts private: set it to public in the package
+settings if the images must be pullable without credentials. Otherwise the
+cluster needs a read token in the chart's `imagePullSecrets`, because a
+`GITHUB_TOKEN` from a workflow expires with the run.
+
+If either image name was pushed by hand before the first workflow run, link that
+existing package to this repository first. The workflow's `GITHUB_TOKEN` can
+only push to a package that is connected to this repository.
+
+Pull an image directly:
+
+```bash
+docker pull ghcr.io/lightguard/chore-tracker-backend:1.2.3
+```
+
+To deploy a published build, point the Helm chart at it:
+
+```bash
+helm upgrade --install chore-tracker deploy/kubernetes/chore-tracker \
+  --namespace chore-tracker \
+  --values my-values.yaml \
+  --set backend.image.repository=ghcr.io/lightguard/chore-tracker-backend \
+  --set backend.image.tag=1.2.3 \
+  --set frontend.image.repository=ghcr.io/lightguard/chore-tracker-frontend \
+  --set frontend.image.tag=1.2.3
+```
+
+The Compose deployment in this repository still builds from source and is not
+affected by the published images.
 
 ## Kubernetes deployment
 

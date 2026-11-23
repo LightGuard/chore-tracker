@@ -1,0 +1,109 @@
+name: Publish container images
+
+# Version tags are the only release trigger. Publishing a GitHub Release for an
+# existing tag does not need its own trigger: the tag push that created it is
+# the single event that starts this workflow, so an image is built exactly once
+# per version. Use "Re-run jobs" in the Actions UI to rebuild a tag.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  # Push to ghcr.io with the repository-scoped token; no other secrets needed.
+  packages: write
+
+# Concurrent runs for the same tag would race on the same package tags.
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  PLATFORMS: linux/amd64,linux/arm64
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.component }} image
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: backend
+            context: .
+            dockerfile: Dockerfile
+            description: FastAPI backend and Alembic migrations
+          - component: frontend
+            context: frontend
+            dockerfile: frontend/Dockerfile
+            description: React frontend served by nginx
+    steps:
+      - uses: actions/checkout@v4
+
+      # The arm64 half of the image is built under emulation on the amd64
+      # runner. Both Dockerfiles use multi-arch base images and install
+      # prebuilt wheels, so no compilation is required for either platform.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image name
+        # GHCR requires a lowercase repository path and github.repository_owner
+        # preserves the owner's registered case. Deriving the name from the
+        # repository keeps both images visible as Packages on the repository.
+        run: |
+          repository="$(printf '%s' "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          image="${REGISTRY}/${repository}-${{ matrix.component }}"
+          echo "IMAGE=${image}" >> "$GITHUB_ENV"
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          # Set explicitly so a future action default cannot start publishing a
+          # floating latest tag for prereleases.
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+          labels: |
+            org.opencontainers.image.title=chore-tracker ${{ matrix.component }}
+            org.opencontainers.image.description=${{ matrix.description }}
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+
+      - name: Summarize published image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### ${{ matrix.component }} image"
+            echo
+            echo '```'
+            echo "${TAGS}"
+            echo '```'
+            echo
+            echo "- Digest: \`${DIGEST}\`"
+            echo "- Platforms: ${PLATFORMS}"
+          } >> "$GITHUB_STEP_SUMMARY"
