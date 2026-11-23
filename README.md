@@ -247,14 +247,22 @@ The Playwright configuration starts both services itself on isolated ports
 `frontend/.playwright-data/chore-tracker-e2e.db`, applies migrations, and seeds the
 current week's assignments plus prior-week history samples. Backend dependencies
 must already be installed in the repository's `.venv`, or `PYTHON` can point at
-another interpreter with the backend dependencies available. The suite covers child
-selection, ordered checklist display, checking and unchecking items, reload
-persistence, the no-assignment state, grouped completion history, empty history,
-history switching when the selected child changes, a phone-sized viewport, and the
-administrator flow. Administrator browser coverage uses Playwright's virtual WebAuthn
-authenticator to exercise real passkey registration, sign-in, second-administrator
-enrollment, invalid and reused invitation handling, protected-screen denial,
-representative family/chore CRUD, and sign-out against the running application.
+another interpreter with the backend dependencies available. Each browser spec
+resets its own baseline, and lifecycle tests use test-only controls in
+`frontend/e2e/backend_server.py` to set a deterministic date, generate assignments,
+and run the Monday rollover without starting the live scheduler. The fixture's
+child-facing date starts at Monday, 2026-11-09; the live scheduler is disabled.
+
+The suite covers child selection, ordered checklist display, checking and unchecking
+items, reload persistence, the no-assignment state, grouped completion history,
+empty history, history switching when the selected child changes, a phone-sized
+viewport, the next-day fresh checklist with the prior day retained in history,
+deterministic one-chore-per-child assignment generation, and repeated Monday rollover
+without duplicate reports or assignments. Administrator browser coverage uses
+Playwright's virtual WebAuthn authenticator to exercise real passkey registration,
+sign-in, second-administrator enrollment, invalid and reused invitation handling,
+protected-screen denial, representative family/chore CRUD, report history/detail, and
+sign-out against the running application.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.

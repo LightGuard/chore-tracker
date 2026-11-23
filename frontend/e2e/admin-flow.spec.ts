@@ -9,10 +9,15 @@ import {
   enableVirtualAuthenticator,
   type WebAuthnCredential,
 } from "./web-authn";
+import { resetFixture } from "./test-control";
 
 const BASE_URL = "http://localhost:5174";
 const FIRST_ADMIN = "first@example.test";
 const SECOND_ADMIN = "second@example.test";
+
+test.beforeAll(async ({ playwright }) => {
+  await resetFixture(playwright);
+});
 
 let firstCredential: WebAuthnCredential | undefined;
 let secondCredential: WebAuthnCredential | undefined;
