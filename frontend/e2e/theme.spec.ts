@@ -328,6 +328,9 @@ test.describe.serial("theme persistence and selection flow", () => {
           .getByRole("list", { name: "Today's checklist" })
           .getByRole("checkbox"),
       ).toHaveCount(6);
+      await expect(
+        page.getByText("CLEARED", { exact: true }).first(),
+      ).toBeVisible();
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth,
       );
