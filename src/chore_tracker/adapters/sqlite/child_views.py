@@ -191,6 +191,234 @@ class SQLiteChildViewsPersistence:
                 }
             }
 
+    def get_derived_stats(self, family_member_id, today, week_start, week_end):
+        """Read generic lifetime, current-week, and household completion facts."""
+        with transaction(self._database_path) as connection:
+            member_rows = connection.execute(
+                """
+                WITH RECURSIVE member_scope AS (
+                  SELECT id, display_name, is_active, 1 AS is_selected
+                  FROM family_members
+                  WHERE id = :family_member_id
+                  UNION ALL
+                  SELECT id, display_name, is_active, 0
+                  FROM family_members
+                  WHERE is_active = 1 AND id != :family_member_id
+                ),
+                assignment_days AS (
+                  SELECT assignment.id AS assignment_id,
+                         assignment.family_member_id,
+                         date(assignment.week_start) AS day,
+                         assignment.week_end
+                  FROM weekly_assignments AS assignment
+                  WHERE assignment.family_member_id IN (
+                    SELECT id FROM member_scope
+                  )
+                  UNION ALL
+                  SELECT assignment_days.assignment_id,
+                         assignment_days.family_member_id,
+                         date(assignment_days.day, '+1 day'),
+                         assignment_days.week_end
+                  FROM assignment_days
+                  WHERE assignment_days.day < assignment_days.week_end
+                ),
+                item_counts AS (
+                  SELECT item.weekly_assignment_id, COUNT(*) AS total_items
+                  FROM assignment_checklist_items AS item
+                  WHERE item.weekly_assignment_id IN (
+                    SELECT assignment_id FROM assignment_days
+                  )
+                  GROUP BY item.weekly_assignment_id
+                ),
+                completion_counts AS (
+                  SELECT item.weekly_assignment_id,
+                         completion.completion_date,
+                         SUM(completion.is_completed) AS completed_items,
+                         COUNT(*) AS recorded_items
+                  FROM assignment_checklist_items AS item
+                  JOIN daily_checklist_completions AS completion
+                    ON completion.assignment_checklist_item_id = item.id
+                  WHERE item.weekly_assignment_id IN (
+                    SELECT assignment_id FROM assignment_days
+                  )
+                  GROUP BY item.weekly_assignment_id,
+                           completion.completion_date
+                ),
+                day_facts AS (
+                  SELECT assignment_days.family_member_id,
+                         assignment_days.day,
+                         COALESCE(items.total_items, 0) AS total_items,
+                         COALESCE(completion.completed_items, 0)
+                           AS completed_items,
+                         CASE
+                           WHEN COALESCE(items.total_items, 0) > 0
+                            AND COALESCE(completion.completed_items, 0)
+                                = items.total_items
+                           THEN 1
+                           ELSE 0
+                         END AS is_complete
+                  FROM assignment_days
+                  LEFT JOIN item_counts AS items
+                    ON items.weekly_assignment_id
+                       = assignment_days.assignment_id
+                  LEFT JOIN completion_counts AS completion
+                    ON completion.weekly_assignment_id
+                       = assignment_days.assignment_id
+                   AND completion.completion_date = assignment_days.day
+                ),
+                streak_anchors AS (
+                  SELECT scope.id AS family_member_id,
+                         CASE
+                           WHEN EXISTS (
+                             SELECT 1
+                             FROM day_facts AS fact
+                             WHERE fact.family_member_id = scope.id
+                               AND fact.day = :today
+                               AND fact.is_complete = 1
+                           ) THEN :today
+                           WHEN EXISTS (
+                             SELECT 1
+                             FROM day_facts AS fact
+                             WHERE fact.family_member_id = scope.id
+                               AND fact.day = date(:today, '-1 day')
+                               AND fact.is_complete = 1
+                           ) THEN date(:today, '-1 day')
+                           ELSE NULL
+                         END AS anchor_day
+                  FROM member_scope AS scope
+                ),
+                streak_days AS (
+                  SELECT family_member_id, anchor_day AS day
+                  FROM streak_anchors
+                  WHERE anchor_day IS NOT NULL
+                  UNION ALL
+                  SELECT streak_days.family_member_id,
+                         date(streak_days.day, '-1 day')
+                  FROM streak_days
+                  JOIN day_facts AS fact
+                    ON fact.family_member_id = streak_days.family_member_id
+                   AND fact.day = date(streak_days.day, '-1 day')
+                   AND fact.is_complete = 1
+                ),
+                streak_counts AS (
+                  SELECT family_member_id, COUNT(*) AS current_streak
+                  FROM streak_days
+                  GROUP BY family_member_id
+                )
+                SELECT scope.id AS family_member_id,
+                       scope.display_name,
+                       scope.is_active,
+                       scope.is_selected,
+                       COALESCE(SUM(
+                         CASE
+                           WHEN fact.day BETWEEN :week_start AND :week_end
+                           THEN fact.completed_items
+                           ELSE 0
+                         END
+                       ), 0) AS current_week_completed_items,
+                       COALESCE(SUM(
+                         CASE
+                           WHEN fact.day BETWEEN :week_start AND :week_end
+                            AND fact.is_complete = 1
+                           THEN 1
+                           ELSE 0
+                         END
+                       ), 0) AS current_week_complete_days,
+                       COALESCE(SUM(fact.completed_items), 0)
+                         AS lifetime_completed_items,
+                       COALESCE(SUM(fact.is_complete), 0)
+                         AS lifetime_complete_days,
+                       COALESCE(streak.current_streak, 0)
+                         AS current_streak
+                FROM member_scope AS scope
+                LEFT JOIN day_facts AS fact
+                  ON fact.family_member_id = scope.id
+                LEFT JOIN streak_counts AS streak
+                  ON streak.family_member_id = scope.id
+                GROUP BY scope.id, scope.display_name, scope.is_active,
+                         scope.is_selected, streak.current_streak
+                ORDER BY scope.is_selected DESC,
+                         scope.display_name COLLATE NOCASE,
+                         scope.id
+                """,
+                {
+                    "family_member_id": family_member_id,
+                    "today": today.isoformat(),
+                    "week_start": week_start.isoformat(),
+                    "week_end": week_end.isoformat(),
+                },
+            ).fetchall()
+            selected_row = next(
+                (row for row in member_rows if row["is_selected"]), None
+            )
+            if selected_row is None:
+                return None
+            week_rows = connection.execute(
+                """
+                WITH RECURSIVE week_days(day) AS (
+                  SELECT date(:week_start)
+                  UNION ALL
+                  SELECT date(day, '+1 day')
+                  FROM week_days
+                  WHERE day < date(:week_end)
+                ),
+                current_assignment AS (
+                  SELECT id
+                  FROM weekly_assignments
+                  WHERE family_member_id = :family_member_id
+                    AND week_start = :week_start
+                ),
+                item_counts AS (
+                  SELECT COUNT(*) AS total_items
+                  FROM assignment_checklist_items
+                  WHERE weekly_assignment_id = (
+                    SELECT id FROM current_assignment
+                  )
+                ),
+                completion_counts AS (
+                  SELECT completion.completion_date,
+                         SUM(completion.is_completed) AS completed_items,
+                         COUNT(*) AS recorded_items
+                  FROM assignment_checklist_items AS item
+                  JOIN daily_checklist_completions AS completion
+                    ON completion.assignment_checklist_item_id = item.id
+                  WHERE item.weekly_assignment_id = (
+                    SELECT id FROM current_assignment
+                  )
+                  GROUP BY completion.completion_date
+                )
+                SELECT week_days.day,
+                       COALESCE(items.total_items, 0) AS total_items,
+                       COALESCE(completion.completed_items, 0)
+                         AS completed_items,
+                       COALESCE(completion.recorded_items, 0)
+                         AS recorded_items,
+                       CASE
+                         WHEN COALESCE(completion.recorded_items, 0) = 0
+                         THEN 'not_recorded'
+                         WHEN COALESCE(items.total_items, 0) > 0
+                          AND completion.completed_items = items.total_items
+                         THEN 'complete'
+                         ELSE 'incomplete'
+                       END AS state
+                FROM week_days
+                LEFT JOIN item_counts AS items ON 1 = 1
+                LEFT JOIN completion_counts AS completion
+                  ON completion.completion_date = week_days.day
+                ORDER BY week_days.day
+                """,
+                {
+                    "family_member_id": family_member_id,
+                    "week_start": week_start.isoformat(),
+                    "week_end": week_end.isoformat(),
+                },
+            ).fetchall()
+            return {
+                "selected": dict(selected_row),
+                "members": [dict(row) for row in member_rows],
+                "current_week_days": [dict(row) for row in week_rows],
+            }
+
     def get_completion_history(self, family_member_id, limit, offset):
         with transaction(self._database_path) as connection:
             member = connection.execute(

@@ -29,6 +29,13 @@ def _today(request: Request) -> date:
     return request.app.state.child_views_today()
 
 
+def _report_timezone(request: Request) -> str:
+    settings_provider = globals().get("get_settings")
+    if settings_provider is not None:
+        return settings_provider().report_timezone
+    return request.app.state.settings.report_timezone
+
+
 def _invoke(operation):
     try:
         return operation()
@@ -132,6 +139,87 @@ def get_current_assignment(family_member_id: int, request: Request) -> dict[str,
     return _invoke(
         lambda: _service(request).get_current_assignment(
             family_member_id, _today(request)
+        )
+    )
+
+
+class DerivedStatsDay(BaseModel):
+    """One day in the current Monday-Sunday week."""
+
+    model_config = ConfigDict(extra="forbid")
+    date: date
+    completed_checklist_items: int
+    total_checklist_items: int
+    state: Literal["complete", "incomplete", "not_recorded"]
+
+
+class DerivedStatsLifetime(BaseModel):
+    """Lifetime completion facts for one child."""
+
+    model_config = ConfigDict(extra="forbid")
+    completed_checklist_items: int
+    complete_days: int
+    current_streak: int
+
+
+class DerivedStatsCurrentWeek(BaseModel):
+    """Current-week completion facts and per-day states."""
+
+    model_config = ConfigDict(extra="forbid")
+    week_start: date
+    week_end: date
+    completed_checklist_items: int
+    complete_days: int
+    days: list[DerivedStatsDay]
+
+
+class DerivedStatsStanding(BaseModel):
+    """One active child in the household weekly standings."""
+
+    model_config = ConfigDict(extra="forbid")
+    family_member_id: int
+    display_name: str
+    completed_checklist_items: int
+    complete_days: int
+    current_streak: int
+
+
+class DerivedStatsHousehold(BaseModel):
+    """Active household counts and generic weekly standings."""
+
+    model_config = ConfigDict(extra="forbid")
+    active_players: int
+    weekly_standings: list[DerivedStatsStanding]
+
+
+class DerivedStats(BaseModel):
+    """Theme-neutral completion facts shared by family-facing themes."""
+
+    model_config = ConfigDict(extra="forbid")
+    family_member_id: int
+    display_name: str
+    as_of: date
+    timezone: str
+    lifetime: DerivedStatsLifetime
+    current_week: DerivedStatsCurrentWeek
+    household: DerivedStatsHousehold
+
+
+@router.get(
+    "/{family_member_id}/derived-stats",
+    response_model=DerivedStats,
+    responses={
+        404: {"description": "Family member was not found."},
+        409: {"description": "The selected family member is inactive."},
+    },
+    summary="Get generic completion facts for a child",
+)
+def get_family_member_derived_stats(
+    family_member_id: int, request: Request
+) -> dict[str, Any]:
+    return _invoke(
+        lambda: _service(request).get_derived_stats(
+            family_member_id, _today(request), _report_timezone(request)
         )
     )
 
