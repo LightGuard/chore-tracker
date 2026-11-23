@@ -1,0 +1,109 @@
+# Default values for chore-tracker.
+#
+# The image values must point at images built from this repository's Dockerfiles.
+# The example ingress and SMTP values are placeholders; override them for the
+# cluster. See the chart README for deployment, backup, and rollback steps.
+
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+
+backend:
+  image:
+    repository: chore-tracker-backend
+    tag: local
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: chore-tracker-frontend
+    tag: local
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+persistence:
+  # Use an existing PVC instead of creating one. The claim must be
+  # ReadWriteOnce and contain the database at mountPath/databaseFile.
+  existingClaim: ""
+  # Leave empty to use the cluster's default StorageClass.
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /data
+  databaseFile: chore-tracker.db
+
+config:
+  # production requires HTTPS origins, a non-localhost passkey RP ID, and a
+  # non-console email transport.
+  environment: production
+  # Leave these empty to derive the origin from ingress.host and TLS. Set them
+  # explicitly when ingress is disabled or an external proxy terminates TLS.
+  appOrigin: ""
+  passkeyOrigin: ""
+  passkeyRpId: ""
+  reportTimezone: America/Denver
+  reportDeliveryTime: "03:00"
+  weeklyRolloverEnabled: true
+  emailTransport: smtp
+  emailFromAddress: chores@example.test
+  smtpHost: mail.example.test
+  smtpPort: 587
+  smtpUsername: ""
+  smtpStarttls: true
+  # Extra non-secret CHORE_TRACKER_* variables. Values must be strings.
+  extraEnv: {}
+
+secrets:
+  # Name of an existing Secret in the release namespace. The chart never creates
+  # or renders secret material.
+  existingSecret: ""
+  smtpPasswordKey: smtp-password
+  mountPath: /run/secrets
+  fileName: smtp_password
+
+ingress:
+  enabled: true
+  # Leave empty to use the cluster's default IngressClass.
+  className: traefik
+  annotations: {}
+  # Replace this placeholder with the hostname served by the homelab Traefik
+  # ingress and covered by the wildcard TLS certificate.
+  host: chore-tracker.example.test
+  path: /
+  pathType: Prefix
+  tls:
+    enabled: true
+    # Replace with the existing wildcard TLS Secret name. Do not commit the
+    # certificate or key material.
+    secretName: wildcard-example-tls

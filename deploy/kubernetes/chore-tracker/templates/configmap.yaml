@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chore-tracker.fullname" . }}
+  labels:
+    {{- include "chore-tracker.labels" . | nindent 4 }}
+data:
+  CHORE_TRACKER_ENVIRONMENT: {{ .Values.config.environment | quote }}
+  CHORE_TRACKER_APP_HOST: "0.0.0.0"
+  CHORE_TRACKER_APP_PORT: "8000"
+  CHORE_TRACKER_APP_ORIGIN: {{ include "chore-tracker.appOrigin" . | quote }}
+  CHORE_TRACKER_PASSKEY_ORIGIN: {{ include "chore-tracker.passkeyOrigin" . | quote }}
+  CHORE_TRACKER_PASSKEY_RP_ID: {{ include "chore-tracker.passkeyRpId" . | quote }}
+  CHORE_TRACKER_DATABASE_PATH: {{ include "chore-tracker.databasePath" . | quote }}
+  CHORE_TRACKER_REPORT_TIMEZONE: {{ .Values.config.reportTimezone | quote }}
+  CHORE_TRACKER_REPORT_DELIVERY_TIME: {{ .Values.config.reportDeliveryTime | quote }}
+  CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED: {{ .Values.config.weeklyRolloverEnabled | quote }}
+  CHORE_TRACKER_EMAIL_TRANSPORT: {{ .Values.config.emailTransport | quote }}
+  CHORE_TRACKER_EMAIL_FROM_ADDRESS: {{ .Values.config.emailFromAddress | quote }}
+  CHORE_TRACKER_SMTP_HOST: {{ .Values.config.smtpHost | quote }}
+  CHORE_TRACKER_SMTP_PORT: {{ .Values.config.smtpPort | quote }}
+  CHORE_TRACKER_SMTP_USERNAME: {{ .Values.config.smtpUsername | quote }}
+  CHORE_TRACKER_SMTP_STARTTLS: {{ .Values.config.smtpStarttls | quote }}
+  {{- if .Values.secrets.existingSecret }}
+  CHORE_TRACKER_SMTP_PASSWORD_FILE: {{ printf "%s/%s" .Values.secrets.mountPath .Values.secrets.fileName | quote }}
+  {{- end }}
+  {{- range $key, $value := .Values.config.extraEnv }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
