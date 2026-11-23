@@ -6,7 +6,7 @@ type ChildSelectorProps = {
   onSelect: (member: FamilyMember) => void;
   onCancel?: () => void;
   busyId?: number;
-  variant?: "default" | "quest";
+  variant?: "default" | "quest" | "sticker";
 };
 
 export function ChildSelector({
@@ -18,20 +18,30 @@ export function ChildSelector({
   variant = "default",
 }: ChildSelectorProps) {
   const isQuest = variant === "quest";
+  const isSticker = variant === "sticker";
   return (
-    <section className="child-selector-panel" aria-labelledby="child-selector-heading">
+    <section
+      className={`child-selector-panel${isSticker ? " sticker-selector" : ""}`}
+      aria-labelledby="child-selector-heading"
+    >
       <div className="section-heading-row">
         <div>
           <div className="section-kicker">
-            {isQuest ? "Squad select" : "Who’s doing chores?"}
+            {isQuest
+              ? "Squad select"
+              : isSticker
+                ? "Sticker Club"
+                : "Who’s doing chores?"}
           </div>
           <h2 id="child-selector-heading">
-            {isQuest ? "Who’s playing?" : "Choose a child"}
+            {isQuest || isSticker ? "Who’s playing?" : "Choose a child"}
           </h2>
           <p className="section-lede">
             {isQuest
               ? "Pick your name to jump into today’s quest. You are not signing in."
-              : "Pick your name to see this week’s chore. You are not signing in."}
+              : isSticker
+                ? "Pick your name to fill today’s sticker. You are not signing in."
+                : "Pick your name to see this week’s chore. You are not signing in."}
           </p>
         </div>
         {onCancel && (
@@ -56,7 +66,9 @@ export function ChildSelector({
             </span>
             <span className="child-name">{member.display_name}</span>
             {member.id === selectedId && (
-              <span className="child-current">Current</span>
+              <span className="child-current">
+                {isSticker ? "YOU" : "Current"}
+              </span>
             )}
           </button>
         ))}

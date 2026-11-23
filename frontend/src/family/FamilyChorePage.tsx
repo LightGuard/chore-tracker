@@ -16,7 +16,12 @@ import { ChildSelector } from "../components/ChildSelector";
 import { ThemePicker } from "../components/ThemePicker";
 import { ThemeScope } from "../components/ThemeScope";
 import { QuestAssignmentView } from "../quest/QuestAssignmentView";
-import { useDerivedStats } from "../quest/useDerivedStats";
+import {
+  StickerAssignmentView,
+  StickerHeaderCount,
+} from "../sticker/StickerAssignmentView";
+import { stickerWeek } from "../sticker/presentation";
+import { useDerivedStats } from "./useDerivedStats";
 import {
   DEFAULT_THEME,
   resolveBootstrapThemeId,
@@ -243,11 +248,13 @@ export function FamilyChorePage() {
   const selectedMember = members.find(
     (member) => String(member.id) === selectedMemberId,
   );
-  const questStats = useDerivedStats(
+  const themeStats = useDerivedStats(
     selectedMember?.id ?? null,
-    themeId === "quest" && !needsThemePicker,
+    (themeId === "quest" || themeId === "sticker-club-v2") &&
+      !needsThemePicker,
     assignmentReloadKey + statsRefreshKey,
   );
+  const sticker = stickerWeek(themeStats.stats, assignment ?? undefined);
 
   const saveTheme = useCallback(
     async (nextThemeId: string) => {
@@ -332,6 +339,14 @@ export function FamilyChorePage() {
         themeBusy={themeBusy}
         onThemeChange={saveTheme}
         currentChild={selectedMember?.display_name}
+        headerBadge={
+          themeId === "sticker-club-v2" && selectedMember && !needsThemePicker ? (
+            <StickerHeaderCount
+              count={sticker.count}
+              status={themeStats.status}
+            />
+          ) : undefined
+        }
         onSwitchChild={
           selectedMember ? () => setSwitchOpen(true) : undefined
         }
@@ -341,8 +356,10 @@ export function FamilyChorePage() {
       <Container width="100%">
         <main
           className={`app-shell family-shell theme-${themeId}-family${
-            themeId === "quest" && selectedMember && !needsThemePicker
-              ? " quest-playing"
+            (themeId === "quest" || themeId === "sticker-club-v2") &&
+            selectedMember &&
+            !needsThemePicker
+              ? ` ${themeId === "quest" ? "quest-playing" : "sticker-playing"}`
               : ""
           }`}
         >
@@ -431,7 +448,13 @@ export function FamilyChorePage() {
                 <ChildSelector
                   members={members}
                   onSelect={selectMember}
-                  variant={themeId === "quest" ? "quest" : "default"}
+                  variant={
+                    themeId === "quest"
+                      ? "quest"
+                      : themeId === "sticker-club-v2"
+                        ? "sticker"
+                        : "default"
+                  }
                 />
               )}
 
@@ -441,7 +464,13 @@ export function FamilyChorePage() {
                   selectedId={selectedMember.id}
                   onSelect={selectMember}
                   onCancel={() => setSwitchOpen(false)}
-                  variant={themeId === "quest" ? "quest" : "default"}
+                  variant={
+                    themeId === "quest"
+                      ? "quest"
+                      : themeId === "sticker-club-v2"
+                        ? "sticker"
+                        : "default"
+                  }
                 />
               )}
 
@@ -519,19 +548,37 @@ export function FamilyChorePage() {
                   )}
 
                   {assignmentStatus === "ready" && assignment &&
-                    (themeId === "quest" ? (
-                      <QuestAssignmentView
-                        displayName={selectedMember?.display_name ?? "Player"}
-                        assignment={assignment}
-                        weekNumber={isoWeekNumber(assignment.week_start)}
-                        stats={questStats.stats}
-                        statsStatus={questStats.status}
-                        statsError={questStats.error}
-                        onRetryStats={questStats.reload}
-                        savingItemId={savingItemId}
-                        saveError={saveError}
-                        onToggle={handleToggle}
-                      />
+                    (themeId === "quest" ||
+                    themeId === "sticker-club-v2" ? (
+                      themeId === "sticker-club-v2" ? (
+                        <StickerAssignmentView
+                          displayName={
+                            selectedMember?.display_name ?? "Sticker fan"
+                          }
+                          assignment={assignment}
+                          weekNumber={isoWeekNumber(assignment.week_start)}
+                          week={sticker}
+                          statsStatus={themeStats.status}
+                          statsError={themeStats.error}
+                          onRetryStats={themeStats.reload}
+                          savingItemId={savingItemId}
+                          saveError={saveError}
+                          onToggle={handleToggle}
+                        />
+                      ) : (
+                        <QuestAssignmentView
+                          displayName={selectedMember?.display_name ?? "Player"}
+                          assignment={assignment}
+                          weekNumber={isoWeekNumber(assignment.week_start)}
+                          stats={themeStats.stats}
+                          statsStatus={themeStats.status}
+                          statsError={themeStats.error}
+                          onRetryStats={themeStats.reload}
+                          savingItemId={savingItemId}
+                          saveError={saveError}
+                          onToggle={handleToggle}
+                        />
+                      )
                     ) : (
                       <Card
                         as="section"

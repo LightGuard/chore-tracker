@@ -4,7 +4,12 @@ import { resolve } from "node:path";
 
 const baseUrl = process.env.PREVIEW_BASE_URL ?? "http://localhost:5174";
 const themeId = process.env.PREVIEW_THEME ?? "homestead";
-const scenario = themeId === "quest" ? "quest-preview" : "preview";
+const scenario =
+  themeId === "quest"
+    ? "quest-preview"
+    : themeId === "sticker-club-v2"
+      ? "sticker-preview"
+      : "preview";
 const output = resolve(process.cwd(), `public/theme-previews/${themeId}.png`);
 
 const browser = await chromium.launch({
@@ -30,6 +35,12 @@ try {
   await page.getByRole("heading", { name: "Kitchen" }).waitFor();
   if (themeId === "quest") {
     await page.locator(".quest-xp").filter({ hasText: "XP" }).waitFor();
+  }
+  if (themeId === "sticker-club-v2") {
+    await page
+      .locator(".sticker-header-count b")
+      .filter({ hasText: /\d/ })
+      .waitFor();
   }
   await page.addStyleTag({
     content: ".theme-trigger-thumb{visibility:hidden}",

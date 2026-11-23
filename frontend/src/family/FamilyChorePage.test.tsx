@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -8,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { Reshaped } from "reshaped";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CurrentAssignment, FamilyMember } from "./api";
+import type { CurrentAssignment, DerivedStats, FamilyMember } from "./api";
 import { FamilyChorePage } from "./FamilyChorePage";
 
 const THEMES = [
@@ -28,6 +29,47 @@ const PICKER_MEMBERS: FamilyMember[] = [
   { id: 1, display_name: "Alex", theme_id: null },
   { id: 2, display_name: "Sam", theme_id: null },
 ];
+
+const STICKER_THEME = {
+  id: "sticker-club-v2",
+  name: "Sticker Club v2",
+  preview_image: "/theme-previews/sticker-club-v2.png",
+};
+
+const STICKER_MEMBERS: FamilyMember[] = [
+  { id: 1, display_name: "Alex", theme_id: "sticker-club-v2" },
+  { id: 2, display_name: "Sam", theme_id: "sticker-club-v2" },
+];
+
+function derivedStats(memberId: number, completeDays: number): DerivedStats {
+  return {
+    family_member_id: memberId,
+    display_name: memberId === 1 ? "Alex" : "Sam",
+    as_of: "2026-11-18",
+    timezone: "America/Denver",
+    lifetime: {
+      completed_checklist_items: completeDays * 2,
+      complete_days: completeDays,
+      current_streak: completeDays,
+    },
+    current_week: {
+      week_start: "2026-11-16",
+      week_end: "2026-11-22",
+      completed_checklist_items: completeDays * 2,
+      complete_days: completeDays,
+      days: Array.from({ length: 7 }, (_, index) => ({
+        date: `2026-11-${16 + index}`,
+        completed_checklist_items: index < completeDays ? 2 : 0,
+        total_checklist_items: 2,
+        state: index < completeDays ? "complete" : "not_recorded",
+      })),
+    },
+    household: {
+      active_players: 2,
+      weekly_standings: [],
+    },
+  };
+}
 
 function assignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignment {
   return {
@@ -522,5 +564,66 @@ describe("family chore page", () => {
       );
     });
     expect(window.localStorage.getItem("chore-tracker.theme.child.1")).toBe("quest");
+  });
+
+  it("clears a child's sticker count before the next child's stats resolve", async () => {
+    let resolveSamStats: ((response: Response) => void) | undefined;
+    installFetch(
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/family-members/active")) {
+          return jsonResponse(STICKER_MEMBERS);
+        }
+        if (url.endsWith("/family-members/1/current-assignment")) {
+          return jsonResponse(
+            assignment({
+              checklist_items: [
+                { id: 11, label: "Wipe counters", position: 0, is_completed: true },
+                { id: 12, label: "Sweep floor", position: 1, is_completed: true },
+              ],
+              is_complete: true,
+            }),
+          );
+        }
+        if (url.endsWith("/family-members/2/current-assignment")) {
+          return jsonResponse(assignment({ family_member_id: 2 }));
+        }
+        if (url.endsWith("/family-members/1/derived-stats")) {
+          return jsonResponse(derivedStats(1, 2));
+        }
+        if (url.endsWith("/family-members/2/derived-stats")) {
+          return new Promise<Response>((resolve) => {
+            resolveSamStats = resolve;
+          });
+        }
+        return jsonResponse({ detail: "Not found" }, 404);
+      },
+      [...THEMES, STICKER_THEME],
+    );
+
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /Alex/ }));
+    expect(
+      await screen.findByLabelText("3 of 7 this week"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Switch child" }));
+    fireEvent.click(screen.getByRole("button", { name: /Sam/ }));
+
+    expect(screen.queryByLabelText("3 of 7 this week")).toBeNull();
+    expect(
+      await screen.findByLabelText("Sticker count loading"),
+    ).toBeInTheDocument();
+
+    await waitFor(() => expect(resolveSamStats).toBeDefined());
+    await act(async () => {
+      resolveSamStats?.(jsonResponse(derivedStats(2, 1)));
+    });
+
+    expect(
+      await screen.findByLabelText("1 of 7 this week"),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("3 of 7 this week")).toBeNull();
+    expect(screen.getByText("OF 7 STICKERS")).toBeInTheDocument();
   });
 });
