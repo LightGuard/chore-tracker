@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { resetFixture } from "./test-control";
+
+test.beforeAll(async ({ playwright }) => {
+  await resetFixture(playwright);
+});
 
 test.describe("family chore flow", () => {
   test("selects a child, loads the ordered checklist, and persists completion", async ({
