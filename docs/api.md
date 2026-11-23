@@ -391,7 +391,6 @@ Common authentication errors:
 | --- | --- |
 | 401 | Authentication required, no enrolled administrator, or authentication failed |
 | 403 | Origin does not match the configured passkey origin |
-| 404 | Administrator email not found for sign-in |
 | 409 | Setup already claimed/completed, duplicate email, credential duplicate, or administrator limit reached |
 | 400 | Invalid, expired, reused, or unverifiable challenge/invitation |
 | 422 | Invalid email or theme id |
