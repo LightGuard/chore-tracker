@@ -2190,7 +2190,7 @@ body[data-theme="quest"] {
 }
 
 .quest-objective.cleared .quest-objective-checkbox > span:last-child {
-  color: #6f7f8d;
+  color: #738494;
   text-decoration: line-through;
   text-decoration-color: rgba(201, 244, 93, 0.42);
 }
@@ -2546,12 +2546,12 @@ body[data-theme="quest"] {
 }
 
 @media (max-width: 390px) {
-  .quest-objective-state {
-    display: none;
+  .quest-objective {
+    grid-template-columns: minmax(0, 1fr) auto 1.4rem;
   }
 
-  .quest-objective {
-    grid-template-columns: 1.4rem minmax(0, 1fr) 1.4rem;
+  .quest-objective-index {
+    display: none;
   }
 
   .quest-meta {
