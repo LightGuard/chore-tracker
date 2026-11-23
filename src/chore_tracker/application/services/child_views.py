@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 
@@ -106,6 +106,72 @@ class ChildViewsService:
         if result.get("item_missing"):
             raise ChecklistItemNotFound
         return result["completion"]
+
+    def get_derived_stats(
+        self, family_member_id: int, today: date, timezone_name: str
+    ) -> dict[str, Any]:
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        result = self._persistence.get_derived_stats(
+            family_member_id, today, week_start, week_end
+        )
+        if result is None:
+            raise FamilyMemberNotFound
+        selected = result["selected"]
+        if not selected["is_active"]:
+            raise FamilyMemberInactive
+
+        active_members = [member for member in result["members"] if member["is_active"]]
+        active_members.sort(
+            key=lambda member: (
+                -member["current_week_completed_items"],
+                -member["current_streak"],
+                member["display_name"].casefold(),
+                member["family_member_id"],
+            )
+        )
+        week_days = [
+            {
+                "date": row["day"],
+                "completed_checklist_items": row["completed_items"],
+                "total_checklist_items": row["total_items"],
+                "state": row["state"],
+            }
+            for row in result["current_week_days"]
+        ]
+        return {
+            "family_member_id": selected["family_member_id"],
+            "display_name": selected["display_name"],
+            "as_of": today.isoformat(),
+            "timezone": timezone_name,
+            "lifetime": {
+                "completed_checklist_items": selected["lifetime_completed_items"],
+                "complete_days": selected["lifetime_complete_days"],
+                "current_streak": selected["current_streak"],
+            },
+            "current_week": {
+                "week_start": week_start.isoformat(),
+                "week_end": week_end.isoformat(),
+                "completed_checklist_items": selected["current_week_completed_items"],
+                "complete_days": selected["current_week_complete_days"],
+                "days": week_days,
+            },
+            "household": {
+                "active_players": len(active_members),
+                "weekly_standings": [
+                    {
+                        "family_member_id": member["family_member_id"],
+                        "display_name": member["display_name"],
+                        "completed_checklist_items": member[
+                            "current_week_completed_items"
+                        ],
+                        "complete_days": member["current_week_complete_days"],
+                        "current_streak": member["current_streak"],
+                    }
+                    for member in active_members
+                ],
+            },
+        }
 
     def get_completion_history(
         self, family_member_id: int, limit: int, offset: int
