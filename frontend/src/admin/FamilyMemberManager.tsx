@@ -110,7 +110,11 @@ export function FamilyMemberManager({ onSessionExpired }: Props) {
       as="section"
       padding={5}
       borderRadius="large"
-      attributes={{ "aria-labelledby": "family-members-heading" }}
+      className="admin-panel admin-family-panel"
+      attributes={{
+        "aria-labelledby": "family-members-heading",
+        id: "family-members",
+      }}
     >
       <View gap={4}>
         <View gap={1}>
@@ -133,58 +137,78 @@ export function FamilyMemberManager({ onSessionExpired }: Props) {
           </Alert>
         )}
 
-        <Card as="section" padding={4} borderRadius="medium">
-          <form onSubmit={(event) => void handleCreate(event)}>
-            <View gap={3}>
-              <Text as="h3" variant="headline-3">
-                Add a family member
-              </Text>
-              <FormControl id="new-family-member-name">
-                <FormControl.Label>New family member name</FormControl.Label>
-                <TextField
-                  name="display_name"
-                  value={displayName}
-                  onChange={({ value }) => setDisplayName(value)}
-                  inputAttributes={{ required: true }}
-                />
-              </FormControl>
-              <Switch
-                name="new-family-member-active"
-                checked={newMemberActive}
-                onChange={({ checked }) => setNewMemberActive(checked)}
-              >
-                Active
-              </Switch>
-              <View direction="row">
-                <Button type="submit" disabled={busy}>
-                  Add family member
-                </Button>
+        <div className="admin-split admin-family-grid">
+          <Card
+            as="section"
+            padding={4}
+            borderRadius="medium"
+            className="admin-subpanel admin-form-panel"
+          >
+            <form onSubmit={(event) => void handleCreate(event)}>
+              <View gap={3}>
+                <Text as="h3" variant="headline-3">
+                  Add a family member
+                </Text>
+                <FormControl id="new-family-member-name">
+                  <FormControl.Label>New family member name</FormControl.Label>
+                  <TextField
+                    name="display_name"
+                    value={displayName}
+                    onChange={({ value }) => setDisplayName(value)}
+                    inputAttributes={{ required: true }}
+                  />
+                </FormControl>
+                <Switch
+                  name="new-family-member-active"
+                  checked={newMemberActive}
+                  onChange={({ checked }) => setNewMemberActive(checked)}
+                >
+                  Active
+                </Switch>
+                <View direction="row">
+                  <Button type="submit" disabled={busy}>
+                    Add family member
+                  </Button>
+                </View>
               </View>
-            </View>
-          </form>
-        </Card>
+            </form>
+          </Card>
 
-        {loading ? (
-          <View align="center" gap={2} padding={4} attributes={{ role: "status" }}>
-            <Loader ariaLabel="Loading family members" />
-            <Text color="neutral-faded">Loading family members…</Text>
-          </View>
-        ) : members.length === 0 ? (
-          <Alert color="neutral" title="No family members yet">
-            Add the first family member using the form above.
-          </Alert>
-        ) : (
-          <View gap={3}>
-            {members.map((member) => (
-              <FamilyMemberRow
-                key={`${member.id}-${member.display_name}-${member.is_active}`}
-                member={member}
-                busy={busy}
-                onSave={(changes) => handleUpdate(member, changes)}
-              />
-            ))}
-          </View>
-        )}
+          <div className="admin-list-panel">
+            <div className="admin-list-heading">
+              <Text as="h3" variant="headline-3">
+                Household roster
+              </Text>
+            </div>
+
+            {loading ? (
+              <View
+                align="center"
+                gap={2}
+                padding={4}
+                attributes={{ role: "status" }}
+              >
+                <Loader ariaLabel="Loading family members" />
+                <Text color="neutral-faded">Loading family members…</Text>
+              </View>
+            ) : members.length === 0 ? (
+              <Alert color="neutral" title="No family members yet">
+                Add the first family member using the form above.
+              </Alert>
+            ) : (
+              <div className="admin-member-grid">
+                {members.map((member) => (
+                  <FamilyMemberRow
+                    key={`${member.id}-${member.display_name}-${member.is_active}`}
+                    member={member}
+                    busy={busy}
+                    onSave={(changes) => handleUpdate(member, changes)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </View>
     </Card>
   );
@@ -205,6 +229,7 @@ function FamilyMemberRow({ member, busy, onSave }: RowProps) {
       as="article"
       padding={4}
       borderRadius="medium"
+      className="admin-subpanel admin-member-card"
       attributes={{ "aria-label": `Family member ${member.display_name}` }}
     >
       <View gap={3}>

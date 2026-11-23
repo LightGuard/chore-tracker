@@ -1,20 +1,8 @@
 import { useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Loader,
-  Text,
-  View,
-} from "reshaped";
+import { Alert, Badge, Button, Card, Loader, Text, View } from "reshaped";
 import { ApiError } from "../api/client";
-import {
-  isUnauthorized,
-  listReports,
-  type WeeklyReportListItem,
-} from "./api";
+import { isUnauthorized, listReports, type WeeklyReportListItem } from "./api";
 import { formatGeneratedAt, formatWeekRange } from "./report-utils";
 
 const LOAD_ERROR =
@@ -77,119 +65,148 @@ export function ReportHistory({ onSessionExpired }: Props) {
       as="section"
       padding={5}
       borderRadius="large"
-      attributes={{ "aria-labelledby": headingId }}
+      className="admin-panel admin-report-panel"
+      attributes={{ "aria-labelledby": headingId, id: "report-history" }}
     >
       <View gap={4}>
         <View gap={1}>
-          <Text
-            as="h2"
-            variant="headline-2"
-            attributes={{ id: headingId }}
-          >
+          <Text as="h2" variant="headline-2" attributes={{ id: headingId }}>
             Report history
           </Text>
           <Text color="neutral-faded">
-            Finalized Monday–Sunday snapshots, newest first. Each report is
-            read from what was persisted for that week.
+            Finalized Monday–Sunday snapshots, newest first. Each report is read
+            from what was persisted for that week.
           </Text>
         </View>
 
-        {status === "loading" && (
-          <View
-            align="center"
-            gap={2}
-            padding={4}
-            attributes={{ role: "status" }}
-          >
-            <Loader ariaLabel="Loading weekly reports" />
-            <Text color="neutral-faded">Loading weekly reports…</Text>
-          </View>
-        )}
-
-        {status === "error" && (
-          <Alert
-            color="critical"
-            title="Weekly reports are unavailable"
-            actionsSlot={
-              <Button
-                variant="outline"
-                onClick={() => setReloadKey((value) => value + 1)}
-              >
-                Try again
-              </Button>
-            }
-          >
-            {error}
-          </Alert>
-        )}
-
-        {status === "ready" && reports.length === 0 && (
-          <Alert color="neutral" title="No weekly reports yet">
-            Reports are created after a Monday–Sunday week ends and the weekly
-            rollover runs. Check back after the next report is generated.
-          </Alert>
-        )}
-
-        {status === "ready" &&
-          reports.map((report) => {
-            const reportHeadingId = `${headingId}-${report.id}`;
-            const week = formatWeekRange(report.week_start, report.week_end);
-            return (
-              <Card
-                as="article"
-                key={report.id}
+        <div className="admin-split admin-report-grid">
+          <div className="admin-report-list">
+            {status === "loading" && (
+              <View
+                align="center"
+                gap={2}
                 padding={4}
-                borderRadius="medium"
-                attributes={{ "aria-labelledby": reportHeadingId }}
+                attributes={{ role: "status" }}
               >
-                <View gap={3}>
-                  <View
-                    direction="row"
-                    align="center"
-                    justify="space-between"
-                    gap={3}
-                    wrap
+                <Loader ariaLabel="Loading weekly reports" />
+                <Text color="neutral-faded">Loading weekly reports…</Text>
+              </View>
+            )}
+
+            {status === "error" && (
+              <Alert
+                color="critical"
+                title="Weekly reports are unavailable"
+                actionsSlot={
+                  <Button
+                    variant="outline"
+                    onClick={() => setReloadKey((value) => value + 1)}
                   >
-                    <View gap={1}>
-                      <Text
-                        as="h3"
-                        variant="headline-3"
-                        attributes={{ id: reportHeadingId }}
+                    Try again
+                  </Button>
+                }
+              >
+                {error}
+              </Alert>
+            )}
+
+            {status === "ready" && reports.length === 0 && (
+              <Alert color="neutral" title="No weekly reports yet">
+                Reports are created after a Monday–Sunday week ends and the
+                weekly rollover runs. Check back after the next report is
+                generated.
+              </Alert>
+            )}
+
+            {status === "ready" &&
+              reports.map((report) => {
+                const reportHeadingId = `${headingId}-${report.id}`;
+                const week = formatWeekRange(
+                  report.week_start,
+                  report.week_end,
+                );
+                return (
+                  <Card
+                    as="article"
+                    key={report.id}
+                    padding={4}
+                    borderRadius="medium"
+                    className="admin-subpanel admin-report-card"
+                    attributes={{ "aria-labelledby": reportHeadingId }}
+                  >
+                    <View gap={3}>
+                      <View
+                        direction="row"
+                        align="center"
+                        justify="space-between"
+                        gap={3}
+                        wrap
                       >
-                        {week}
-                      </Text>
+                        <View gap={1}>
+                          <Text
+                            as="h3"
+                            variant="headline-3"
+                            attributes={{ id: reportHeadingId }}
+                          >
+                            {week}
+                          </Text>
+                          <Text variant="caption-1" color="neutral-faded">
+                            Generated{" "}
+                            <time dateTime={report.generated_at}>
+                              {formatGeneratedAt(report.generated_at)}
+                            </time>
+                          </Text>
+                        </View>
+                        <View direction="row" align="center" gap={2} wrap>
+                          <Badge
+                            color={reportBadgeColor(report)}
+                            variant="faded"
+                          >
+                            {report.summary.completed_days} /{" "}
+                            {report.summary.total_days} days
+                          </Badge>
+                          <Link
+                            className="report-link-button"
+                            to={`/admin/reports/${report.week_start}`}
+                            aria-label={`View report for ${week}`}
+                          >
+                            View report
+                          </Link>
+                        </View>
+                      </View>
                       <Text variant="caption-1" color="neutral-faded">
-                        Generated{" "}
-                        <time dateTime={report.generated_at}>
-                          {formatGeneratedAt(report.generated_at)}
-                        </time>
+                        {report.summary.family_member_count} children ·{" "}
+                        {report.summary.incomplete_days} incomplete days
                       </Text>
                     </View>
-                    <View direction="row" align="center" gap={2} wrap>
-                      <Badge
-                        color={reportBadgeColor(report)}
-                        variant="faded"
-                      >
-                        {report.summary.completed_days} /{" "}
-                        {report.summary.total_days} days
-                      </Badge>
-                      <Link
-                        className="report-link-button"
-                        to={`/admin/reports/${report.week_start}`}
-                        aria-label={`View report for ${week}`}
-                      >
-                        View report
-                      </Link>
-                    </View>
-                  </View>
-                  <Text variant="caption-1" color="neutral-faded">
-                    {report.summary.family_member_count} children ·{" "}
-                    {report.summary.incomplete_days} incomplete days
-                  </Text>
-                </View>
-              </Card>
-            );
-          })}
+                  </Card>
+                );
+              })}
+          </div>
+
+          <aside className="admin-context-panel admin-report-context">
+            <span className="admin-context-kicker">How reports work</span>
+            <h3>Immutable by design</h3>
+            <p>
+              Reports are generated after the week ends and the Monday rollover
+              runs. Chore or checklist edits do not rewrite a finalized report.
+            </p>
+            <dl className="admin-context-list">
+              <div>
+                <dt>Generated</dt>
+                <dd>Weekly</dd>
+              </div>
+              <div>
+                <dt>Window</dt>
+                <dd>Mon–Sun</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>Persisted completion</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
       </View>
     </Card>
   );

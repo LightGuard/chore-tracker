@@ -1,0 +1,1219 @@
+/* Signed-in administrator layouts for the three approved themes. */
+
+.admin-workspace-shell {
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: 26px 36px 48px;
+}
+
+.admin-workspace {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.admin-side-nav {
+  position: sticky;
+  top: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.admin-nav-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.admin-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-nav-link span {
+  font-weight: 800;
+}
+
+.admin-nav-link small {
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.admin-session {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+}
+
+.admin-session-kicker {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-session h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.admin-session p {
+  margin: 0;
+  font-size: 10px;
+}
+
+.admin-session button {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+.admin-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-page-head {
+  margin: 0 0 2px;
+}
+
+.admin-page-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.admin-page-head h1 {
+  margin: 4px 0 0;
+  font-size: 46px;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.admin-page-head p {
+  max-width: 800px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-screen-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.admin-panel {
+  min-width: 0;
+}
+
+.admin-split {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-family-grid,
+.admin-chore-grid {
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+}
+
+.admin-report-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+}
+
+.admin-invite-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+}
+
+.admin-form-panel,
+.admin-list-panel {
+  min-width: 0;
+}
+
+.admin-list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-list-heading {
+  margin: 0;
+}
+
+.admin-member-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.admin-chore-list,
+.admin-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-context-panel {
+  min-width: 0;
+  padding: 16px;
+}
+
+.admin-context-kicker {
+  display: block;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-context-panel h3 {
+  margin: 5px 0 0;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.admin-context-panel p {
+  margin: 7px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.admin-context-list {
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-context-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid currentColor;
+  font-size: 10px;
+}
+
+.admin-context-list dt {
+  opacity: 0.72;
+}
+
+.admin-context-list dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.admin-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-overview-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-overview-heading h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.admin-overview-heading p {
+  max-width: 350px;
+  margin: 0;
+  font-size: 11px;
+}
+
+.admin-overview-kicker {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.admin-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-overview-card {
+  min-width: 0;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-overview-tag {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-overview-card strong {
+  margin-top: 8px;
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+.admin-overview-card > span:last-of-type {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.admin-overview-card i {
+  margin-top: auto;
+  align-self: flex-end;
+  font-size: 20px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.admin-auth-shell {
+  max-width: 56rem;
+}
+
+@media (max-width: 1160px) {
+  .admin-workspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .admin-workspace-shell {
+    padding-inline: 24px;
+  }
+
+  .admin-family-grid,
+  .admin-chore-grid,
+  .admin-report-grid,
+  .admin-invite-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-report-context,
+  .admin-access-context {
+    max-width: none;
+  }
+
+  .admin-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .admin-workspace-shell {
+    padding: 16px;
+  }
+
+  .admin-workspace {
+    display: block;
+  }
+
+  .admin-side-nav {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 18px;
+  }
+
+  .admin-nav-links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-nav-link {
+    border-left: 0;
+  }
+
+  .admin-session {
+    margin-top: 4px;
+  }
+
+  .admin-page-head h1 {
+    font-size: 36px;
+  }
+
+  .admin-member-grid,
+  .admin-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-overview-heading {
+    display: block;
+  }
+
+  .admin-overview-heading p {
+    margin-top: 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-nav-links {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-nav-link small {
+    display: none;
+  }
+
+  .admin-form-panel,
+  .admin-list-panel {
+    min-width: 0;
+  }
+}
+
+/* Homestead — paper ledger */
+
+.theme-homestead .admin-workspace-shell {
+  color: var(--hs-ink);
+}
+
+.theme-homestead .admin-side-nav {
+  padding: 14px;
+  border: 1px solid var(--hs-line);
+  border-radius: 8px;
+  background: rgba(252, 248, 238, 0.74);
+  box-shadow: 0 16px 34px -32px rgba(60, 40, 20, 0.6);
+}
+
+.theme-homestead .admin-nav-kicker {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hs-line);
+  color: var(--hs-olive);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 8px;
+}
+
+.theme-homestead .admin-nav-links {
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.theme-homestead .admin-nav-link {
+  border-left: 2px solid transparent;
+  border-radius: 3px;
+  color: var(--hs-muted);
+}
+
+.theme-homestead .admin-nav-link span {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.theme-homestead .admin-nav-link small {
+  color: var(--hs-faint);
+}
+
+.theme-homestead .admin-nav-link:hover,
+.theme-homestead .admin-nav-link:focus-visible {
+  background: var(--hs-deep);
+  color: var(--hs-ink);
+  outline: none;
+}
+
+.theme-homestead .admin-nav-link.active {
+  border-left-color: var(--hs-terra);
+  background: var(--hs-card);
+  color: var(--hs-terra-deep);
+}
+
+.theme-homestead .admin-session {
+  margin-top: 8px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--hs-line);
+  color: var(--hs-muted);
+}
+
+.theme-homestead .admin-session-kicker {
+  color: var(--hs-faint);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-homestead .admin-session h2 {
+  color: var(--hs-ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theme-homestead .admin-session button {
+  border-color: var(--hs-line);
+  background: var(--hs-card);
+  color: var(--hs-terra-deep);
+}
+
+.theme-homestead .admin-page-kicker,
+.theme-homestead .admin-overview-kicker,
+.theme-homestead .admin-context-kicker {
+  color: var(--hs-olive);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-homestead .admin-page-head h1 {
+  color: var(--hs-ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.theme-homestead .admin-page-head p {
+  color: var(--hs-muted);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.theme-homestead .admin-panel {
+  border: 1px solid var(--hs-line);
+  border-radius: 7px;
+  background: var(--hs-card);
+  box-shadow:
+    0 1px 0 rgba(80, 60, 30, 0.08),
+    0 18px 32px -32px rgba(60, 40, 20, 0.55);
+}
+
+.theme-homestead .admin-subpanel,
+.theme-homestead .admin-context-panel {
+  border: 1px solid var(--hs-line);
+  border-radius: 5px;
+  background: #fffaf0;
+}
+
+.theme-homestead .admin-list-heading h3,
+.theme-homestead .admin-panel h2,
+.theme-homestead .admin-panel h3,
+.theme-homestead .admin-report-detail h2 {
+  color: var(--hs-ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 600;
+}
+
+.theme-homestead .admin-overview-card {
+  border: 1px solid var(--hs-line);
+  border-radius: 5px;
+  background: var(--hs-card);
+  box-shadow: 0 14px 30px -30px rgba(60, 40, 20, 0.5);
+}
+
+.theme-homestead .admin-overview-card:hover,
+.theme-homestead .admin-overview-card:focus-visible {
+  border-color: var(--hs-terra);
+  outline: none;
+}
+
+.theme-homestead .admin-overview-tag {
+  color: var(--hs-olive);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-homestead .admin-overview-card strong {
+  color: var(--hs-ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 600;
+}
+
+.theme-homestead .admin-overview-card i {
+  color: var(--hs-terra);
+}
+
+.theme-homestead .admin-overview-card > span:last-of-type,
+.theme-homestead .admin-overview-heading p {
+  color: var(--hs-muted);
+}
+
+.theme-homestead .admin-context-panel h3 {
+  color: var(--hs-ink);
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+.theme-homestead .admin-context-panel p,
+.theme-homestead .admin-context-list {
+  color: var(--hs-muted);
+}
+
+.theme-homestead .admin-context-list > div {
+  border-color: var(--hs-line);
+}
+
+.theme-homestead .admin-report-detail {
+  padding: 18px;
+  border: 1px solid var(--hs-line);
+  border-radius: 7px;
+  background: var(--hs-card);
+}
+
+.theme-homestead .report-meta,
+.theme-homestead .report-stat,
+.theme-homestead .report-progress-card,
+.theme-homestead .admin-report-table-card {
+  border-color: var(--hs-line);
+  background: #fffaf0;
+}
+
+.theme-homestead .report-link-button {
+  border-color: var(--hs-line);
+  background: var(--hs-card);
+  color: var(--hs-ink);
+}
+
+.theme-homestead .report-link-button:hover,
+.theme-homestead .report-link-button:focus-visible {
+  border-color: var(--hs-terra);
+  background: var(--hs-deep);
+}
+
+.theme-homestead .report-table th {
+  border-color: var(--hs-line);
+  background: var(--hs-deep);
+  color: var(--hs-faint);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-homestead .report-table td {
+  border-color: #e7dcc9;
+}
+
+/* Quest — dark command console */
+
+.theme-quest .admin-workspace-shell {
+  color: var(--q-ink);
+}
+
+.theme-quest .admin-side-nav {
+  border: 1px solid var(--q-line);
+  background: var(--q-surface);
+}
+
+.theme-quest .admin-nav-kicker {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--q-line);
+  color: var(--q-faint);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 8px;
+}
+
+.theme-quest .admin-nav-links {
+  gap: 0;
+  margin: 0;
+}
+
+.theme-quest .admin-nav-link {
+  padding: 13px 14px;
+  border-left: 2px solid transparent;
+  color: var(--q-muted);
+}
+
+.theme-quest .admin-nav-link span {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.theme-quest .admin-nav-link small {
+  color: var(--q-faint);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 8px;
+}
+
+.theme-quest .admin-nav-link:hover,
+.theme-quest .admin-nav-link:focus-visible {
+  background: #15212a;
+  color: var(--q-ink);
+  outline: none;
+}
+
+.theme-quest .admin-nav-link.active {
+  border-left-color: var(--q-lime);
+  background: linear-gradient(90deg, rgba(201, 244, 93, 0.1), transparent);
+  color: var(--q-lime);
+}
+
+.theme-quest .admin-session {
+  margin-top: auto;
+  padding: 14px;
+  border-top: 1px solid var(--q-line);
+  color: var(--q-muted);
+}
+
+.theme-quest .admin-session-kicker {
+  color: var(--q-cyan);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-quest .admin-session h2 {
+  color: var(--q-ink);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+}
+
+.theme-quest .admin-session button {
+  border-color: var(--q-line-bright);
+  background: var(--q-panel);
+  color: var(--q-cyan);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9px;
+}
+
+.theme-quest .admin-page-kicker,
+.theme-quest .admin-overview-kicker,
+.theme-quest .admin-context-kicker {
+  color: var(--q-cyan);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-quest .admin-page-head h1 {
+  color: var(--q-ink);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 58px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.theme-quest .admin-page-head p {
+  color: var(--q-muted);
+  font-size: 12px;
+}
+
+.theme-quest .admin-panel {
+  border: 1px solid var(--q-line);
+  border-top-color: rgba(201, 244, 93, 0.48);
+  background: var(--q-surface);
+  box-shadow: 0 0 32px rgba(201, 244, 93, 0.035);
+}
+
+.theme-quest .admin-subpanel,
+.theme-quest .admin-context-panel {
+  border: 1px solid var(--q-line);
+  background: #0f171d;
+}
+
+.theme-quest .admin-list-heading h3,
+.theme-quest .admin-panel h2,
+.theme-quest .admin-panel h3,
+.theme-quest .admin-report-detail h2 {
+  color: var(--q-ink);
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.theme-quest .admin-overview-card {
+  position: relative;
+  border: 1px solid var(--q-line);
+  background: linear-gradient(145deg, #141f28, #0d141b);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  box-shadow: inset 0 1px 0 rgba(201, 244, 93, 0.18);
+}
+
+.theme-quest .admin-overview-card:hover,
+.theme-quest .admin-overview-card:focus-visible {
+  border-color: var(--q-lime);
+  outline: none;
+}
+
+.theme-quest .admin-overview-tag {
+  color: var(--q-lime);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-quest .admin-overview-card strong {
+  color: var(--q-ink);
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.theme-quest .admin-overview-card i {
+  color: var(--q-lime);
+}
+
+.theme-quest .admin-overview-card > span:last-of-type,
+.theme-quest .admin-overview-heading p {
+  color: var(--q-muted);
+}
+
+.theme-quest .admin-context-panel h3 {
+  color: var(--q-ink);
+  font-family: "Barlow Condensed", sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.theme-quest .admin-context-panel p,
+.theme-quest .admin-context-list {
+  color: var(--q-muted);
+}
+
+.theme-quest .admin-context-list > div {
+  border-color: var(--q-line);
+}
+
+.theme-quest .admin-report-detail {
+  padding: 18px;
+  border: 1px solid var(--q-line);
+  background: var(--q-surface);
+}
+
+.theme-quest .report-meta,
+.theme-quest .report-stat,
+.theme-quest .report-progress-card,
+.theme-quest .admin-report-table-card {
+  border-color: var(--q-line);
+  background: #0f171d;
+  color: var(--q-muted);
+}
+
+.theme-quest .report-meta strong,
+.theme-quest .report-table th strong,
+.theme-quest .report-child-copy strong,
+.theme-quest .report-stat strong {
+  color: var(--q-ink);
+}
+
+.theme-quest .report-stat strong {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--q-lime);
+}
+
+.theme-quest .report-back-link {
+  color: var(--q-cyan);
+}
+
+.theme-quest .report-child-copy span,
+.theme-quest .report-legend {
+  color: var(--q-faint);
+}
+
+.theme-quest .report-avatar {
+  background: #18222c;
+  color: var(--q-cyan);
+}
+
+.theme-quest .report-progress-card {
+  --rs-color-background-positive: var(--q-lime);
+}
+
+.theme-quest .report-day-status.complete {
+  background: rgba(201, 244, 93, 0.12);
+  color: var(--q-lime);
+}
+
+.theme-quest .report-day-status.incomplete {
+  background: #18222c;
+  color: var(--q-faint);
+}
+
+.theme-quest .report-status-pill.complete-pill {
+  background: rgba(201, 244, 93, 0.08);
+  color: var(--q-lime);
+}
+
+.theme-quest .report-status-pill.partial-pill {
+  background: rgba(255, 162, 76, 0.08);
+  color: var(--q-orange);
+}
+
+.theme-quest .report-status-pill.empty-pill {
+  background: #18222c;
+  color: var(--q-faint);
+}
+
+.theme-quest .report-link-button {
+  border-color: var(--q-line-bright);
+  background: var(--q-panel);
+  color: var(--q-ink);
+}
+
+.theme-quest .report-link-button:hover,
+.theme-quest .report-link-button:focus-visible {
+  border-color: var(--q-cyan);
+  background: #15212a;
+}
+
+.theme-quest .report-table th {
+  border-color: var(--q-line-bright);
+  background: #0c131a;
+  color: var(--q-faint);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-quest .report-table td {
+  border-color: var(--q-line);
+}
+
+/* Sticker Club v2 — type-only paper with a top sticker rail */
+
+.theme-sticker-club-v2 .admin-workspace-shell {
+  color: var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-workspace {
+  display: block;
+  padding-top: 16px;
+}
+
+.theme-sticker-club-v2 .admin-side-nav {
+  position: static;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 8px;
+  border: 2px solid var(--sc-ink);
+  border-radius: 8px;
+  background: var(--sc-paper);
+  box-shadow: 3px 3px 0 var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-nav-kicker {
+  display: none;
+}
+
+.theme-sticker-club-v2 .admin-nav-links {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+}
+
+.theme-sticker-club-v2 .admin-nav-link {
+  padding: 7px 10px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  color: var(--sc-muted);
+}
+
+.theme-sticker-club-v2 .admin-nav-link span {
+  font-family: "Nunito", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.theme-sticker-club-v2 .admin-nav-link small {
+  display: none;
+}
+
+.theme-sticker-club-v2 .admin-nav-link:hover,
+.theme-sticker-club-v2 .admin-nav-link:focus-visible {
+  border-color: var(--sc-ink);
+  background: var(--sc-sky);
+  color: var(--sc-ink);
+  outline: none;
+}
+
+.theme-sticker-club-v2 .admin-nav-link.active {
+  border-color: var(--sc-ink);
+  background: var(--sc-yellow);
+  box-shadow: 2px 2px 0 var(--sc-ink);
+  color: var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-session {
+  margin-left: auto;
+  min-width: 12rem;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--sc-ink);
+  color: var(--sc-muted);
+}
+
+.theme-sticker-club-v2 .admin-session-kicker {
+  color: var(--sc-muted);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 7px;
+}
+
+.theme-sticker-club-v2 .admin-session h2 {
+  color: var(--sc-ink);
+  font-family: "Nunito", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.theme-sticker-club-v2 .admin-session p {
+  display: none;
+}
+
+.theme-sticker-club-v2 .admin-session button {
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sc-blue);
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 8px;
+}
+
+.theme-sticker-club-v2 .admin-page-kicker,
+.theme-sticker-club-v2 .admin-overview-kicker,
+.theme-sticker-club-v2 .admin-context-kicker {
+  color: var(--sc-muted);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-sticker-club-v2 .admin-page-head h1 {
+  color: var(--sc-ink);
+  font-family: "Nunito", sans-serif;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.theme-sticker-club-v2 .admin-page-head p {
+  color: var(--sc-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theme-sticker-club-v2 .admin-panel {
+  padding: 16px;
+  border: 2px solid var(--sc-ink);
+  border-radius: 8px;
+  background: var(--sc-paper);
+  box-shadow: 3px 3px 0 var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-subpanel,
+.theme-sticker-club-v2 .admin-context-panel {
+  border: 2px solid var(--sc-ink);
+  border-radius: 6px;
+  background: var(--sc-paper);
+  box-shadow: 2px 2px 0 var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-list-heading h3,
+.theme-sticker-club-v2 .admin-panel h2,
+.theme-sticker-club-v2 .admin-panel h3,
+.theme-sticker-club-v2 .admin-report-detail h2 {
+  color: var(--sc-ink);
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+}
+
+.theme-sticker-club-v2 .admin-member-card:nth-child(2) {
+  background: #fff3ee;
+}
+
+.theme-sticker-club-v2 .admin-member-card:nth-child(3) {
+  background: #effcf5;
+}
+
+.theme-sticker-club-v2 .admin-member-card:nth-child(4) {
+  background: #f5f0ff;
+}
+
+.theme-sticker-club-v2 .admin-overview-card {
+  border: 2px solid var(--sc-ink);
+  border-radius: 8px;
+  background: var(--sc-sky);
+  box-shadow: 4px 4px 0 var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .admin-overview-card:nth-child(2) {
+  background: #fff0e9;
+  transform: rotate(-0.5deg);
+}
+
+.theme-sticker-club-v2 .admin-overview-card:nth-child(3) {
+  background: #f0eaff;
+  transform: rotate(0.6deg);
+}
+
+.theme-sticker-club-v2 .admin-overview-card:hover,
+.theme-sticker-club-v2 .admin-overview-card:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+.theme-sticker-club-v2 .admin-overview-tag {
+  color: var(--sc-muted);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-sticker-club-v2 .admin-overview-card strong {
+  color: var(--sc-ink);
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+}
+
+.theme-sticker-club-v2 .admin-overview-card i {
+  color: var(--sc-blue);
+}
+
+.theme-sticker-club-v2 .admin-overview-card > span:last-of-type,
+.theme-sticker-club-v2 .admin-overview-heading p {
+  color: var(--sc-muted);
+}
+
+.theme-sticker-club-v2 .admin-context-panel h3 {
+  color: var(--sc-ink);
+  font-family: "Nunito", sans-serif;
+}
+
+.theme-sticker-club-v2 .admin-context-panel p,
+.theme-sticker-club-v2 .admin-context-list {
+  color: var(--sc-muted);
+}
+
+.theme-sticker-club-v2 .admin-context-list > div {
+  border-color: #d8cdb8;
+}
+
+.theme-sticker-club-v2 .admin-report-detail {
+  padding: 16px;
+  border: 2px solid var(--sc-ink);
+  border-radius: 8px;
+  background: var(--sc-paper);
+  box-shadow: 3px 3px 0 var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .report-meta,
+.theme-sticker-club-v2 .report-stat,
+.theme-sticker-club-v2 .report-progress-card,
+.theme-sticker-club-v2 .admin-report-table-card {
+  border: 2px solid var(--sc-ink);
+  border-radius: 8px;
+  background: var(--sc-paper);
+}
+
+.theme-sticker-club-v2 .report-progress-card {
+  --rs-color-background-positive: var(--sc-blue);
+}
+
+.theme-sticker-club-v2 .report-back-link {
+  color: var(--sc-blue);
+}
+
+.theme-sticker-club-v2 .report-child-copy strong {
+  color: var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .report-child-copy span {
+  color: var(--sc-muted);
+}
+
+.theme-sticker-club-v2 .report-stat:nth-child(1) {
+  background: var(--sc-sky);
+}
+
+.theme-sticker-club-v2 .report-stat:nth-child(2) {
+  background: #effcf5;
+}
+
+.theme-sticker-club-v2 .report-stat:nth-child(3) {
+  background: #fff3ee;
+}
+
+.theme-sticker-club-v2 .report-link-button {
+  border: 2px solid var(--sc-ink);
+  border-radius: 5px;
+  background: var(--sc-yellow);
+  box-shadow: 2px 2px 0 var(--sc-ink);
+  color: var(--sc-ink);
+}
+
+.theme-sticker-club-v2 .report-link-button:hover,
+.theme-sticker-club-v2 .report-link-button:focus-visible {
+  background: var(--sc-sky);
+}
+
+.theme-sticker-club-v2 .report-table th {
+  border-color: var(--sc-ink);
+  background: #f4eddd;
+  color: var(--sc-muted);
+  font-family: "JetBrains Mono", Menlo, monospace;
+}
+
+.theme-sticker-club-v2 .report-table td {
+  border-color: #d8cdb8;
+}
+
+@media (max-width: 820px) {
+  .theme-sticker-club-v2 .admin-side-nav {
+    display: block;
+    padding: 7px;
+  }
+
+  .theme-sticker-club-v2 .admin-nav-links {
+    overflow-x: auto;
+  }
+
+  .theme-sticker-club-v2 .admin-session {
+    margin: 8px 0 0;
+    padding: 7px 0 0;
+    border-top: 2px solid var(--sc-ink);
+    border-left: 0;
+  }
+
+  .theme-sticker-club-v2 .admin-session p {
+    display: block;
+  }
+
+  .theme-sticker-club-v2 .admin-page-head h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .theme-homestead .admin-page-head h1,
+  .theme-quest .admin-page-head h1,
+  .theme-sticker-club-v2 .admin-page-head h1 {
+    font-size: 34px;
+  }
+
+  .admin-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-overview-card {
+    min-height: 115px;
+  }
+}

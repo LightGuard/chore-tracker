@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="homestead">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chore catalog mockup</title>
+  <link rel="stylesheet" href="../../frontend/public/fonts/fonts.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" href="data:,">
+</head>
+<body data-screen="Chore catalog" data-active="family">
+<main class="admin-main" aria-label="Chore and checklist management">
+  <header class="page-head">
+    <div>
+      <div class="kicker">Catalog</div>
+      <h1>Chore catalog</h1>
+      <p>New chores start inactive. Add at least one active checklist item before activating a chore. Catalog edits never rewrite historical assignments.</p>
+    </div>
+  </header>
+  <div class="screen-grid chores-screen">
+    <section class="panel form-panel">
+      <div class="panel-heading"><span class="tag">New chore</span><h2>Add a chore</h2></div>
+      <div class="form-stack">
+        <label class="field" for="new-chore-name"><span>New chore name</span><input id="new-chore-name" value=""></label>
+        <label class="field" for="new-chore-description"><span>New chore description</span><textarea id="new-chore-description" rows="3"></textarea></label>
+        <button type="button" class="btn primary">Create chore</button>
+      </div>
+      <div class="side-note"><strong>Catalog rule</strong><p>Historical assignments keep their immutable snapshots. Deactivate a chore instead of deleting it.</p></div>
+    </section>
+    <section class="panel catalog-panel">
+      <div class="panel-heading row-heading"><div><span class="tag">4 chores</span><h2>Weekly catalog</h2></div><span class="muted-note">3 active · 1 inactive</span></div>
+      <article class="chore-editor">
+        <div class="chore-editor-head">
+          <div><span class="tag">Active</span><h3>Kitchen</h3><p>Wipe and sweep after dinner.</p></div>
+          <button type="button" class="btn tiny">Deactivate chore</button>
+        </div>
+        <div class="field-grid">
+          <label class="field" for="kitchen-name"><span>Chore name</span><input id="kitchen-name" value="Kitchen"></label>
+          <label class="field" for="kitchen-description"><span>Description</span><textarea id="kitchen-description" rows="2">Wipe and sweep after dinner.</textarea></label>
+        </div>
+        <div class="checklist-head"><h4>The checklist</h4><span>Order matters · move items with the controls</span></div>
+        <ol class="checklist">
+          <li class="check-row"><span class="check-num" aria-hidden="true">01</span><label class="check-label" for="kitchen-item-0"><span class="sr-only">Checklist item 1</span><input id="kitchen-item-0" value="Wipe counters"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span><div class="check-actions"><button type="button" class="btn tiny">Move up</button><button type="button" class="btn tiny">Move down</button><button type="button" class="btn tiny danger">Remove</button></div></li>
+          <li class="check-row"><span class="check-num" aria-hidden="true">02</span><label class="check-label" for="kitchen-item-1"><span class="sr-only">Checklist item 2</span><input id="kitchen-item-1" value="Sweep floor"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span><div class="check-actions"><button type="button" class="btn tiny">Move up</button><button type="button" class="btn tiny">Move down</button><button type="button" class="btn tiny danger">Remove</button></div></li>
+          <li class="check-row"><span class="check-num" aria-hidden="true">03</span><label class="check-label" for="kitchen-item-2"><span class="sr-only">Checklist item 3</span><input id="kitchen-item-2" value="Take out trash"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span><div class="check-actions"><button type="button" class="btn tiny">Move up</button><button type="button" class="btn tiny">Move down</button><button type="button" class="btn tiny danger">Remove</button></div></li>
+        </ol>
+        <div class="inline-add"><label class="sr-only" for="new-kitchen-item">New checklist item</label><input id="new-kitchen-item" placeholder="Add a checklist item"><button type="button" class="btn small">Add checklist item</button></div>
+        <div class="row-actions"><button type="button" class="btn small">Save chore</button></div>
+      </article>
+      <div class="compact-list">
+        <article class="compact-chore"><div class="compact-copy"><span class="tag">Active</span><h3>Bathroom</h3><p>Clean the bathroom.</p></div><div class="compact-meta"><span>2 checklist items</span><button type="button" class="btn tiny">Deactivate chore</button></div></article>
+        <article class="compact-chore"><div class="compact-copy"><span class="tag">Active</span><h3>Yard</h3><p>Maintain the yard.</p></div><div class="compact-meta"><span>2 checklist items</span><button type="button" class="btn tiny">Deactivate chore</button></div></article>
+        <article class="compact-chore"><div class="compact-copy"><span class="tag muted">Inactive</span><h3>Laundry</h3><p>Wash and fold clothes.</p></div><div class="compact-meta"><span>1 checklist item</span><button type="button" class="btn tiny">Activate chore</button></div></article>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="admin.js"></script>
+</body>
+</html>
