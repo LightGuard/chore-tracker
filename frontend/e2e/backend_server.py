@@ -605,6 +605,188 @@ def seed_theme_fixture(member_names: tuple[str, ...], labels: tuple[str, ...]) -
         connection.close()
 
 
+def seed_quest_fixture(assign_quest_theme: bool) -> None:
+    """Seed Quest stats with deterministic weekly, lifetime, and streak facts."""
+    reset_database()
+    week_start = E2E_TODAY - timedelta(days=E2E_TODAY.weekday())
+    week_end = week_start + timedelta(days=6)
+    prior_start = week_start - timedelta(days=7)
+    prior_end = week_end - timedelta(days=7)
+    connection = sqlite3.connect(DATABASE_PATH)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    try:
+        member_ids = {}
+        for display_name in ("Alex", "Sam", "Riley", "Avery"):
+            theme_id = (
+                "quest" if display_name == "Alex" and assign_quest_theme else None
+            )
+            member_ids[display_name] = connection.execute(
+                """INSERT INTO family_members (display_name, theme_id)
+                   VALUES (?, ?)""",
+                (display_name, theme_id),
+            ).lastrowid
+
+        def create_chore(name, description, labels):
+            chore_id = connection.execute(
+                """INSERT INTO chores (name, description, is_active)
+                   VALUES (?, ?, 1)""",
+                (name, description),
+            ).lastrowid
+            item_ids = [
+                connection.execute(
+                    """INSERT INTO chore_checklist_items
+                       (chore_id, label, position, is_active)
+                       VALUES (?, ?, ?, 1)""",
+                    (chore_id, label, position),
+                ).lastrowid
+                for position, label in enumerate(labels)
+            ]
+            return chore_id, item_ids
+
+        def assign(member_name, chore_id, item_ids, start, end, name, description):
+            assignment_id = connection.execute(
+                """INSERT INTO weekly_assignments
+                   (family_member_id, chore_id, week_start, week_end,
+                    chore_name_snapshot, chore_description_snapshot)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    member_ids[member_name],
+                    chore_id,
+                    start.isoformat(),
+                    end.isoformat(),
+                    name,
+                    description,
+                ),
+            ).lastrowid
+            snapshot_ids = []
+            for position, item_id in enumerate(item_ids):
+                label = connection.execute(
+                    "SELECT label FROM chore_checklist_items WHERE id = ?",
+                    (item_id,),
+                ).fetchone()["label"]
+                snapshot_ids.append(
+                    connection.execute(
+                        """INSERT INTO assignment_checklist_items
+                           (weekly_assignment_id, source_checklist_item_id,
+                            label_snapshot, position)
+                           VALUES (?, ?, ?, ?)""",
+                        (assignment_id, item_id, label, position),
+                    ).lastrowid
+                )
+            return snapshot_ids
+
+        def record_day(snapshot_ids, day, completed_positions):
+            for position, snapshot_id in enumerate(snapshot_ids):
+                is_completed = position in completed_positions
+                connection.execute(
+                    """INSERT INTO daily_checklist_completions
+                       (assignment_checklist_item_id, completion_date,
+                        is_completed, completed_at)
+                       VALUES (?, ?, ?, ?)""",
+                    (
+                        snapshot_id,
+                        day.isoformat(),
+                        int(is_completed),
+                        f"{day.isoformat()}T18:00:00Z" if is_completed else None,
+                    ),
+                )
+
+        kitchen_id, kitchen_items = create_chore(
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+            ("Wipe counters", "Sweep floor", "Take out trash"),
+        )
+        bathroom_id, bathroom_items = create_chore(
+            "Bathroom",
+            "Clean the bathroom.",
+            ("Clean sink", "Scrub tub"),
+        )
+        yard_id, yard_items = create_chore(
+            "Yard",
+            "Maintain the yard.",
+            ("Mow lawn", "Rake leaves", "Trim hedges", "Sweep walk"),
+        )
+        laundry_id, laundry_items = create_chore(
+            "Laundry",
+            "Wash and fold clothes.",
+            ("Wash clothes",),
+        )
+
+        alex_current = assign(
+            "Alex",
+            kitchen_id,
+            kitchen_items,
+            week_start,
+            week_end,
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+        )
+        record_day(alex_current, E2E_TODAY, {0, 1, 2})
+
+        alex_prior = assign(
+            "Alex",
+            kitchen_id,
+            kitchen_items,
+            prior_start,
+            prior_end,
+            "Kitchen",
+            "Wipe and sweep after dinner.",
+        )
+        for day_index in range(7):
+            record_day(alex_prior, prior_start + timedelta(days=day_index), {0, 1, 2})
+
+        sam_current = assign(
+            "Sam",
+            bathroom_id,
+            bathroom_items,
+            week_start,
+            week_end,
+            "Bathroom",
+            "Clean the bathroom.",
+        )
+        record_day(sam_current, E2E_TODAY, {0, 1})
+
+        riley_current = assign(
+            "Riley",
+            yard_id,
+            yard_items,
+            week_start,
+            week_end,
+            "Yard",
+            "Maintain the yard.",
+        )
+        record_day(riley_current, E2E_TODAY, {0, 1, 2, 3})
+
+        riley_prior = assign(
+            "Riley",
+            yard_id,
+            yard_items,
+            prior_start,
+            prior_end,
+            "Yard",
+            "Maintain the yard.",
+        )
+        record_day(riley_prior, prior_end, {0, 1, 2, 3})
+
+        avery_current = assign(
+            "Avery",
+            laundry_id,
+            laundry_items,
+            week_start,
+            week_end,
+            "Laundry",
+            "Wash and fold clothes.",
+        )
+        record_day(avery_current, E2E_TODAY, {0})
+
+        connection.commit()
+    finally:
+        connection.close()
+
+    set_test_today(E2E_TODAY)
+
+
 def seed_preview_fixture() -> None:
     seed_theme_fixture(
         ("Alex", "Sam", "Riley", "Avery"),
@@ -643,6 +825,16 @@ def install_test_hooks():
     def reset_preview_fixture() -> dict[str, str]:
         seed_preview_fixture()
         set_test_today(E2E_TODAY)
+        return {"status": "ok", "today": E2E_TODAY.isoformat()}
+
+    @router.post("/scenario/quest", include_in_schema=False)
+    def reset_quest_fixture() -> dict[str, str]:
+        seed_quest_fixture(assign_quest_theme=False)
+        return {"status": "ok", "today": E2E_TODAY.isoformat()}
+
+    @router.post("/scenario/quest-preview", include_in_schema=False)
+    def reset_quest_preview_fixture() -> dict[str, str]:
+        seed_quest_fixture(assign_quest_theme=True)
         return {"status": "ok", "today": E2E_TODAY.isoformat()}
 
     @router.post("/scenario/stress", include_in_schema=False)

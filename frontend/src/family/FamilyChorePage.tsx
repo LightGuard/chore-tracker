@@ -15,7 +15,14 @@ import { AppHeader } from "../components/AppHeader";
 import { ChildSelector } from "../components/ChildSelector";
 import { ThemePicker } from "../components/ThemePicker";
 import { ThemeScope } from "../components/ThemeScope";
-import { DEFAULT_THEME, resolveThemeId, updateFamilyMemberTheme } from "../theme/api";
+import { QuestAssignmentView } from "../quest/QuestAssignmentView";
+import { useDerivedStats } from "../quest/useDerivedStats";
+import {
+  DEFAULT_THEME,
+  resolveBootstrapThemeId,
+  resolveThemeId,
+  updateFamilyMemberTheme,
+} from "../theme/api";
 import {
   applyDocumentTheme,
   clearCachedTheme,
@@ -103,7 +110,7 @@ export function FamilyChorePage() {
     const remembered = readRememberedChildId();
     return remembered === null
       ? DEFAULT_THEME.id
-      : resolveThemeId(readCachedTheme("child", remembered), [DEFAULT_THEME]);
+      : resolveBootstrapThemeId(readCachedTheme("child", remembered));
   });
   const [needsThemePicker, setNeedsThemePicker] = useState(false);
   const [themeBusy, setThemeBusy] = useState(false);
@@ -122,6 +129,7 @@ export function FamilyChorePage() {
 
   const [savingItemId, setSavingItemId] = useState<number | null>(null);
   const [saveError, setSaveError] = useState("");
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const restored = useRef(false);
 
@@ -235,6 +243,11 @@ export function FamilyChorePage() {
   const selectedMember = members.find(
     (member) => String(member.id) === selectedMemberId,
   );
+  const questStats = useDerivedStats(
+    selectedMember?.id ?? null,
+    themeId === "quest" && !needsThemePicker,
+    assignmentReloadKey + statsRefreshKey,
+  );
 
   const saveTheme = useCallback(
     async (nextThemeId: string) => {
@@ -293,6 +306,7 @@ export function FamilyChorePage() {
             is_complete: result.is_complete,
           };
         });
+        setStatsRefreshKey((value) => value + 1);
       } catch (reason) {
         setSaveError(readableError(reason, SAVE_ERROR));
       } finally {
@@ -325,7 +339,13 @@ export function FamilyChorePage() {
       />
 
       <Container width="100%">
-        <main className="app-shell family-shell homestead-family">
+        <main
+          className={`app-shell family-shell theme-${themeId}-family${
+            themeId === "quest" && selectedMember && !needsThemePicker
+              ? " quest-playing"
+              : ""
+          }`}
+        >
           <div className="family-hero">
             <div>
               <div className="section-kicker">
@@ -408,7 +428,11 @@ export function FamilyChorePage() {
           ) : (
             <>
               {!selectedMember && (
-                <ChildSelector members={members} onSelect={selectMember} />
+                <ChildSelector
+                  members={members}
+                  onSelect={selectMember}
+                  variant={themeId === "quest" ? "quest" : "default"}
+                />
               )}
 
               {selectedMember && switchOpen && (
@@ -417,6 +441,7 @@ export function FamilyChorePage() {
                   selectedId={selectedMember.id}
                   onSelect={selectMember}
                   onCancel={() => setSwitchOpen(false)}
+                  variant={themeId === "quest" ? "quest" : "default"}
                 />
               )}
 
@@ -493,136 +518,150 @@ export function FamilyChorePage() {
                     </Alert>
                   )}
 
-                  {assignmentStatus === "ready" && assignment && (
-                    <Card
-                      as="section"
-                      padding={5}
-                      borderRadius="large"
-                      raised
-                      attributes={{ "aria-labelledby": "assignment-heading" }}
-                      className="homestead-assignment-card"
-                    >
-                      <View gap={4}>
-                        <div className="assignment-heading-row">
-                          <div>
-                            <div className="section-kicker">
-                              This week&rsquo;s chore
-                            </div>
-                            <Text
-                              as="h2"
-                              variant="headline-2"
-                              attributes={{ id: "assignment-heading" }}
-                              className="assignment-chore-name"
-                            >
-                              {assignment.chore_name}
-                            </Text>
-                            <Text
-                              variant="caption-1"
-                              color="neutral-faded"
-                              className="assignment-week"
-                            >
-                              Week of {formatDate(assignment.week_start)} &ndash;{" "}
-                              {formatDate(assignment.week_end)}
-                            </Text>
-                            {assignment.chore_description && (
-                              <Text className="assignment-description">
-                                {assignment.chore_description}
-                              </Text>
-                            )}
-                          </div>
-                          <span className="week-stamp">
-                            Week {isoWeekNumber(assignment.week_start)}
-                          </span>
-                        </div>
-
-                        <Divider />
-
-                        <div className="progress-block">
-                          <div className="progress-row">
-                            <span>Today</span>
-                            <strong>
-                              {completedCount} of {itemCount} done
-                            </strong>
-                          </div>
-                          <div
-                            className="progress-segments"
-                            aria-hidden="true"
-                          >
-                            {assignment.checklist_items.map((item) => (
-                              <i
-                                key={item.id}
-                                className={item.is_completed ? "on" : undefined}
-                              />
-                            ))}
-                          </div>
-                        </div>
-
-                        {assignment.checklist_items.length === 0 ? (
-                          <Alert color="warning" title="No checklist items">
-                            This chore does not have any checklist items yet.
-                          </Alert>
-                        ) : (
-                          <View
-                            as="ol"
-                            gap={2}
-                            attributes={{ "aria-label": "Today's checklist" }}
-                            className="homestead-checklist"
-                          >
-                            {assignment.checklist_items.map((item) => (
-                              <View.Item as="li" key={item.id}>
-                                <Checkbox
-                                  name={"checklist-item-" + item.id}
-                                  value={String(item.id)}
-                                  checked={item.is_completed}
-                                  disabled={savingItemId !== null}
-                                  onChange={({ checked }) =>
-                                    void handleToggle(item, checked)
-                                  }
-                                >
-                                  {item.label}
-                                </Checkbox>
-                              </View.Item>
-                            ))}
-                          </View>
-                        )}
-
-                        {saveError && (
-                          <Alert
-                            color="critical"
-                            title="Couldn't save that change"
-                          >
-                            {saveError}
-                          </Alert>
-                        )}
-
-                        <View
-                          gap={2}
-                          attributes={{ "aria-live": "polite" }}
-                          className="completion-status"
-                        >
-                          {assignment.is_complete ? (
-                            <>
-                              <div className="all-done-stamp" role="status">
-                                <span>All done for today</span>
-                                <strong>Every item on this chore is complete.</strong>
+                  {assignmentStatus === "ready" && assignment &&
+                    (themeId === "quest" ? (
+                      <QuestAssignmentView
+                        displayName={selectedMember?.display_name ?? "Player"}
+                        assignment={assignment}
+                        weekNumber={isoWeekNumber(assignment.week_start)}
+                        stats={questStats.stats}
+                        statsStatus={questStats.status}
+                        statsError={questStats.error}
+                        onRetryStats={questStats.reload}
+                        savingItemId={savingItemId}
+                        saveError={saveError}
+                        onToggle={handleToggle}
+                      />
+                    ) : (
+                      <Card
+                        as="section"
+                        padding={5}
+                        borderRadius="large"
+                        raised
+                        attributes={{ "aria-labelledby": "assignment-heading" }}
+                        className="homestead-assignment-card"
+                      >
+                        <View gap={4}>
+                          <div className="assignment-heading-row">
+                            <div>
+                              <div className="section-kicker">
+                                This week&rsquo;s chore
                               </div>
                               <Text
-                                weight="medium"
-                                color="neutral-faded"
-                                className="completion-count"
+                                as="h2"
+                                variant="headline-2"
+                                attributes={{ id: "assignment-heading" }}
+                                className="assignment-chore-name"
                               >
+                                {assignment.chore_name}
+                              </Text>
+                              <Text
+                                variant="caption-1"
+                                color="neutral-faded"
+                                className="assignment-week"
+                              >
+                                Week of {formatDate(assignment.week_start)} &ndash;{" "}
+                                {formatDate(assignment.week_end)}
+                              </Text>
+                              {assignment.chore_description && (
+                                <Text className="assignment-description">
+                                  {assignment.chore_description}
+                                </Text>
+                              )}
+                            </div>
+                            <span className="week-stamp">
+                              Week {isoWeekNumber(assignment.week_start)}
+                            </span>
+                          </div>
+
+                          <Divider />
+
+                          <div className="progress-block">
+                            <div className="progress-row">
+                              <span>Today</span>
+                              <strong>
+                                {completedCount} of {itemCount} done
+                              </strong>
+                            </div>
+                            <div
+                              className="progress-segments"
+                              aria-hidden="true"
+                            >
+                              {assignment.checklist_items.map((item) => (
+                                <i
+                                  key={item.id}
+                                  className={item.is_completed ? "on" : undefined}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {assignment.checklist_items.length === 0 ? (
+                            <Alert color="warning" title="No checklist items">
+                              This chore does not have any checklist items yet.
+                            </Alert>
+                          ) : (
+                            <View
+                              as="ol"
+                              gap={2}
+                              attributes={{ "aria-label": "Today's checklist" }}
+                              className="homestead-checklist"
+                            >
+                              {assignment.checklist_items.map((item) => (
+                                <View.Item as="li" key={item.id}>
+                                  <Checkbox
+                                    name={"checklist-item-" + item.id}
+                                    value={String(item.id)}
+                                    checked={item.is_completed}
+                                    disabled={savingItemId !== null}
+                                    onChange={({ checked }) =>
+                                      void handleToggle(item, checked)
+                                    }
+                                  >
+                                    {item.label}
+                                  </Checkbox>
+                                </View.Item>
+                              ))}
+                            </View>
+                          )}
+
+                          {saveError && (
+                            <Alert
+                              color="critical"
+                              title="Couldn't save that change"
+                            >
+                              {saveError}
+                            </Alert>
+                          )}
+
+                          <View
+                            gap={2}
+                            attributes={{ "aria-live": "polite" }}
+                            className="completion-status"
+                          >
+                            {assignment.is_complete ? (
+                              <>
+                                <div className="all-done-stamp" role="status">
+                                  <span>All done for today</span>
+                                  <strong>Every item on this chore is complete.</strong>
+                                </div>
+                                <Text
+                                  weight="medium"
+                                  color="neutral-faded"
+                                  className="completion-count"
+                                >
+                                  {completedCount} of {itemCount} complete today
+                                </Text>
+                              </>
+                            ) : (
+                              <Text weight="medium" color="neutral-faded">
                                 {completedCount} of {itemCount} complete today
                               </Text>
-                            </>
-                          ) : (
-                            <Text weight="medium" color="neutral-faded">
-                              {completedCount} of {itemCount} complete today
-                            </Text>
-                          )}
+                            )}
+                          </View>
                         </View>
-                      </View>
-                    </Card>
-                  )}
+                      </Card>
+                    ))}
 
                   {selectedMember && (
                     <View gap={3} paddingTop={4} className="history-wrap">

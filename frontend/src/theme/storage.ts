@@ -1,4 +1,4 @@
-import { DEFAULT_THEME } from "./api";
+import { resolveBootstrapThemeId } from "./api";
 
 const PREFIX = "chore-tracker.theme";
 const LAST_CHILD_KEY = `${PREFIX}.last-child`;
@@ -112,6 +112,9 @@ export function applyDocumentTheme(themeId: string): void {
   if (typeof document === "undefined") return;
   document.documentElement.dataset.theme = themeId;
   document.body.dataset.theme = themeId;
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", themeId === "quest" ? "#080b10" : "#f6f0e2");
 }
 
 /**
@@ -124,14 +127,14 @@ export function applyInitialDocumentTheme(): string {
     typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
   if (isAdmin) {
     const cached = readCachedAdminBootstrapTheme();
-    const themeId = cached === DEFAULT_THEME.id ? cached : DEFAULT_THEME.id;
+    const themeId = resolveBootstrapThemeId(cached);
     applyDocumentTheme(themeId);
     return themeId;
   }
   const childId = readRememberedChildId();
   const cached = childId === null ? null : readCachedTheme("child", childId);
   // Unknown ids are ignored before the catalog is available.
-  const themeId = cached === DEFAULT_THEME.id ? cached : DEFAULT_THEME.id;
+  const themeId = resolveBootstrapThemeId(cached);
   applyDocumentTheme(themeId);
   return themeId;
 }

@@ -110,6 +110,92 @@ Historical records remain available when a family profile or chore is inactive, 
 catalog edits do not change the assignment snapshots. An unknown profile returns HTTP
 404; a known profile with no assignments returns HTTP 200 with an empty page.
 
+### Generic derived statistics
+
+`GET /family-members/{family_member_id}/derived-stats` returns the theme-neutral
+completion facts shared by family-facing themes. It is unauthenticated under the
+existing child-facing trust model. An unknown profile returns HTTP 404 and an inactive
+profile returns HTTP 409, matching the current-assignment endpoint.
+
+The response is read-only, is computed per request, and is not cached or persisted. The
+endpoint adds no XP, level, rank, streak, sticker, reward, or other theme-specific
+fields; themes derive their presentation from these facts.
+
+```json
+{
+  "family_member_id": 1,
+  "display_name": "Alex",
+  "as_of": "2026-11-25",
+  "timezone": "America/Denver",
+  "lifetime": {
+    "completed_checklist_items": 124,
+    "complete_days": 31,
+    "current_streak": 4
+  },
+  "current_week": {
+    "week_start": "2026-11-23",
+    "week_end": "2026-11-29",
+    "completed_checklist_items": 22,
+    "complete_days": 3,
+    "days": [
+      {
+        "date": "2026-11-23",
+        "completed_checklist_items": 3,
+        "total_checklist_items": 3,
+        "state": "complete"
+      },
+      {
+        "date": "2026-11-24",
+        "completed_checklist_items": 1,
+        "total_checklist_items": 3,
+        "state": "incomplete"
+      },
+      {
+        "date": "2026-11-25",
+        "completed_checklist_items": 0,
+        "total_checklist_items": 3,
+        "state": "not_recorded"
+      }
+    ]
+  },
+  "household": {
+    "active_players": 7,
+    "weekly_standings": [
+      {
+        "family_member_id": 2,
+        "display_name": "Sam",
+        "completed_checklist_items": 28,
+        "complete_days": 4,
+        "current_streak": 2
+      }
+    ]
+  }
+}
+```
+
+- `lifetime.completed_checklist_items` counts persisted completion records with
+  `is_completed = true` across all assignments. It does not consult the current chore
+  catalog.
+- `lifetime.complete_days` counts persisted assignment days where every immutable
+  checklist snapshot item was completed.
+- `lifetime.current_streak` counts consecutive complete days ending today, or ending
+  yesterday when today is not complete. It is zero when neither day is complete.
+- `current_week.days` always has seven entries for the Monday-Sunday week in
+  `CHORE_TRACKER_REPORT_TIMEZONE`. `state` is `complete`, `incomplete`, or
+  `not_recorded`; a day with no persisted completion rows is `not_recorded` and is
+  never complete.
+- `household.weekly_standings` contains every active child, ordered by current-week
+  completed checklist items descending, current streak descending, and display name
+  ascending using a case-insensitive comparison. It has no rank field.
+- Weekly values reset at the Monday boundary. The endpoint reads the child and active
+  household in a fixed number of aggregate queries, independent of household size.
+
+Family themes map these facts in their own presentation layer. Quest uses
+`XP = 10 x lifetime.completed_checklist_items` and
+`level = 1 + floor(XP / 500)`. Current-week XP is
+`10 x current_week.completed_checklist_items`; rank, player count, and the XP gap to
+first come from the order of `household.weekly_standings`.
+
 ### Theme catalog and preferences
 
 Themes are visual and layout variants. The API is the source of truth for which
@@ -124,14 +210,18 @@ their public paths.
     "id": "homestead",
     "name": "Homestead",
     "preview_image": "/theme-previews/homestead.png"
+  },
+  {
+    "id": "quest",
+    "name": "Quest",
+    "preview_image": "/theme-previews/quest.png"
   }
 ]
 ```
 
-Only `homestead` is available in this ticket. Its stable id is also the default
-theme. Unknown or unset saved values are treated as Homestead by the frontend; the
-API deliberately returns the raw saved value so the server remains the durable source
-of truth.
+`homestead` and `quest` are available. Homestead remains the default theme. Unknown
+or unset saved values are treated as Homestead by the frontend; the API deliberately
+returns the raw saved value so the server remains the durable source of truth.
 
 - `GET /family-members/active` includes the child's raw `theme_id` or `null`.
 - `GET /auth/me` includes the administrator's raw `theme_id` or `null`.
@@ -290,41 +380,69 @@ Browser storage is limited to convenience and flash avoidance:
 - `chore-tracker.theme.child.<id>` and `chore-tracker.theme.admin.<id>` cache the last
   known theme per identity.
 - `chore-tracker.theme.last-theme` is a small bootstrap mirror used before React paints.
-  Unknown ids are ignored. Server responses reconcile the cache: a valid saved theme
-  updates it, while an unset or unavailable theme clears the per-identity entry and
-  falls back to Homestead.
+  Bundled child ids (`homestead` and `quest`) can paint immediately; other unknown ids
+  are ignored. Server responses reconcile the cache: a valid saved theme updates it,
+  while an unset or unavailable theme clears the per-identity entry and falls back to
+  Homestead. Admin bootstrap remains Homestead until `/auth/me` confirms the
+  administrator's saved theme.
 
 Family and admin route contexts are separate. Child themes never theme signed-in
 admin screens, and administrator themes never theme family screens. Signing out
 returns the admin context to Homestead and disables the theme control.
 
-Homestead uses bundled WOFF2 assets, not a font CDN:
+### Quest family theme
 
-| Use | Font | Files |
+Quest is a dark co-op HUD for family-facing screens. It uses the shared header,
+child selector, theme picker, assignment data, checklist writes, and completion
+history; it adds presentation only. The selected child must have Quest saved for the
+family screens to use it. Administrator screens keep the signed-in administrator's
+theme and do not inherit a child's Quest selection.
+
+Quest reads `GET /family-members/{family_member_id}/derived-stats` after a child is
+selected and after each successful checklist change. The player HUD maps lifetime
+completed items to XP and level, the current-week facts to weekly XP and the seven-day
+rail, the lifetime streak to the streak strip, and the weekly standings order to rank,
+player count, and XP gap to first. A completed day shows the all-done "QUEST CLEAR"
+state. Stats are never written by the theme.
+
+The stats request is independent of the checklist. If it fails, the checklist remains
+usable and the HUD shows an actionable retry; switching children clears the previous
+child's stats before the new request resolves. Quest deliberately has no seasons,
+currencies, shops, rewards, inventory, navigation, or other non-functional controls.
+
+Both themes use bundled WOFF2 assets, not a font CDN:
+
+| Theme / use | Font | Files |
 | --- | --- | --- |
-| Headings | Source Serif 4 | `frontend/public/fonts/source-serif-4-*.woff2` |
-| Body | Nunito Sans | `frontend/public/fonts/nunito-sans-*.woff2` |
-| Handwritten notes | Caveat | `frontend/public/fonts/caveat-*.woff2` |
+| Homestead headings | Source Serif 4 | `frontend/public/fonts/source-serif-4-*.woff2` |
+| Homestead body | Nunito Sans | `frontend/public/fonts/nunito-sans-*.woff2` |
+| Homestead handwritten notes | Caveat | `frontend/public/fonts/caveat-*.woff2` |
+| Quest headings | Barlow Condensed | `frontend/public/fonts/barlow-condensed-*.woff2` |
+| Quest body | Barlow | `frontend/public/fonts/barlow-*.woff2` |
 | Small labels | JetBrains Mono | `frontend/public/fonts/jetbrains-mono-*.woff2` |
 
 Font licenses are in `frontend/public/fonts/licenses/`; `fonts.css` declares the
 self-hosted faces and is linked from `frontend/index.html`.
 
-The committed Homestead phone assignment preview is
-`frontend/public/theme-previews/homestead.png`, served at
-`/theme-previews/homestead.png`. It is generated from the running frontend against
-the deterministic preview fixture in `frontend/e2e/backend_server.py`:
+The committed phone assignment previews are
+`frontend/public/theme-previews/homestead.png` and
+`frontend/public/theme-previews/quest.png`, served from
+`/theme-previews/`. They are generated from the running frontend against the
+deterministic preview fixtures in `frontend/e2e/backend_server.py`:
 
 ```bash
 cd frontend
 PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
+PREVIEW_THEME=quest PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
 ```
 
 The generation browser must be installed; set
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when using a pre-installed Chromium. The
-scripted fixture starts from a clean database and always uses the four-child,
-three-item Homestead assignment, so the image is reproducible. The seven-child /
-six-checklist-item stress case is a separate test-only scenario.
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when using a pre-installed Chromium. Each
+scripted fixture starts from a clean database and uses a deterministic four-child
+assignment: Homestead uses three checklist items, and Quest uses the persisted
+completion history described above so its XP, streak, and leaderboard are
+reproducible. The seven-child / six-checklist-item stress case remains a separate
+test-only scenario.
 
 Copy `frontend/.env.example` to `frontend/.env` to override the defaults for local
 development. Do not put secrets in `VITE_*` variables; those values are exposed to
@@ -371,7 +489,11 @@ history, deterministic one-chore-per-child assignment generation, and repeated M
 rollover without duplicate reports or assignments. Theme coverage includes cold-load
 default, disabled controls, preview image loading, dropdown keyboard operation,
 seven-child / six-item responsiveness at phone/tablet/desktop widths, the preview
-fixture, and the committed preview image. Administrator browser coverage uses
+fixtures, and the committed preview images. Quest coverage selects the theme, checks
+XP, level, streak, rank, player count, and gap-to-first against persisted completion
+data, verifies a checklist toggle updates those facts, confirms the values and child
+theme survive reload, and checks that an admin route does not inherit the child's
+Quest theme. Administrator browser coverage uses
 Playwright's virtual WebAuthn authenticator to exercise real passkey registration,
 sign-in, second-administrator enrollment, invalid and reused invitation handling,
 protected-screen denial, representative family/chore CRUD, report history/detail,
