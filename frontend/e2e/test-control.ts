@@ -1,4 +1,4 @@
-import type { APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 const BASE_URL = "http://localhost:5174";
 
@@ -41,4 +41,30 @@ export async function setTestToday(
       `Setting the test date failed: ${response.status()} ${await response.text()}`,
     );
   }
+}
+
+/**
+ * Select a child, saving Homestead first when the child has no theme yet.
+ * Repeated calls after a reload are harmless when the child is already active.
+ */
+export async function selectChild(page: Page, name: string): Promise<void> {
+  let child = page.getByRole("button", { name, exact: true });
+  if ((await child.count()) === 0) {
+    const switchButton = page.getByRole("button", { name: "Switch child" });
+    if ((await switchButton.count()) === 0) return;
+    await switchButton.click();
+    child = page.getByRole("button", { name, exact: true });
+  }
+  await child.click();
+
+  const picker = page.getByRole("region", { name: /Pick a look for/ });
+  if (await picker.isVisible().catch(() => false)) {
+    await picker.getByRole("button", { name: /Homestead/ }).click();
+    await expect(picker).toBeHidden();
+  }
+}
+
+export async function switchChild(page: Page, name: string): Promise<void> {
+  await page.getByRole("button", { name: "Switch child" }).click();
+  await selectChild(page, name);
 }

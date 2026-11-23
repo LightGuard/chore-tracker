@@ -54,8 +54,9 @@ child authentication. The household trust model uses profile selection rather th
 individual child accounts.
 
 - `GET /family-members/active` returns active profiles as an array of
-  `{ "id": integer, "display_name": string }`, ordered by display name (case-insensitive)
-  and then ID. Inactive profiles are excluded.
+  `{ "id": integer, "display_name": string, "theme_id": string | null }`, ordered by
+  display name (case-insensitive) and then ID. Inactive profiles are excluded. A
+  `theme_id` of `null` means the child has never saved a theme.
 - `GET /family-members/{family_member_id}/current-assignment` returns the selected
   active child's assignment for the current Monday–Sunday week in the configured
   `CHORE_TRACKER_REPORT_TIMEZONE`. The response includes the immutable chore name
@@ -108,6 +109,57 @@ The endpoint does not create completion rows or infer a result from a missing ro
 Historical records remain available when a family profile or chore is inactive, and
 catalog edits do not change the assignment snapshots. An unknown profile returns HTTP
 404; a known profile with no assignments returns HTTP 200 with an empty page.
+
+### Theme catalog and preferences
+
+Themes are visual and layout variants. The API is the source of truth for which
+themes are available; preview images are frontend assets, and the API publishes only
+their public paths.
+
+`GET /themes` is public and returns entries in display order:
+
+```json
+[
+  {
+    "id": "homestead",
+    "name": "Homestead",
+    "preview_image": "/theme-previews/homestead.png"
+  }
+]
+```
+
+Only `homestead` is available in this ticket. Its stable id is also the default
+theme. Unknown or unset saved values are treated as Homestead by the frontend; the
+API deliberately returns the raw saved value so the server remains the durable source
+of truth.
+
+- `GET /family-members/active` includes the child's raw `theme_id` or `null`.
+- `GET /auth/me` includes the administrator's raw `theme_id` or `null`.
+- `PUT /family-members/{family_member_id}/theme` accepts
+  `{ "theme_id": "homestead" }`, is idempotent, and returns
+  `{ "theme_id": "homestead" }`. Child theme writes follow the existing
+  unauthenticated household trust model. An unknown child returns 404, an inactive
+  child 409, and an unavailable theme 422.
+- `PUT /auth/me/theme` accepts the same body, requires an authenticated
+  administrator, enforces the existing same-origin check, is idempotent, and returns
+  `{ "theme_id": "homestead" }`. Preferences are stored per administrator row.
+  An unavailable theme returns 422.
+
+Migration `0008_theme_preferences` adds nullable `theme_id` columns to
+`family_members` and `administrators`. It does not assign a theme to existing rows.
+There is no theme table; the catalog is application-owned. No assignment, completion,
+report, or authentication behavior depends on the theme value.
+
+#### Adding a theme
+
+1. Add a stable lowercase id, display name, and frontend preview path to
+   `THEME_CATALOG` in `src/chore_tracker/application/services/themes.py`.
+2. Add the preview image under `frontend/public/theme-previews/`.
+3. Add a scoped `theme-<id>` token block and layout rules in
+   `frontend/src/styles.css`, keeping ReShaped components as the substrate.
+4. Add the theme to backend API tests and frontend catalog fixtures, then cover its
+   picker/dropdown rendering and responsive behavior.
+5. Never reuse an id for a different visual direction; saved ids are durable.
 
 ### Application configuration
 
@@ -217,6 +269,63 @@ passkey relying-party ID is `localhost`; using the IP address causes an
 - `API_PROXY_TARGET` sets the development proxy destination. It defaults to
   `http://127.0.0.1:8000` and is used by Vite only.
 
+### Themes, fonts, and previews
+
+The family flow is child-first. Before a child is selected the page renders in
+Homestead and the header theme control is disabled. A child with a saved theme sees
+their assignment immediately after selection. A child with no valid saved theme sees
+the Homestead-selected picker before any assignment content; choosing a theme saves it
+immediately and reveals the assignment. Choosing another child from the dismissible
+Switch child step leaves the current child active until a new child is selected.
+
+The header and picker use `GET /themes` for names and preview images. Header changes
+save immediately for the active child or signed-in administrator. A failed save keeps
+the previous theme and surfaces an actionable retry; a failed first-time picker save
+stays on the picker.
+
+Browser storage is limited to convenience and flash avoidance:
+
+- `chore-tracker.theme.last-child` is written only after a child has a saved theme
+  and drives reload restoration.
+- `chore-tracker.theme.child.<id>` and `chore-tracker.theme.admin.<id>` cache the last
+  known theme per identity.
+- `chore-tracker.theme.last-theme` is a small bootstrap mirror used before React paints.
+  Unknown ids are ignored. Server responses reconcile the cache: a valid saved theme
+  updates it, while an unset or unavailable theme clears the per-identity entry and
+  falls back to Homestead.
+
+Family and admin route contexts are separate. Child themes never theme signed-in
+admin screens, and administrator themes never theme family screens. Signing out
+returns the admin context to Homestead and disables the theme control.
+
+Homestead uses bundled WOFF2 assets, not a font CDN:
+
+| Use | Font | Files |
+| --- | --- | --- |
+| Headings | Source Serif 4 | `frontend/public/fonts/source-serif-4-*.woff2` |
+| Body | Nunito Sans | `frontend/public/fonts/nunito-sans-*.woff2` |
+| Handwritten notes | Caveat | `frontend/public/fonts/caveat-*.woff2` |
+| Small labels | JetBrains Mono | `frontend/public/fonts/jetbrains-mono-*.woff2` |
+
+Font licenses are in `frontend/public/fonts/licenses/`; `fonts.css` declares the
+self-hosted faces and is linked from `frontend/index.html`.
+
+The committed Homestead phone assignment preview is
+`frontend/public/theme-previews/homestead.png`, served at
+`/theme-previews/homestead.png`. It is generated from the running frontend against
+the deterministic preview fixture in `frontend/e2e/backend_server.py`:
+
+```bash
+cd frontend
+PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
+```
+
+The generation browser must be installed; set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when using a pre-installed Chromium. The
+scripted fixture starts from a clean database and always uses the four-child,
+three-item Homestead assignment, so the image is reproducible. The seven-child /
+six-checklist-item stress case is a separate test-only scenario.
+
 Copy `frontend/.env.example` to `frontend/.env` to override the defaults for local
 development. Do not put secrets in `VITE_*` variables; those values are exposed to
 browser code.
@@ -253,16 +362,21 @@ resets its own baseline, and lifecycle tests use test-only controls in
 and run the Monday rollover without starting the live scheduler. The fixture's
 child-facing date starts at Monday, 2026-11-09; the live scheduler is disabled.
 
-The suite covers child selection, ordered checklist display, checking and unchecking
-items, reload persistence, the no-assignment state, grouped completion history,
-empty history, history switching when the selected child changes, a phone-sized
-viewport, the next-day fresh checklist with the prior day retained in history,
-deterministic one-chore-per-child assignment generation, and repeated Monday rollover
-without duplicate reports or assignments. Administrator browser coverage uses
+The suite covers child selection, picker-before-assignment, saving Homestead,
+remembered-child restoration, switch-child cancellation, ordered checklist display,
+checking and unchecking items, reload persistence, the no-assignment state, grouped
+completion history, empty history, history switching when the selected child changes,
+a phone-sized viewport, the next-day fresh checklist with the prior day retained in
+history, deterministic one-chore-per-child assignment generation, and repeated Monday
+rollover without duplicate reports or assignments. Theme coverage includes cold-load
+default, disabled controls, preview image loading, dropdown keyboard operation,
+seven-child / six-item responsiveness at phone/tablet/desktop widths, the preview
+fixture, and the committed preview image. Administrator browser coverage uses
 Playwright's virtual WebAuthn authenticator to exercise real passkey registration,
 sign-in, second-administrator enrollment, invalid and reused invitation handling,
-protected-screen denial, representative family/chore CRUD, report history/detail, and
-sign-out against the running application.
+protected-screen denial, representative family/chore CRUD, report history/detail,
+administrator theme saving, sign-out reverting to Homestead, and disabled controls
+after sign-out against the running application.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.
@@ -624,6 +738,11 @@ passkey origin uses HTTPS. State-changing authentication requests require the co
 browser Origin. Administrative API routes must declare both the `require_admin` and
 `require_same_origin` dependencies for state-changing operations. Child-facing routes
 must not use administrator authentication.
+
+Administrator theme preference is stored per administrator and is changed only through
+`PUT /auth/me/theme`, which requires both the authenticated administrator session and
+the configured same-origin header. Signing out does not erase the stored preference,
+but the next unsigned-in admin view renders Homestead and disables the theme control.
 
 For local development, the defaults support `http://localhost:5173` and the
 `localhost` relying-party ID. For LAN deployment, configure `CHORE_TRACKER_APP_ORIGIN`

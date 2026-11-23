@@ -535,6 +535,99 @@ def report_payload(report) -> dict[str, object]:
     }
 
 
+def seed_theme_fixture(
+    member_names: tuple[str, ...], labels: tuple[str, ...]
+) -> None:
+    """Reset to a deterministic assignment for theme preview and stress tests."""
+    reset_database()
+    week_start = E2E_TODAY - timedelta(days=E2E_TODAY.weekday())
+    week_end = week_start + timedelta(days=6)
+    connection = sqlite3.connect(DATABASE_PATH)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    try:
+        member_ids = {}
+        for index, display_name in enumerate(member_names):
+            member_ids[display_name] = connection.execute(
+                """INSERT INTO family_members (display_name, theme_id)
+                   VALUES (?, ?)""",
+                (display_name, "homestead" if index == 0 else None),
+            ).lastrowid
+        chore_id = connection.execute(
+            """INSERT INTO chores (name, description, is_active)
+               VALUES ('Kitchen', 'Wipe and sweep after dinner.', 1)"""
+        ).lastrowid
+        item_ids = [
+            connection.execute(
+                """INSERT INTO chore_checklist_items
+                   (chore_id, label, position, is_active)
+                   VALUES (?, ?, ?, 1)""",
+                (chore_id, label, position),
+            ).lastrowid
+            for position, label in enumerate(labels)
+        ]
+        assignment_id = connection.execute(
+            """INSERT INTO weekly_assignments
+               (family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot)
+               VALUES (?, ?, ?, ?, 'Kitchen', 'Wipe and sweep after dinner.')""",
+            (
+                member_ids[member_names[0]],
+                chore_id,
+                week_start.isoformat(),
+                week_end.isoformat(),
+            ),
+        ).lastrowid
+        snapshot_ids = [
+            connection.execute(
+                """INSERT INTO assignment_checklist_items
+                   (weekly_assignment_id, source_checklist_item_id,
+                    label_snapshot, position)
+                   VALUES (?, ?, ?, ?)""",
+                (assignment_id, item_id, labels[position], position),
+            ).lastrowid
+            for position, item_id in enumerate(item_ids)
+        ]
+        completed = min(2, len(snapshot_ids))
+        for position, snapshot_id in enumerate(snapshot_ids):
+            if position < completed:
+                connection.execute(
+                    """INSERT INTO daily_checklist_completions
+                       (assignment_checklist_item_id, completion_date,
+                        is_completed, completed_at)
+                       VALUES (?, ?, 1, ?)""",
+                    (
+                        snapshot_id,
+                        E2E_TODAY.isoformat(),
+                        f"{E2E_TODAY.isoformat()}T18:00:00Z",
+                    ),
+                )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def seed_preview_fixture() -> None:
+    seed_theme_fixture(
+        ("Alex", "Sam", "Riley", "Avery"),
+        ("Wipe counters", "Sweep floor", "Take out trash"),
+    )
+
+
+def seed_stress_fixture() -> None:
+    seed_theme_fixture(
+        ("Alex", "Sam", "Riley", "Avery", "Jordan", "Morgan", "Taylor"),
+        (
+            "Wipe counters",
+            "Wipe the cabinet fronts",
+            "Sweep floor",
+            "Take out trash",
+            "Wipe the stovetop",
+            "Refill the soap dispenser",
+        ),
+    )
+
+
 def install_test_hooks():
     """Attach isolated fixture controls to the real application for e2e tests."""
     from chore_tracker.main import app
@@ -545,6 +638,18 @@ def install_test_hooks():
     def reset_fixture() -> dict[str, str]:
         reset_database()
         seed_database()
+        set_test_today(E2E_TODAY)
+        return {"status": "ok", "today": E2E_TODAY.isoformat()}
+
+    @router.post("/scenario/preview", include_in_schema=False)
+    def reset_preview_fixture() -> dict[str, str]:
+        seed_preview_fixture()
+        set_test_today(E2E_TODAY)
+        return {"status": "ok", "today": E2E_TODAY.isoformat()}
+
+    @router.post("/scenario/stress", include_in_schema=False)
+    def reset_stress_fixture() -> dict[str, str]:
+        seed_stress_fixture()
         set_test_today(E2E_TODAY)
         return {"status": "ok", "today": E2E_TODAY.isoformat()}
 

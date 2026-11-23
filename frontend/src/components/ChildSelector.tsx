@@ -37,6 +37,7 @@ export function ChildSelector({
             key={member.id}
             type="button"
             className={`child-option${member.id === selectedId ? " selected" : ""}`}
+            aria-label={member.display_name}
             aria-pressed={member.id === selectedId}
             disabled={busyId !== undefined}
             onClick={() => onSelect(member)}

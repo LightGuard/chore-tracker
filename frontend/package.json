@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "theme:preview": "node scripts/generate-theme-preview.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

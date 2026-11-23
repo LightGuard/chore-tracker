@@ -28,9 +28,10 @@ import { ThemeScope } from "../components/ThemeScope";
 import { DEFAULT_THEME, resolveThemeId, updateAdministratorTheme } from "../theme/api";
 import {
   applyDocumentTheme,
+  clearAdministratorSession,
   clearCachedTheme,
-  clearLastTheme,
-  writeCachedTheme,
+  readCachedAdminBootstrapTheme,
+  rememberAdministratorSession,
   writeLastTheme,
 } from "../theme/storage";
 import { useThemeCatalog } from "../theme/useThemeCatalog";
@@ -65,6 +66,9 @@ export function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [themeBusy, setThemeBusy] = useState(false);
   const [themeError, setThemeError] = useState("");
+  const [bootstrapTheme, setBootstrapTheme] = useState(
+    () => readCachedAdminBootstrapTheme() ?? DEFAULT_THEME.id,
+  );
   const [failedThemeId, setFailedThemeId] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,19 +80,19 @@ export function AdminPage() {
 
   const themeId = administrator
     ? resolveThemeId(administrator.theme_id, catalog.themes)
-    : DEFAULT_THEME.id;
+    : bootstrapTheme;
 
   useLayoutEffect(() => {
     applyDocumentTheme(themeId);
     if (!administrator) return;
-    writeLastTheme(themeId);
     if (
       administrator.theme_id &&
       catalog.themes.some((theme) => theme.id === administrator.theme_id)
     ) {
-      writeCachedTheme("admin", administrator.id, administrator.theme_id);
+      rememberAdministratorSession(administrator.id, administrator.theme_id);
     } else {
       clearCachedTheme("admin", administrator.id);
+      writeLastTheme(themeId);
     }
   }, [administrator, catalog.themes, themeId]);
 
@@ -100,6 +104,8 @@ export function AdminPage() {
     } catch (reason) {
       if (!isUnauthorized(reason)) throw reason;
       setAdministrator(null);
+      clearAdministratorSession();
+      setBootstrapTheme(DEFAULT_THEME.id);
     }
   }, []);
 
@@ -115,7 +121,8 @@ export function AdminPage() {
 
   const handleSessionExpired = useCallback(() => {
     setAdministrator(null);
-    clearLastTheme();
+    clearAdministratorSession();
+    setBootstrapTheme(DEFAULT_THEME.id);
     setStatus((current) =>
       current
         ? { ...current, setup_required: false, enrollment_pending: false }
@@ -239,7 +246,8 @@ export function AdminPage() {
     try {
       await apiRequest("/auth/logout", { method: "POST" });
       setAdministrator(null);
-      clearLastTheme();
+      clearAdministratorSession();
+      setBootstrapTheme(DEFAULT_THEME.id);
       setInvitationUrl("");
       setSessionMessage("You have signed out.");
     } catch (reason) {

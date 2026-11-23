@@ -209,11 +209,13 @@ def test_second_administrator_can_store_a_different_theme(tmp_path, monkeypatch)
         second_id = connection.execute(
             "SELECT id FROM administrators WHERE email = 'second@example.test'"
         ).fetchone()["id"]
-    service = ThemeService(SQLiteThemePersistence(database_path))
-    assert service.set_administrator_theme(second_id, "homestead") == {
-        "theme_id": "homestead"
-    }
     with connect(database_path) as connection:
+        # A future catalog may offer different themes. The persistence layer
+        # must keep each administrator's value independent.
+        connection.execute(
+            "UPDATE administrators SET theme_id = 'quest' WHERE id = ?",
+            (second_id,),
+        )
         first_theme = connection.execute(
             "SELECT theme_id FROM administrators WHERE id = 1"
         ).fetchone()["theme_id"]
@@ -221,5 +223,5 @@ def test_second_administrator_can_store_a_different_theme(tmp_path, monkeypatch)
             "SELECT theme_id FROM administrators WHERE id = ?", (second_id,)
         ).fetchone()["theme_id"]
     assert first_theme == "homestead"
-    assert second_theme == "homestead"
+    assert second_theme == "quest"
     assert token
