@@ -59,7 +59,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0007_weekly_rollover_state"
+        assert revision == "0008_theme_preferences"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -664,3 +664,44 @@ def test_report_migration_preserves_existing_report_and_delivery_rows(
         "incomplete_days": 0,
     }
     assert dict(delivery) == {"report_id": 1, "administrator_id": 1}
+
+
+def test_theme_preferences_are_nullable_and_downgrade_removes_them(tmp_path) -> None:
+    database_path = tmp_path / "theme-preferences.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO family_members (display_name) VALUES ('Taylor')"
+        )
+        connection.execute(
+            "INSERT INTO administrators (email) VALUES ('admin@example.test')"
+        )
+        member = connection.execute(
+            "SELECT theme_id FROM family_members WHERE id = 1"
+        ).fetchone()
+        administrator = connection.execute(
+            "SELECT theme_id FROM administrators WHERE id = 1"
+        ).fetchone()
+        assert member["theme_id"] is None
+        assert administrator["theme_id"] is None
+
+    command.downgrade(config, "0007_weekly_rollover_state")
+    with read_connection(database_path) as connection:
+        member_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(family_members)")
+        }
+        admin_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(administrators)")
+        }
+        assert "theme_id" not in member_columns
+        assert "theme_id" not in admin_columns
+        assert (
+            connection.execute(
+                "SELECT display_name FROM family_members WHERE id = 1"
+            ).fetchone()["display_name"]
+            == "Taylor"
+        )

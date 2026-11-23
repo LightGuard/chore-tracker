@@ -16,6 +16,7 @@ from chore_tracker.adapters.sqlite.family_chore_management import (
     SQLiteFamilyChoreManagementPersistence,
 )
 from chore_tracker.adapters.sqlite.health import SQLiteReadinessProbe
+from chore_tracker.adapters.sqlite.themes import SQLiteThemePersistence
 from chore_tracker.adapters.sqlite.weekly_assignments import (
     SQLiteWeeklyAssignmentPersistence,
 )
@@ -31,11 +32,13 @@ from chore_tracker.api.routes.chores import router as chores_router
 from chore_tracker.api.routes.family_members import router as family_members_router
 from chore_tracker.api.routes.health import router as health_router
 from chore_tracker.api.routes.reports import router as reports_router
+from chore_tracker.api.routes.themes import router as themes_router
 from chore_tracker.application.services.authentication import AuthenticationService
 from chore_tracker.application.services.child_views import ChildViewsService
 from chore_tracker.application.services.family_chore_management import (
     FamilyChoreManagementService,
 )
+from chore_tracker.application.services.themes import ThemeService
 from chore_tracker.application.services.weekly_assignment_generation import (
     WeeklyAssignmentGenerationService,
 )
@@ -155,6 +158,7 @@ app.state.report_service_factory = lambda: WeeklyReportService(
     SQLiteWeeklyReportPersistence(settings.database_path),
     settings.report_timezone,
 )
+app.state.theme_service = ThemeService(SQLiteThemePersistence(settings.database_path))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted({settings.app_origin, settings.passkey_origin}),
@@ -163,6 +167,7 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 app.include_router(health_router)
+app.include_router(themes_router)
 app.include_router(auth_router)
 app.include_router(chores_router)
 app.include_router(reports_router)

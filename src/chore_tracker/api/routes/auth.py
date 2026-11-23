@@ -13,6 +13,7 @@ from chore_tracker.application.services.authentication import (
     AuthenticationError,
     AuthenticationService,
 )
+from chore_tracker.application.services.themes import ThemeError
 from chore_tracker.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -30,6 +31,14 @@ class CeremonyRequest(BaseModel):
 
 class EnrollmentStartRequest(BaseModel):
     token: str
+
+
+class ThemeUpdate(BaseModel):
+    theme_id: str
+
+
+class ThemeUpdateResult(BaseModel):
+    theme_id: str
 
 
 def _verify_registration(challenge: str, credential_data: dict[str, Any]):
@@ -176,6 +185,23 @@ def current_admin(
     administrator: Annotated[dict[str, Any], Depends(require_admin)],
 ) -> dict[str, Any]:
     return administrator
+
+
+@router.put("/me/theme", response_model=ThemeUpdateResult)
+def update_current_admin_theme(
+    request: ThemeUpdate,
+    http_request: Request,
+    administrator: Annotated[dict[str, Any], Depends(require_admin)],
+    origin: None = Depends(require_same_origin),
+) -> dict[str, str]:
+    try:
+        return http_request.app.state.theme_service.set_administrator_theme(
+            administrator["id"], request.theme_id
+        )
+    except ThemeError as error:
+        raise HTTPException(
+            status_code=error.status_code, detail=error.detail
+        ) from error
 
 
 @router.post("/logout")

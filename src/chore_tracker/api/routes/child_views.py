@@ -46,6 +46,21 @@ class ActiveFamilyMember(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: int
     display_name: str
+    theme_id: str | None = None
+
+
+class ThemeUpdate(BaseModel):
+    """A requested theme id."""
+
+    model_config = ConfigDict(extra="forbid")
+    theme_id: str
+
+
+class ThemeUpdateResult(BaseModel):
+    """The stored theme id."""
+
+    model_config = ConfigDict(extra="forbid")
+    theme_id: str
 
 
 class AssignmentChecklistItem(BaseModel):
@@ -80,6 +95,28 @@ class CurrentWeeklyAssignment(BaseModel):
 )
 def list_active_family_members(request: Request) -> list[dict[str, Any]]:
     return _service(request).list_active_family_members()
+
+
+@router.put(
+    "/{family_member_id}/theme",
+    response_model=ThemeUpdateResult,
+    responses={
+        404: {"description": "Family member was not found."},
+        409: {"description": "The family member is inactive."},
+        422: {"description": "The theme id is not available."},
+    },
+    summary="Set a child's theme preference",
+)
+def update_family_member_theme(
+    family_member_id: int,
+    body: ThemeUpdate,
+    request: Request,
+) -> dict[str, str]:
+    return _invoke(
+        lambda: request.app.state.theme_service.set_family_member_theme(
+            family_member_id, body.theme_id
+        )
+    )
 
 
 @router.get(
