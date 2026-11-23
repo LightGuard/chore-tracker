@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { Alert, Button, Checkbox, Loader } from "reshaped";
 import type { ChecklistItem, CurrentAssignment, DerivedStats } from "../family/api";
 import { questLeaderboard, questLevelProgress } from "./presentation";
-import type { DerivedStatsStatus } from "./useDerivedStats";
+import type { DerivedStatsStatus } from "../family/useDerivedStats";
 
 const questDateFormatter = new Intl.DateTimeFormat("en", {
   weekday: "short",

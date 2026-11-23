@@ -20,6 +20,11 @@ THEME_CATALOG: tuple[dict[str, str], ...] = (
         "name": "Quest",
         "preview_image": "/theme-previews/quest.png",
     },
+    {
+        "id": "sticker-club-v2",
+        "name": "Sticker Club v2",
+        "preview_image": "/theme-previews/sticker-club-v2.png",
+    },
 )
 
 

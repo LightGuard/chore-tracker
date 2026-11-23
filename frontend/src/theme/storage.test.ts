@@ -58,6 +58,15 @@ describe("theme storage", () => {
     expect(document.body.dataset.theme).toBe("quest");
   });
 
+  it("applies a cached Sticker Club v2 child theme before the catalog request resolves", () => {
+    rememberChildId(4);
+    writeCachedTheme("child", 4, "sticker-club-v2");
+
+    expect(applyInitialDocumentTheme()).toBe("sticker-club-v2");
+    expect(document.documentElement.dataset.theme).toBe("sticker-club-v2");
+    expect(document.body.dataset.theme).toBe("sticker-club-v2");
+  });
+
   it("applies a cached Quest admin theme only while an admin hint exists", () => {
     window.history.pushState({}, "", "/admin");
     rememberAdministratorSession(1, "quest");

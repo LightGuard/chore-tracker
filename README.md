@@ -194,7 +194,9 @@ Family themes map these facts in their own presentation layer. Quest uses
 `XP = 10 x lifetime.completed_checklist_items` and
 `level = 1 + floor(XP / 500)`. Current-week XP is
 `10 x current_week.completed_checklist_items`; rank, player count, and the XP gap to
-first come from the order of `household.weekly_standings`.
+first come from the order of `household.weekly_standings`. Sticker Club v2 uses
+`current_week.complete_days` as its sticker count and `current_week.days` as its
+seven-slot week rail. It ignores `household.weekly_standings`.
 
 ### Theme catalog and preferences
 
@@ -215,13 +217,19 @@ their public paths.
     "id": "quest",
     "name": "Quest",
     "preview_image": "/theme-previews/quest.png"
+  },
+  {
+    "id": "sticker-club-v2",
+    "name": "Sticker Club v2",
+    "preview_image": "/theme-previews/sticker-club-v2.png"
   }
 ]
 ```
 
-`homestead` and `quest` are available. Homestead remains the default theme. Unknown
-or unset saved values are treated as Homestead by the frontend; the API deliberately
-returns the raw saved value so the server remains the durable source of truth.
+`homestead`, `quest`, and `sticker-club-v2` are available. Homestead remains the
+default theme. Unknown or unset saved values are treated as Homestead by the frontend;
+the API deliberately returns the raw saved value so the server remains the durable
+source of truth.
 
 - `GET /family-members/active` includes the child's raw `theme_id` or `null`.
 - `GET /auth/me` includes the administrator's raw `theme_id` or `null`.
@@ -380,8 +388,8 @@ Browser storage is limited to convenience and flash avoidance:
 - `chore-tracker.theme.child.<id>` and `chore-tracker.theme.admin.<id>` cache the last
   known theme per identity.
 - `chore-tracker.theme.last-theme` is a small bootstrap mirror used before React paints.
-  Bundled child ids (`homestead` and `quest`) can paint immediately; other unknown ids
-  are ignored. Server responses reconcile the cache: a valid saved theme updates it,
+  Bundled child ids (`homestead`, `quest`, and `sticker-club-v2`) can paint
+  immediately; other unknown ids are ignored. Server responses reconcile the cache: a valid saved theme updates it,
   while an unset or unavailable theme clears the per-identity entry and falls back to
   Homestead. Admin bootstrap remains Homestead until `/auth/me` confirms the
   administrator's saved theme.
@@ -410,7 +418,62 @@ usable and the HUD shows an actionable retry; switching children clears the prev
 child's stats before the new request resolves. Quest deliberately has no seasons,
 currencies, shops, rewards, inventory, navigation, or other non-functional controls.
 
-Both themes use bundled WOFF2 assets, not a font CDN:
+### Sticker Club v2 family theme
+
+Sticker Club v2 is the type-only Sticker Club concept: paper, ink, five sticker
+colors, numbered jobs, and no person, chore, subtype, or animal pictograms. It also
+has no reward jar or collectible inventory. The theme uses the shared header, child
+selector, theme picker, assignment/checklist writes, and completion history.
+
+The top bar always shows the current-week count as `N OF 7 STICKERS` with the
+assistive label `N of 7 this week`. The only source is
+`current_week.complete_days` from the generic derived-stat endpoint. A day is worth
+one sticker only when every checklist item for that immutable assignment day is
+complete; incomplete and `not_recorded` days earn none. Checking the final item of
+today updates the seven-slot rail and count immediately from the successful
+assignment mutation, then reconciles with the derived endpoint. The count resets at
+the Monday boundary. `household.weekly_standings` is intentionally ignored: this is a
+personal sticker sheet, not a leaderboard.
+
+The seven-slot rail shows `DONE`, `PART`, or `—` in each slot so complete,
+incomplete, and not-recorded days are distinguishable without color; today receives
+an outline. The jobs live in a fixed-height scroll window with a visible position rail.
+The all-done state uses the stamp language `STICKER N OF 7`.
+
+If the stats request fails, the assignment remains usable, the count shows a
+placeholder rather than zero, and an actionable retry is offered. Switching children
+clears the previous child's count before the new stats resolve. No sticker count,
+inventory, reward, or collectible data is persisted; only the existing theme
+preference is saved.
+
+### Administrator themes
+
+Signed-in administrator screens follow the administrator's saved theme. The shared
+header, theme switcher, and preference API are the same ones used by the family flow;
+changing the theme re-renders the signed-in layout immediately and keeps the choice
+after reload. A selected child's theme is never consulted for admin screens.
+
+Each theme has a distinct signed-in working layout:
+
+- **Homestead:** paper ledger with a left index rail, serif headings, and ledger-style
+  cards.
+- **Quest:** dark command console with a lit navigation rail, clipped HUD surfaces,
+  condensed headings, and lime/cyan status language.
+- **Sticker Club v2:** type-only paper with a horizontal sticker-tag navigation strip,
+  thick ink borders, hard shadows, and five-color content blocks.
+
+The screens cover the signed-in shell and navigation, family member management, chore
+and checklist management, report history, report detail/pagination, and administrator
+invitation management. These are presentation changes only: no administrator API,
+authorization, persistence, or workflow is changed. The approved matrix and 18
+reference screenshots are in [design/admin/](design/admin/README.md).
+
+Pre-authentication initial setup, sign-in, and invitation acceptance remain on the
+Homestead token styling from #72, regardless of an administrator's saved preference.
+The signed-in layouts are desktop-first and reflow at tablet and phone widths without
+page-level horizontal scrolling.
+
+All themes use bundled WOFF2 assets, not a font CDN:
 
 | Theme / use | Font | Files |
 | --- | --- | --- |
@@ -419,14 +482,17 @@ Both themes use bundled WOFF2 assets, not a font CDN:
 | Homestead handwritten notes | Caveat | `frontend/public/fonts/caveat-*.woff2` |
 | Quest headings | Barlow Condensed | `frontend/public/fonts/barlow-condensed-*.woff2` |
 | Quest body | Barlow | `frontend/public/fonts/barlow-*.woff2` |
+| Sticker Club v2 display | Nunito | `frontend/public/fonts/nunito.woff2` |
+| Sticker Club v2 body | Nunito Sans | `frontend/public/fonts/nunito-sans-*.woff2` |
 | Small labels | JetBrains Mono | `frontend/public/fonts/jetbrains-mono-*.woff2` |
 
 Font licenses are in `frontend/public/fonts/licenses/`; `fonts.css` declares the
 self-hosted faces and is linked from `frontend/index.html`.
 
 The committed phone assignment previews are
-`frontend/public/theme-previews/homestead.png` and
-`frontend/public/theme-previews/quest.png`, served from
+`frontend/public/theme-previews/homestead.png`,
+`frontend/public/theme-previews/quest.png`, and
+`frontend/public/theme-previews/sticker-club-v2.png`, served from
 `/theme-previews/`. They are generated from the running frontend against the
 deterministic preview fixtures in `frontend/e2e/backend_server.py`:
 
@@ -434,15 +500,16 @@ deterministic preview fixtures in `frontend/e2e/backend_server.py`:
 cd frontend
 PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
 PREVIEW_THEME=quest PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
+PREVIEW_THEME=sticker-club-v2 PREVIEW_BASE_URL=http://localhost:5174 npm run theme:preview
 ```
 
 The generation browser must be installed; set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when using a pre-installed Chromium. Each
 scripted fixture starts from a clean database and uses a deterministic four-child
-assignment: Homestead uses three checklist items, and Quest uses the persisted
-completion history described above so its XP, streak, and leaderboard are
-reproducible. The seven-child / six-checklist-item stress case remains a separate
-test-only scenario.
+assignment: Homestead uses three checklist items, Quest uses the persisted
+completion history described above, and Sticker Club v2 uses two complete days plus
+a partially complete today so its count and rail are reproducible. The seven-child /
+six-checklist-item stress case remains a separate test-only scenario.
 
 Copy `frontend/.env.example` to `frontend/.env` to override the defaults for local
 development. Do not put secrets in `VITE_*` variables; those values are exposed to
@@ -493,12 +560,19 @@ fixtures, and the committed preview images. Quest coverage selects the theme, ch
 XP, level, streak, rank, player count, and gap-to-first against persisted completion
 data, verifies a checklist toggle updates those facts, confirms the values and child
 theme survive reload, and checks that an admin route does not inherit the child's
-Quest theme. Administrator browser coverage uses
+Quest theme. Sticker Club v2 coverage selects the theme, verifies the current-week
+count and seven-slot rail, checks the final job to add a sticker, reloads, unchecks
+to remove it, verifies a stats failure leaves the assignment usable, confirms child
+switching clears the previous count, checks the fixed-height list with seven children
+and six jobs, and verifies admin routes do not inherit the theme. Administrator browser coverage uses
 Playwright's virtual WebAuthn authenticator to exercise real passkey registration,
 sign-in, second-administrator enrollment, invalid and reused invitation handling,
 protected-screen denial, representative family/chore CRUD, report history/detail,
 administrator theme saving, sign-out reverting to Homestead, and disabled controls
-after sign-out against the running application.
+after sign-out against the running application. It also switches each administrator
+theme through all six signed-in screens, attaches the 18 visual snapshots to the
+Playwright run, verifies theme persistence across reload, and checks desktop, tablet,
+and phone widths for horizontal overflow.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.

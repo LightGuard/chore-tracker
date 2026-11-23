@@ -1,4 +1,10 @@
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type Browser,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -24,12 +30,14 @@ let secondCredential: WebAuthnCredential | undefined;
 let enrollmentUrl: string | undefined;
 
 function requireFirstCredential(): WebAuthnCredential {
-  if (!firstCredential) throw new Error("First administrator credential is missing");
+  if (!firstCredential)
+    throw new Error("First administrator credential is missing");
   return firstCredential;
 }
 
 function requireSecondCredential(): WebAuthnCredential {
-  if (!secondCredential) throw new Error("Second administrator credential is missing");
+  if (!secondCredential)
+    throw new Error("Second administrator credential is missing");
   return secondCredential;
 }
 
@@ -40,10 +48,7 @@ async function authenticatedContext(
 ) {
   const context = await browser.newContext({ baseURL: BASE_URL });
   const page = await context.newPage();
-  const authenticator = await addCredentialToNewAuthenticator(
-    page,
-    credential,
-  );
+  const authenticator = await addCredentialToNewAuthenticator(page, credential);
   await signIn(page, email);
 
   const credentials = await credentialsFor(authenticator);
@@ -95,7 +100,8 @@ function setEnrollmentTokenExpiry(expiresAt: string) {
       candidate !== undefined &&
       (candidate === "python3" || existsSync(candidate)),
   );
-  if (!python) throw new Error("No Python interpreter available for test setup");
+  if (!python)
+    throw new Error("No Python interpreter available for test setup");
 
   execFileSync(
     python,
@@ -171,10 +177,10 @@ test.describe.serial("administrator passkey and management flow", () => {
     await expect(casey).toBeVisible();
     await casey.getByLabel("Display name").fill("Casey Jones");
     await casey.locator("label").filter({ hasText: "Active" }).click();
-    await expect(casey.getByRole("switch", { name: "Active" })).not.toBeChecked();
-    await casey
-      .getByRole("button", { name: "Save family member" })
-      .click();
+    await expect(
+      casey.getByRole("switch", { name: "Active" }),
+    ).not.toBeChecked();
+    await casey.getByRole("button", { name: "Save family member" }).click();
 
     const updatedCasey = page.getByRole("article", {
       name: "Family member Casey Jones",
@@ -185,8 +191,10 @@ test.describe.serial("administrator passkey and management flow", () => {
     const membersResponse = await page.request.get("/api/family-members");
     const members = await membersResponse.json();
     expect(
-      members.find((member: { display_name: string }) => member.display_name === "Casey Jones")
-        .is_active,
+      members.find(
+        (member: { display_name: string }) =>
+          member.display_name === "Casey Jones",
+      ).is_active,
     ).toBe(false);
 
     const choreRegion = page.getByRole("region", { name: "Chore catalog" });
@@ -274,15 +282,17 @@ test.describe.serial("administrator passkey and management flow", () => {
       page.getByRole("heading", { name: "Report history" }),
     ).toHaveCount(0);
     expect((await page.request.get("/api/reports")).status()).toBe(401);
-    expect((await page.request.get("/api/reports/2026-11-16")).status()).toBe(401);
+    expect((await page.request.get("/api/reports/2026-11-16")).status()).toBe(
+      401,
+    );
 
     await page.goto("/admin/reports/2026-11-16");
     await expect(
       page.getByRole("region", { name: "Administrator sign in" }),
     ).toBeVisible();
-    await expect(page.getByRole("region", { name: "Report detail" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("region", { name: "Report detail" }),
+    ).toHaveCount(0);
 
     await context.close();
   });
@@ -306,7 +316,7 @@ test.describe.serial("administrator passkey and management flow", () => {
     expect(reports).toHaveLength(2);
     expect(reports[0].week_start > reports[1].week_start).toBe(true);
 
-    await page.getByRole("link", { name: "Reports" }).click();
+    await page.getByRole("link", { name: "Reports", exact: true }).click();
     const history = page.getByRole("region", {
       name: "Report history",
     });
@@ -327,13 +337,16 @@ test.describe.serial("administrator passkey and management flow", () => {
     const jordan = members.find((member) => member.display_name === "Jordan");
     expect(jordan).toBeTruthy();
     if (!jordan) throw new Error("Jordan was not seeded");
-    const renamed = await page.request.patch(`/api/family-members/${jordan.id}`, {
-      headers: {
-        Origin: BASE_URL,
-        "Content-Type": "application/json",
+    const renamed = await page.request.patch(
+      `/api/family-members/${jordan.id}`,
+      {
+        headers: {
+          Origin: BASE_URL,
+          "Content-Type": "application/json",
+        },
+        data: { display_name: "Jordan Renamed" },
       },
-      data: { display_name: "Jordan Renamed" },
-    });
+    );
     expect(renamed.ok()).toBeTruthy();
 
     const firstPageResponse = await page.request.get(
@@ -357,9 +370,7 @@ test.describe.serial("administrator passkey and management flow", () => {
       .click();
     const detail = page.getByRole("region", { name: "Report detail" });
     await expect(detail).toBeVisible();
-    await expect(
-      detail.getByRole("heading", { level: 2 }),
-    ).toBeVisible();
+    await expect(detail.getByRole("heading", { level: 2 })).toBeVisible();
     await expect(detail.getByText("of 42 child-day slots")).toBeVisible();
     await expect(detail.getByText("Showing 1–5 of 6 entries")).toBeVisible();
 
@@ -369,7 +380,9 @@ test.describe.serial("administrator passkey and management flow", () => {
         name: `Report entry for ${entry.family_member_name}`,
       });
       await expect(row).toBeVisible();
-      await expect(row.getByText(entry.chore_name, { exact: true })).toBeVisible();
+      await expect(
+        row.getByText(entry.chore_name, { exact: true }),
+      ).toBeVisible();
       await expect(row.locator(".report-total-cell strong")).toHaveText(
         `${entry.completed_days} / 7`,
       );
@@ -407,7 +420,9 @@ test.describe.serial("administrator passkey and management flow", () => {
         name: `Report entry for ${entry.family_member_name}`,
       });
       await expect(row).toBeVisible();
-      await expect(row.getByText(entry.chore_name, { exact: true })).toBeVisible();
+      await expect(
+        row.getByText(entry.chore_name, { exact: true }),
+      ).toBeVisible();
       await expect(row.locator(".report-total-cell strong")).toHaveText(
         `${entry.completed_days} / 7`,
       );
@@ -434,7 +449,7 @@ test.describe.serial("administrator passkey and management flow", () => {
       FIRST_ADMIN,
     );
     const secondAdminRegion = first.page.getByRole("region", {
-      name: "Second administrator",
+      name: "Administrator access",
     });
     await secondAdminRegion
       .getByLabel("Administrator email")
@@ -442,9 +457,7 @@ test.describe.serial("administrator passkey and management flow", () => {
     await secondAdminRegion
       .getByRole("button", { name: "Create administrator invitation" })
       .click();
-    await expect(
-      first.page.getByText("Enrollment link created"),
-    ).toBeVisible();
+    await expect(first.page.getByText("Enrollment link created")).toBeVisible();
     enrollmentUrl = await first.page.getByLabel("Enrollment link").inputValue();
     expect(enrollmentUrl).toContain("/admin/enroll#token=");
     await first.context.close();
@@ -454,9 +467,7 @@ test.describe.serial("administrator passkey and management flow", () => {
     const expiredPage = await expiredContext.newPage();
     await enableVirtualAuthenticator(expiredPage);
     await expiredPage.goto(enrollmentUrl);
-    await expiredPage
-      .getByRole("button", { name: "Register passkey" })
-      .click();
+    await expiredPage.getByRole("button", { name: "Register passkey" }).click();
     await expect(
       expiredPage.getByText("Enrollment token is invalid or expired"),
     ).toBeVisible();
@@ -502,9 +513,7 @@ test.describe.serial("administrator passkey and management flow", () => {
     const invalidPage = await invalidContext.newPage();
     await enableVirtualAuthenticator(invalidPage);
     await invalidPage.goto("/admin/enroll#token=not-a-real-token");
-    await invalidPage
-      .getByRole("button", { name: "Register passkey" })
-      .click();
+    await invalidPage.getByRole("button", { name: "Register passkey" }).click();
     await expect(
       invalidPage.getByText("Enrollment token is invalid or expired"),
     ).toBeVisible();
@@ -521,7 +530,6 @@ test.describe.serial("administrator passkey and management flow", () => {
     ).toBeVisible();
     await reusedContext.close();
   });
-
 
   test("saves the administrator theme and reverts to Homestead on sign-out", async ({
     browser,
@@ -590,6 +598,173 @@ test.describe.serial("administrator passkey and management flow", () => {
       page.getByRole("heading", { name: "Family members" }),
     ).toHaveCount(0);
 
+    await context.close();
+  });
+
+  test("renders all six admin screens in all three themes", async ({
+    browser,
+  }, testInfo) => {
+    const { context, page } = await authenticatedContext(
+      browser,
+      requireFirstCredential(),
+      FIRST_ADMIN,
+    );
+    const reportsResponse = await page.request.get("/api/reports");
+    expect(reportsResponse.ok()).toBeTruthy();
+    const reports = (await reportsResponse.json()) as Array<{
+      week_start: string;
+    }>;
+    expect(reports.length).toBeGreaterThan(0);
+
+    const themes = [
+      ["homestead", /Homestead/],
+      ["quest", /Quest/],
+      ["sticker-club-v2", /Sticker Club v2/],
+    ] as const;
+
+    async function attachScreenshot(name: string, target: Page | Locator) {
+      await testInfo.attach(name, {
+        body: await target.screenshot(),
+        contentType: "image/png",
+      });
+      if (env.CAPTURE_ADMIN_SCREENS === "1") {
+        const directory = resolve(cwd(), ".playwright-data/admin-visual");
+        mkdirSync(directory, { recursive: true });
+        await target.screenshot({
+          path: resolve(directory, `${name}.png`),
+          fullPage: false,
+        });
+      }
+    }
+
+    for (const [themeId, themeName] of themes) {
+      await page.goto("/admin");
+      await expect(
+        page.getByRole("heading", {
+          name: `Signed in as ${FIRST_ADMIN}`,
+        }),
+      ).toBeVisible();
+
+      await page.getByRole("button", { name: "Theme" }).click();
+      await page.getByRole("option", { name: themeName }).click();
+      await expect(page.locator(".theme-scope")).toHaveAttribute(
+        "data-theme",
+        themeId,
+      );
+      await expect(page.locator(".admin-workspace")).toHaveAttribute(
+        "data-admin-theme",
+        themeId,
+      );
+
+      await page.reload();
+      await expect(
+        page.locator(`.admin-workspace[data-admin-theme="${themeId}"]`),
+      ).toBeVisible();
+      await attachScreenshot(`${themeId}-shell`, page);
+      await page.addStyleTag({
+        content: ".app-header { display: none !important; }",
+      });
+
+      await attachScreenshot(
+        `${themeId}-family`,
+        page.locator("#family-members"),
+      );
+      await attachScreenshot(
+        `${themeId}-chores`,
+        page.locator("#chore-catalog"),
+      );
+      await attachScreenshot(
+        `${themeId}-invite`,
+        page.locator("#administrator-access"),
+      );
+
+      await page.getByRole("link", { name: "Reports", exact: true }).click();
+      await expect(
+        page.getByRole("region", { name: "Report history" }),
+      ).toBeVisible();
+      await attachScreenshot(
+        `${themeId}-reports`,
+        page.locator("#report-history"),
+      );
+
+      await page
+        .locator(`a[href="/admin/reports/${reports[0].week_start}"]`)
+        .click();
+      await expect(
+        page.getByRole("region", { name: "Report detail" }),
+      ).toBeVisible();
+      await attachScreenshot(
+        `${themeId}-report-detail`,
+        page.locator("#report-detail"),
+      );
+    }
+
+    await context.close();
+  });
+
+  test("keeps signed-in administrator layouts usable at phone and tablet widths", async ({
+    browser,
+  }) => {
+    const { context, page } = await authenticatedContext(
+      browser,
+      requireFirstCredential(),
+      FIRST_ADMIN,
+    );
+    const themes = [
+      ["homestead", /Homestead/],
+      ["quest", /Quest/],
+      ["sticker-club-v2", /Sticker Club v2/],
+    ] as const;
+
+    for (const [themeId, themeName] of themes) {
+      await page.goto("/admin");
+      await page.getByRole("button", { name: "Theme" }).click();
+      await page.getByRole("option", { name: themeName }).click();
+      await expect(page.locator(".admin-workspace")).toHaveAttribute(
+        "data-admin-theme",
+        themeId,
+      );
+
+      for (const width of [390, 768]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/admin");
+        await expect(
+          page.getByRole("heading", {
+            name: `Signed in as ${FIRST_ADMIN}`,
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("link", { name: "Reports", exact: true }),
+        ).toBeVisible();
+        await expect(page.locator("#family-members")).toBeVisible();
+        await expect(page.locator("#chore-catalog")).toBeVisible();
+        await expect(page.locator("#administrator-access")).toBeVisible();
+        const homeOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth,
+        );
+        expect(homeOverflow).toBeLessThanOrEqual(1);
+
+        await page.getByRole("link", { name: "Reports", exact: true }).click();
+        await expect(
+          page.getByRole("region", { name: "Report history" }),
+        ).toBeVisible();
+        const reportsOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth,
+        );
+        expect(reportsOverflow).toBeLessThanOrEqual(1);
+
+        await page.locator('a[href^="/admin/reports/"]').first().click();
+        await expect(
+          page.getByRole("region", { name: "Report detail" }),
+        ).toBeVisible();
+        const detailOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth,
+        );
+        expect(detailOverflow).toBeLessThanOrEqual(1);
+      }
+    }
+
+    await page.setViewportSize({ width: 1280, height: 720 });
     await context.close();
   });
 });

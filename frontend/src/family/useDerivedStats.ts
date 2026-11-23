@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getDerivedStats, type DerivedStats } from "../family/api";
+import { getDerivedStats, type DerivedStats } from "./api";
 
 export type DerivedStatsStatus = "idle" | "loading" | "ready" | "error";
 
@@ -10,7 +10,7 @@ export type DerivedStatsState = {
 };
 
 const STATS_ERROR =
-  "We couldn't load Quest progress. Check your connection and try again.";
+  "We couldn't load this week's progress. Check your connection and try again.";
 
 export function useDerivedStats(
   familyMemberId: number | null,
@@ -60,5 +60,16 @@ export function useDerivedStats(
 
   const reload = useCallback(() => setReloadKey((value) => value + 1), []);
 
-  return { stats, status, error, reload };
+  const currentStats =
+    stats && familyMemberId !== null && stats.family_member_id === familyMemberId
+      ? stats
+      : null;
+  const currentStatus =
+    currentStats === null && enabled && familyMemberId !== null
+      ? status === "error"
+        ? "error"
+        : "loading"
+      : status;
+
+  return { stats: currentStats, status: currentStatus, error, reload };
 }

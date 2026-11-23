@@ -16,16 +16,15 @@ import {
   TextField,
   View,
 } from "reshaped";
-import {
-  NavLink,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, apiRequest } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { ThemeScope } from "../components/ThemeScope";
-import { DEFAULT_THEME, resolveThemeId, updateAdministratorTheme } from "../theme/api";
+import {
+  DEFAULT_THEME,
+  resolveThemeId,
+  updateAdministratorTheme,
+} from "../theme/api";
 import {
   applyDocumentTheme,
   clearAdministratorSession,
@@ -35,6 +34,7 @@ import {
   writeLastTheme,
 } from "../theme/storage";
 import { useThemeCatalog } from "../theme/useThemeCatalog";
+import { AdminLayout } from "./AdminLayout";
 import { ChoreManager } from "./ChoreManager";
 import { FamilyMemberManager } from "./FamilyMemberManager";
 import { ReportDetail } from "./ReportDetail";
@@ -56,7 +56,9 @@ function isUnauthorized(reason: unknown): boolean {
 export function AdminPage() {
   const catalog = useThemeCatalog();
   const [status, setStatus] = useState<SetupStatus | null>(null);
-  const [administrator, setAdministrator] = useState<Administrator | null>(null);
+  const [administrator, setAdministrator] = useState<Administrator | null>(
+    null,
+  );
   const [email, setEmail] = useState("");
   const [invitationEmail, setInvitationEmail] = useState("");
   const [invitationUrl, setInvitationUrl] = useState("");
@@ -78,9 +80,20 @@ export function AdminPage() {
     window.location.hash.slice(1),
   ).get("token");
 
-  const themeId = administrator
-    ? resolveThemeId(administrator.theme_id, catalog.themes)
-    : bootstrapTheme;
+  const signedIn = Boolean(administrator) && !enrollmentToken;
+  const authThemeId = loading ? bootstrapTheme : DEFAULT_THEME.id;
+  const themeId =
+    administrator && !enrollmentToken
+      ? resolveThemeId(administrator.theme_id, catalog.themes)
+      : authThemeId;
+
+  useEffect(() => {
+    if (loading || !location.hash) return;
+    const target = document.getElementById(location.hash.slice(1));
+    if (target && typeof target.scrollIntoView === "function") {
+      target.scrollIntoView({ block: "start" });
+    }
+  }, [administrator, loading, location.hash, reportsView]);
 
   useLayoutEffect(() => {
     applyDocumentTheme(themeId);
@@ -112,9 +125,7 @@ export function AdminPage() {
   useEffect(() => {
     refresh()
       .catch((reason: unknown) => {
-        setError(
-          messageFor(reason, "Unable to load administrator setup."),
-        );
+        setError(messageFor(reason, "Unable to load administrator setup."));
       })
       .finally(() => setLoading(false));
   }, [refresh]);
@@ -276,6 +287,42 @@ export function AdminPage() {
     }
   }
 
+  const notices = (
+    <>
+      {catalog.error && (
+        <Alert color="warning" title="Theme catalog unavailable">
+          {catalog.error} Homestead is being used for now.
+        </Alert>
+      )}
+
+      {themeError && (
+        <Alert
+          color="critical"
+          title="Theme was not saved"
+          actionsSlot={
+            failedThemeId ? (
+              <Button
+                variant="outline"
+                disabled={themeBusy}
+                onClick={() => void handleThemeChange(failedThemeId)}
+              >
+                Try again
+              </Button>
+            ) : undefined
+          }
+        >
+          {themeError}
+        </Alert>
+      )}
+
+      {error && (
+        <Alert color="critical" title="Administrator request failed">
+          {error}
+        </Alert>
+      )}
+    </>
+  );
+
   return (
     <ThemeScope themeId={themeId}>
       <AppHeader
@@ -289,92 +336,32 @@ export function AdminPage() {
         context="admin"
       />
       <Container width="100%">
-        <main className="app-shell admin-shell">
-        <View gap={1} paddingBlock={3}>
-          <Text as="h1" variant="headline-1">
-            {reportsView ? "Weekly reports" : "Chore Tracker administration"}
-          </Text>
-          <Text color="neutral-faded">
-            {reportsView
-              ? "Browse immutable Monday–Sunday completion snapshots generated for the household."
-              : "Administrator access uses passkeys. Child profiles remain separate and are not signed-in accounts."}
-          </Text>
-        </View>
+        {signedIn && administrator ? (
+          <AdminLayout
+            themeId={themeId}
+            administratorEmail={administrator.email}
+            busy={busy}
+            reportsView={reportsView}
+            onLogout={handleLogout}
+          >
+            <header className="admin-page-head">
+              <div className="admin-page-kicker">
+                {reportsView ? "Weekly archive" : "Signed-in administration"}
+              </div>
+              <h1>
+                {reportsView
+                  ? "Weekly reports"
+                  : "One house, one control room."}
+              </h1>
+              <p>
+                {reportsView
+                  ? "Browse immutable Monday–Sunday completion snapshots generated for the household."
+                  : "Manage the household roster, chore catalog, weekly reports, and administrator access without changing the underlying workflow."}
+              </p>
+            </header>
 
-        <View gap={4} paddingTop={4}>
-          {catalog.error && (
-            <Alert color="warning" title="Theme catalog unavailable">
-              {catalog.error} Homestead is being used for now.
-            </Alert>
-          )}
+            {notices}
 
-          {themeError && (
-            <Alert
-              color="critical"
-              title="Theme was not saved"
-              actionsSlot={
-                failedThemeId ? (
-                  <Button
-                    variant="outline"
-                    disabled={themeBusy}
-                    onClick={() => void handleThemeChange(failedThemeId)}
-                  >
-                    Try again
-                  </Button>
-                ) : undefined
-              }
-            >
-              {themeError}
-            </Alert>
-          )}
-
-          {error && (
-            <Alert color="critical" title="Administrator request failed">
-              {error}
-            </Alert>
-          )}
-
-          {loading ? (
-            <View
-              align="center"
-              gap={2}
-              padding={6}
-              attributes={{ role: "status" }}
-            >
-              <Loader ariaLabel="Loading administrator setup" />
-              <Text color="neutral-faded">Loading administrator setup…</Text>
-            </View>
-          ) : enrollmentToken ? (
-            <Card
-              as="section"
-              padding={5}
-              borderRadius="large"
-              attributes={{ "aria-labelledby": "enrollment-heading" }}
-            >
-              <View gap={3}>
-                <Text
-                  as="h2"
-                  variant="headline-2"
-                  attributes={{ id: "enrollment-heading" }}
-                >
-                  Register administrator passkey
-                </Text>
-                <Text>
-                  This one-time invitation expires after 24 hours. Register a
-                  passkey on this device to finish enrollment.
-                </Text>
-                <View direction="row">
-                  <Button
-                    disabled={busy}
-                    loading={busy}
-                    onClick={() => void handleEnrollment()}
-                  >
-                    Register passkey
-                  </Button>
-                </View>
-              </View>
-            </Card>
-          ) : administrator ? (
             <SignedInContent
               administrator={administrator}
               busy={busy}
@@ -384,109 +371,175 @@ export function AdminPage() {
               reportWeek={weekStart}
               onInvitationEmailChange={setInvitationEmail}
               onInvitation={handleInvitation}
-              onLogout={handleLogout}
               onSessionExpired={handleSessionExpired}
             />
-          ) : status?.setup_required ? (
-            <Card
-              as="section"
-              padding={5}
-              borderRadius="large"
-              attributes={{ "aria-labelledby": "setup-heading" }}
-            >
-              <form onSubmit={(event) => void handleInitialSetup(event)}>
-                <View gap={3}>
-                  <Text
-                    as="h2"
-                    variant="headline-2"
-                    attributes={{ id: "setup-heading" }}
-                  >
-                    Initial administrator setup
-                  </Text>
+          </AdminLayout>
+        ) : (
+          <main className="app-shell admin-shell admin-auth-shell">
+            <View gap={1} paddingBlock={3}>
+              <Text as="h1" variant="headline-1">
+                {reportsView
+                  ? "Weekly reports"
+                  : "Chore Tracker administration"}
+              </Text>
+              <Text color="neutral-faded">
+                {reportsView
+                  ? "Browse immutable Monday–Sunday completion snapshots generated for the household."
+                  : "Administrator access uses passkeys. Child profiles remain separate and are not signed-in accounts."}
+              </Text>
+            </View>
+
+            <View gap={4} paddingTop={4}>
+              {notices}
+
+              {loading ? (
+                <View
+                  align="center"
+                  gap={2}
+                  padding={6}
+                  attributes={{ role: "status" }}
+                >
+                  <Loader ariaLabel="Loading administrator setup" />
                   <Text color="neutral-faded">
-                    Create the first administrator and register a passkey on
-                    this device. This unauthenticated setup path is available
-                    only before the first passkey is registered.
+                    Loading administrator setup…
                   </Text>
-                  <FormControl id="admin-email">
-                    <FormControl.Label>Administrator email</FormControl.Label>
-                    <TextField
-                      name="email"
-                      value={email}
-                      onChange={({ value }) => setEmail(value)}
-                      inputAttributes={{
-                        type: "email",
-                        autoComplete: "email",
-                        required: true,
-                      }}
-                    />
-                  </FormControl>
-                  <View direction="row">
-                    <Button
-                      type="submit"
-                      disabled={busy}
-                      loading={busy}
-                      loadingAriaLabel="Creating administrator"
-                    >
-                      Create administrator and register passkey
-                    </Button>
-                  </View>
                 </View>
-              </form>
-            </Card>
-          ) : status ? (
-            <Card
-              as="section"
-              padding={5}
-              borderRadius="large"
-              attributes={{ "aria-labelledby": "login-heading" }}
-            >
-              <form onSubmit={(event) => void handleLogin(event)}>
-                <View gap={3}>
-                  {sessionMessage && (
-                    <Alert color="warning" title="Session ended">
-                      {sessionMessage}
-                    </Alert>
-                  )}
-                  <Text
-                    as="h2"
-                    variant="headline-2"
-                    attributes={{ id: "login-heading" }}
-                  >
-                    Administrator sign in
-                  </Text>
-                  <Text color="neutral-faded">
-                    Use the passkey registered for your administrator account.
-                  </Text>
-                  <FormControl id="login-email">
-                    <FormControl.Label>Administrator email</FormControl.Label>
-                    <TextField
-                      name="email"
-                      value={email}
-                      onChange={({ value }) => setEmail(value)}
-                      inputAttributes={{
-                        type: "email",
-                        autoComplete: "username webauthn",
-                        required: true,
-                      }}
-                    />
-                  </FormControl>
-                  <View direction="row">
-                    <Button
-                      type="submit"
-                      disabled={busy}
-                      loading={busy}
-                      loadingAriaLabel="Signing in"
+              ) : enrollmentToken ? (
+                <Card
+                  as="section"
+                  padding={5}
+                  borderRadius="large"
+                  attributes={{ "aria-labelledby": "enrollment-heading" }}
+                >
+                  <View gap={3}>
+                    <Text
+                      as="h2"
+                      variant="headline-2"
+                      attributes={{ id: "enrollment-heading" }}
                     >
-                      Sign in with passkey
-                    </Button>
+                      Register administrator passkey
+                    </Text>
+                    <Text>
+                      This one-time invitation expires after 24 hours. Register
+                      a passkey on this device to finish enrollment.
+                    </Text>
+                    <View direction="row">
+                      <Button
+                        disabled={busy}
+                        loading={busy}
+                        onClick={() => void handleEnrollment()}
+                      >
+                        Register passkey
+                      </Button>
+                    </View>
                   </View>
-                </View>
-              </form>
-            </Card>
-          ) : null}
-        </View>
-        </main>
+                </Card>
+              ) : status?.setup_required ? (
+                <Card
+                  as="section"
+                  padding={5}
+                  borderRadius="large"
+                  attributes={{ "aria-labelledby": "setup-heading" }}
+                >
+                  <form onSubmit={(event) => void handleInitialSetup(event)}>
+                    <View gap={3}>
+                      <Text
+                        as="h2"
+                        variant="headline-2"
+                        attributes={{ id: "setup-heading" }}
+                      >
+                        Initial administrator setup
+                      </Text>
+                      <Text color="neutral-faded">
+                        Create the first administrator and register a passkey on
+                        this device. This unauthenticated setup path is
+                        available only before the first passkey is registered.
+                      </Text>
+                      <FormControl id="admin-email">
+                        <FormControl.Label>
+                          Administrator email
+                        </FormControl.Label>
+                        <TextField
+                          name="email"
+                          value={email}
+                          onChange={({ value }) => setEmail(value)}
+                          inputAttributes={{
+                            type: "email",
+                            autoComplete: "email",
+                            required: true,
+                          }}
+                        />
+                      </FormControl>
+                      <View direction="row">
+                        <Button
+                          type="submit"
+                          disabled={busy}
+                          loading={busy}
+                          loadingAriaLabel="Creating administrator"
+                        >
+                          Create administrator and register passkey
+                        </Button>
+                      </View>
+                    </View>
+                  </form>
+                </Card>
+              ) : status ? (
+                <Card
+                  as="section"
+                  padding={5}
+                  borderRadius="large"
+                  attributes={{ "aria-labelledby": "login-heading" }}
+                >
+                  <form onSubmit={(event) => void handleLogin(event)}>
+                    <View gap={3}>
+                      {sessionMessage && (
+                        <Alert color="warning" title="Session ended">
+                          {sessionMessage}
+                        </Alert>
+                      )}
+                      <Text
+                        as="h2"
+                        variant="headline-2"
+                        attributes={{ id: "login-heading" }}
+                      >
+                        Administrator sign in
+                      </Text>
+                      <Text color="neutral-faded">
+                        Use the passkey registered for your administrator
+                        account.
+                      </Text>
+                      <FormControl id="login-email">
+                        <FormControl.Label>
+                          Administrator email
+                        </FormControl.Label>
+                        <TextField
+                          name="email"
+                          value={email}
+                          onChange={({ value }) => setEmail(value)}
+                          inputAttributes={{
+                            type: "email",
+                            autoComplete: "username webauthn",
+                            required: true,
+                          }}
+                        />
+                      </FormControl>
+                      <View direction="row">
+                        <Button
+                          type="submit"
+                          disabled={busy}
+                          loading={busy}
+                          loadingAriaLabel="Signing in"
+                        >
+                          Sign in with passkey
+                        </Button>
+                      </View>
+                    </View>
+                  </form>
+                </Card>
+              ) : null}
+            </View>
+          </main>
+        )}
       </Container>
     </ThemeScope>
   );
@@ -501,32 +554,45 @@ type SignedInProps = {
   reportWeek?: string;
   onInvitationEmailChange: (value: string) => void;
   onInvitation: (event: FormEvent<HTMLFormElement>) => Promise<void>;
-  onLogout: () => Promise<void>;
   onSessionExpired: () => void;
 };
 
-function AdminNavigation({ reportsView }: { reportsView: boolean }) {
+function AdminOverview() {
   return (
-    <nav className="admin-nav" aria-label="Administration sections">
-      <NavLink
-        end
-        to="/admin"
-        className={({ isActive }) =>
-          `admin-nav-link${isActive ? " active" : ""}`
-        }
-      >
-        Family &amp; chores
-      </NavLink>
-      <NavLink
-        to="/admin/reports"
-        className={({ isActive }) =>
-          `admin-nav-link${isActive ? " active" : ""}`
-        }
-        aria-current={reportsView ? "page" : undefined}
-      >
-        Reports
-      </NavLink>
-    </nav>
+    <section
+      className="admin-overview"
+      aria-labelledby="admin-overview-heading"
+    >
+      <div className="admin-overview-heading">
+        <div>
+          <span className="admin-overview-kicker">Administration</span>
+          <h2 id="admin-overview-heading">Choose a workspace</h2>
+        </div>
+        <p>
+          Existing household tools, organized for the signed-in administrator.
+        </p>
+      </div>
+      <div className="admin-overview-grid">
+        <a className="admin-overview-card" href="#family-members">
+          <span className="admin-overview-tag">Family</span>
+          <strong>Family &amp; chores</strong>
+          <span>Profiles, chore catalog, checklist order.</span>
+          <i aria-hidden="true">→</i>
+        </a>
+        <Link className="admin-overview-card" to="/admin/reports">
+          <span className="admin-overview-tag">Archive</span>
+          <strong>Weekly reports</strong>
+          <span>Immutable Monday–Sunday snapshots.</span>
+          <i aria-hidden="true">→</i>
+        </Link>
+        <a className="admin-overview-card" href="#administrator-access">
+          <span className="admin-overview-tag">Access</span>
+          <strong>Administrator access</strong>
+          <span>Invite the second administrator.</span>
+          <i aria-hidden="true">→</i>
+        </a>
+      </div>
+    </section>
   );
 }
 
@@ -539,39 +605,10 @@ function SignedInContent({
   reportWeek,
   onInvitationEmailChange,
   onInvitation,
-  onLogout,
   onSessionExpired,
 }: SignedInProps) {
   return (
-    <View gap={4}>
-      <Card padding={4} borderRadius="medium">
-        <View
-          direction="row"
-          align="center"
-          justify="space-between"
-          gap={3}
-          wrap
-        >
-          <View gap={1}>
-            <Text as="h2" variant="headline-3">
-              Signed in as {administrator.email}
-            </Text>
-            <Text variant="caption-1" color="neutral-faded">
-              Administrator session active
-            </Text>
-          </View>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => void onLogout()}
-          >
-            Sign out
-          </Button>
-        </View>
-      </Card>
-
-      <AdminNavigation reportsView={reportsView} />
-
+    <div className="admin-screen-content">
       {reportsView ? (
         reportWeek ? (
           <ReportDetail
@@ -584,71 +621,132 @@ function SignedInContent({
         )
       ) : (
         <>
+          <AdminOverview />
           <FamilyMemberManager onSessionExpired={onSessionExpired} />
           <ChoreManager onSessionExpired={onSessionExpired} />
-
-          <Card
-            as="section"
-            padding={5}
-            borderRadius="large"
-            attributes={{ "aria-labelledby": "second-administrator-heading" }}
-          >
-            <View gap={3}>
-              <View gap={1}>
-                <Text
-                  as="h2"
-                  variant="headline-2"
-                  attributes={{ id: "second-administrator-heading" }}
-                >
-                  Second administrator
-                </Text>
-                <Text color="neutral-faded">
-                  The household supports at most two administrators. Create a
-                  one-time enrollment link that expires after 24 hours.
-                </Text>
-              </View>
-              <form onSubmit={(event) => void onInvitation(event)}>
-                <View gap={2}>
-                  <FormControl id="invitation-email">
-                    <FormControl.Label>Administrator email</FormControl.Label>
-                    <TextField
-                      name="email"
-                      value={invitationEmail}
-                      onChange={({ value }) => onInvitationEmailChange(value)}
-                      inputAttributes={{
-                        type: "email",
-                        required: true,
-                      }}
-                    />
-                  </FormControl>
-                  <View direction="row">
-                    <Button type="submit" disabled={busy}>
-                      Create administrator invitation
-                    </Button>
-                  </View>
-                </View>
-              </form>
-              {invitationUrl && (
-                <View gap={2}>
-                  <Alert color="positive" title="Enrollment link created">
-                    Send this one-time link to the second administrator. It can be
-                    used once.
-                  </Alert>
-                  <FormControl id="enrollment-link">
-                    <FormControl.Label>Enrollment link</FormControl.Label>
-                    <TextField
-                      name="enrollment_link"
-                      value={invitationUrl}
-                      onChange={() => undefined}
-                      inputAttributes={{ readOnly: true }}
-                    />
-                  </FormControl>
-                </View>
-              )}
-            </View>
-          </Card>
+          <AdministratorAccessPanel
+            administratorEmail={administrator.email}
+            busy={busy}
+            invitationEmail={invitationEmail}
+            invitationUrl={invitationUrl}
+            onInvitationEmailChange={onInvitationEmailChange}
+            onInvitation={onInvitation}
+          />
         </>
       )}
-    </View>
+    </div>
+  );
+}
+
+type AdministratorAccessProps = {
+  administratorEmail: string;
+  busy: boolean;
+  invitationEmail: string;
+  invitationUrl: string;
+  onInvitationEmailChange: (value: string) => void;
+  onInvitation: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+};
+
+function AdministratorAccessPanel({
+  administratorEmail,
+  busy,
+  invitationEmail,
+  invitationUrl,
+  onInvitationEmailChange,
+  onInvitation,
+}: AdministratorAccessProps) {
+  return (
+    <Card
+      as="section"
+      padding={5}
+      borderRadius="large"
+      className="admin-panel admin-invite-panel"
+      attributes={{
+        "aria-labelledby": "second-administrator-heading",
+        id: "administrator-access",
+      }}
+    >
+      <View gap={4}>
+        <View gap={1}>
+          <Text
+            as="h2"
+            variant="headline-2"
+            attributes={{ id: "second-administrator-heading" }}
+          >
+            Administrator access
+          </Text>
+          <Text color="neutral-faded">
+            The household supports at most two administrators. Create a one-time
+            enrollment link that expires after 24 hours.
+          </Text>
+        </View>
+
+        <div className="admin-split admin-invite-grid">
+          <div className="admin-form-panel">
+            <Text as="h3" variant="headline-3">
+              Invite a second administrator
+            </Text>
+            <form onSubmit={(event) => void onInvitation(event)}>
+              <View gap={2} paddingTop={2}>
+                <FormControl id="invitation-email">
+                  <FormControl.Label>Administrator email</FormControl.Label>
+                  <TextField
+                    name="email"
+                    value={invitationEmail}
+                    onChange={({ value }) => onInvitationEmailChange(value)}
+                    inputAttributes={{ type: "email", required: true }}
+                  />
+                </FormControl>
+                <View direction="row">
+                  <Button type="submit" disabled={busy}>
+                    Create administrator invitation
+                  </Button>
+                </View>
+              </View>
+            </form>
+            {invitationUrl && (
+              <View gap={2} paddingTop={3}>
+                <Alert color="positive" title="Enrollment link created">
+                  Send this one-time link to the second administrator. It can be
+                  used once.
+                </Alert>
+                <FormControl id="enrollment-link">
+                  <FormControl.Label>Enrollment link</FormControl.Label>
+                  <TextField
+                    name="enrollment_link"
+                    value={invitationUrl}
+                    onChange={() => undefined}
+                    inputAttributes={{ readOnly: true }}
+                  />
+                </FormControl>
+              </View>
+            )}
+          </div>
+
+          <aside className="admin-context-panel admin-access-context">
+            <span className="admin-context-kicker">Access model</span>
+            <h3>Passkey sessions</h3>
+            <p>
+              Administrator access uses a passkey registered for this account.
+              Child profiles remain separate and are not signed-in accounts.
+            </p>
+            <dl className="admin-context-list">
+              <div>
+                <dt>Signed in</dt>
+                <dd>{administratorEmail}</dd>
+              </div>
+              <div>
+                <dt>Session</dt>
+                <dd>Active</dd>
+              </div>
+              <div>
+                <dt>Administrators</dt>
+                <dd>2 maximum</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+      </View>
+    </Card>
   );
 }
