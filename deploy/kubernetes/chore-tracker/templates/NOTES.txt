@@ -1,0 +1,23 @@
+Chore Tracker has been installed.
+
+{{- if .Values.ingress.enabled }}
+Open:
+{{- if .Values.ingress.tls.enabled }}
+  https://{{ .Values.ingress.host }}
+{{- else }}
+  http://{{ .Values.ingress.host }}
+{{- end }}
+{{- else }}
+Ingress is disabled. Forward the frontend service to reach the application:
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "chore-tracker.fullname" . }}-frontend {{ .Values.frontend.service.port }}:{{ .Values.frontend.service.port }}
+{{- end }}
+
+The backend runs with one replica and a ReadWriteOnce SQLite volume. Do not
+scale it beyond one replica.
+
+Check readiness:
+  kubectl --namespace {{ .Release.Namespace }} get pods,pvc,ingress
+  kubectl --namespace {{ .Release.Namespace }} rollout status deployment/{{ include "chore-tracker.fullname" . }}-backend
+
+Before an upgrade or rollback, take a SQLite backup. Helm rollback does not
+downgrade the database schema; see the chart README for details.

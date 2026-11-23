@@ -384,6 +384,33 @@ application containers are non-root, writes a sentinel to the volume, restarts
 the deployment, and verifies the sentinel survived. It removes its own volume
 on exit. Set `CHORE_TRACKER_HTTP_PORT` if port 8080 is already in use.
 
+## Kubernetes deployment
+
+A Helm chart for the homelab Traefik environment is in
+[`deploy/kubernetes/chore-tracker`](deploy/kubernetes/chore-tracker). It deploys
+the backend and frontend images, migrates SQLite in an init container, persists
+the database on a ReadWriteOnce volume, and configures liveness/readiness
+probes against `/health/live` and `/health/ready`.
+
+The chart takes the IngressClass, hostname, wildcard TLS Secret, image
+repository, storage class, secrets, and resource requests/limits as values; it
+does not install an ingress controller or create secret material. The backend
+is deliberately limited to one replica with the `Recreate` strategy because
+SQLite supports one writer.
+
+See the [chart README](deploy/kubernetes/chore-tracker/README.md) for image
+publishing, installation, the test-cluster procedure, backups, and rollback.
+A quick install looks like:
+
+```bash
+helm upgrade --install chore-tracker ./deploy/kubernetes/chore-tracker \
+  --namespace chore-tracker --create-namespace \
+  --values my-values.yaml --wait --timeout 5m
+```
+
+The `kubernetes` CI job lints the chart and validates all rendered objects with
+`kubeconform`.
+
 ## Tilt development environment
 
 Tilt starts the API and frontend directly as local processes. It installs the backend
