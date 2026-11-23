@@ -17,7 +17,11 @@ export const DEFAULT_THEME: Theme = {
 };
 
 /** Theme ids the frontend can safely paint before the catalog request resolves. */
-export const BUNDLED_THEME_IDS = new Set(["homestead", "quest"]);
+export const BUNDLED_THEME_IDS = new Set([
+  "homestead",
+  "quest",
+  "sticker-club-v2",
+]);
 
 export function resolveBootstrapThemeId(
   themeId: string | null | undefined,

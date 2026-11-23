@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Theme } from "../theme/api";
 import { ThemeDropdown } from "./ThemeDropdown";
 
@@ -11,6 +12,7 @@ type AppHeaderProps = {
   currentChild?: string;
   onSwitchChild?: () => void;
   currentAdministrator?: string;
+  headerBadge?: ReactNode;
   context?: "family" | "admin";
 };
 
@@ -24,9 +26,11 @@ export function AppHeader({
   currentChild,
   onSwitchChild,
   currentAdministrator,
+  headerBadge,
   context = "family",
 }: AppHeaderProps) {
   const isQuest = themeId === "quest";
+  const isSticker = themeId === "sticker-club-v2";
 
   return (
     <header className="app-header">
@@ -34,7 +38,13 @@ export function AppHeader({
         <a
           className="app-brand"
           href="/"
-          aria-label={isQuest ? "Quest home" : "Chore Tracker home"}
+          aria-label={
+            isQuest
+              ? "Quest home"
+              : isSticker
+                ? "Sticker Club home"
+                : "Chore Tracker home"
+          }
         >
           <span className="app-brand-mark" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -48,11 +58,21 @@ export function AppHeader({
                 <>
                   QUE<span className="quest-wordmark-accent">ST</span>
                 </>
+              ) : isSticker ? (
+                <>
+                  STICKER<span className="sticker-wordmark-accent">CLUB</span>
+                </>
               ) : (
                 "Chore Tracker"
               )}
             </strong>
-            <span>{isQuest ? "family command" : "our house, one page"}</span>
+            <span>
+              {isQuest
+                ? "family command"
+                : isSticker
+                  ? "no pictograms · just the plan"
+                  : "our house, one page"}
+            </span>
           </span>
         </a>
 
@@ -60,7 +80,7 @@ export function AppHeader({
           {currentChild ? (
             <>
               <span className="identity-label">
-                {isQuest ? "Playing as" : "Doing chores"}
+                {isQuest || isSticker ? "Playing as" : "Doing chores"}
               </span>
               <strong>{currentChild}</strong>
               {onSwitchChild && (
@@ -82,6 +102,8 @@ export function AppHeader({
             </span>
           )}
         </div>
+
+        {headerBadge && <div className="app-header-badge">{headerBadge}</div>}
 
         <div className="app-header-theme">
           <ThemeDropdown

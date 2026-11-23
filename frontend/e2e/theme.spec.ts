@@ -155,6 +155,11 @@ test.describe.serial("theme persistence and selection flow", () => {
         name: "Quest",
         preview_image: "/theme-previews/quest.png",
       },
+      {
+        id: "sticker-club-v2",
+        name: "Sticker Club v2",
+        preview_image: "/theme-previews/sticker-club-v2.png",
+      },
     ]);
   });
 
@@ -196,6 +201,11 @@ test.describe.serial("theme persistence and selection flow", () => {
     const questPreview = await page.request.get("/theme-previews/quest.png");
     expect(questPreview.ok()).toBeTruthy();
     expect(questPreview.headers()["content-type"]).toContain("image/png");
+    const stickerPreview = await page.request.get(
+      "/theme-previews/sticker-club-v2.png",
+    );
+    expect(stickerPreview.ok()).toBeTruthy();
+    expect(stickerPreview.headers()["content-type"]).toContain("image/png");
   });
 
   test("selects Quest, renders persisted progress, and updates after a checklist change", async ({
@@ -350,6 +360,201 @@ test.describe.serial("theme persistence and selection flow", () => {
       .getByRole("button", { name: /Quest/ })
       .click();
     await expect(page.locator(".quest-board")).toBeVisible();
+
+    await page.goto("/admin");
+    await expect(page.locator(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+    await expect(page.getByRole("button", { name: "Theme" })).toBeDisabled();
+  });
+
+  test("selects Sticker Club v2, adds the final sticker, reloads, and removes it", async ({
+    page,
+    playwright,
+  }) => {
+    await resetFixture(playwright, "/api/__test__/scenario/sticker");
+    const externalFontRequests: string[] = [];
+    page.on("request", (request) => {
+      if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) {
+        externalFontRequests.push(request.url());
+      }
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Alex", exact: true }).click();
+    const picker = page.getByRole("region", { name: "Pick a look for Alex" });
+    await expect(picker).toBeVisible();
+    const stickerOption = picker.getByRole("button", {
+      name: /Sticker Club v2/,
+    });
+    expect(
+      await stickerOption.locator("img").evaluate((image) => {
+        const img = image as HTMLImageElement;
+        return img.complete && img.naturalWidth > 0;
+      }),
+    ).toBe(true);
+    await stickerOption.click();
+
+    await expect(page.getByRole("heading", { name: "Kitchen" })).toBeVisible();
+    await expect(page.locator(".sticker-board")).toBeVisible();
+    await expect(page.getByLabel("2 of 7 this week")).toBeVisible();
+    await expect(page.locator(".sticker-board img")).toHaveCount(0);
+    await expect(page.locator(".theme-sticker-club-v2 .app-brand-mark")).toBeHidden();
+    await expect(page.getByText(/leaderboard|rank/i)).toHaveCount(0);
+
+    const rail = page.getByRole("list", { name: "This week's stickers" });
+    await expect(rail.getByLabel("Monday, complete")).toBeVisible();
+    await expect(rail.getByLabel("Tuesday, complete")).toBeVisible();
+    await expect(rail.getByLabel("Wednesday, incomplete, today")).toBeVisible();
+    await expect(rail.getByLabel("Thursday, not recorded")).toBeVisible();
+    await expect(rail.getByText("PART", { exact: true })).toBeVisible();
+    await expect(page.getByText("STICKER 3 OF 7")).toHaveCount(0);
+
+    const finalJob = page.getByRole("checkbox", {
+      name: "Refill the soap dispenser",
+    });
+    await expect(finalJob).not.toBeChecked();
+    await finalJob.click();
+    await expect(page.getByLabel("3 of 7 this week")).toBeVisible();
+    await expect(page.getByText("STICKER 3 OF 7")).toBeVisible();
+    await expect(rail.getByLabel("Wednesday, complete, today")).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Kitchen" })).toBeVisible();
+    await expect(page.getByLabel("3 of 7 this week")).toBeVisible();
+    await expect(
+      page.getByRole("checkbox", { name: "Refill the soap dispenser" }),
+    ).toBeChecked();
+    await expect(page.getByText("STICKER 3 OF 7")).toBeVisible();
+
+    const unchecked = page.getByRole("checkbox", {
+      name: "Refill the soap dispenser",
+    });
+    await unchecked.focus();
+    await expect(unchecked).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("2 of 7 this week")).toBeVisible();
+    await expect(page.getByText("STICKER 3 OF 7")).toHaveCount(0);
+    await expect(rail.getByLabel("Wednesday, incomplete, today")).toBeVisible();
+    expect(externalFontRequests).toEqual([]);
+  });
+
+  test("keeps Sticker Club v2 usable when derived stats fail", async ({
+    page,
+    playwright,
+  }) => {
+    await resetFixture(playwright, "/api/__test__/scenario/sticker");
+    await page.route("**/api/family-members/*/derived-stats", (route) =>
+      route.abort(),
+    );
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Alex", exact: true }).click();
+    await page
+      .getByRole("region", { name: "Pick a look for Alex" })
+      .getByRole("button", { name: /Sticker Club v2/ })
+      .click();
+
+    await expect(page.getByRole("heading", { name: "Kitchen" })).toBeVisible();
+    await expect(page.getByLabel("Sticker count unavailable")).toBeVisible();
+    await expect(page.getByText("Sticker count unavailable")).toBeVisible();
+    await expect(page.locator(".sticker-header-count")).toHaveText(
+      /—\s*OF 7 STICKERS/,
+    );
+    await expect(page.getByRole("checkbox", { name: "Take out trash" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  test("clears the previous child's sticker count when switching", async ({
+    page,
+    playwright,
+  }) => {
+    await resetFixture(playwright, "/api/__test__/scenario/sticker");
+    await page.goto("/");
+    await page.getByRole("button", { name: "Alex", exact: true }).click();
+    await page
+      .getByRole("region", { name: "Pick a look for Alex" })
+      .getByRole("button", { name: /Sticker Club v2/ })
+      .click();
+    await expect(page.getByLabel("2 of 7 this week")).toBeVisible();
+
+    await page.getByRole("button", { name: "Switch child" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Who’s playing?" }),
+    ).toBeVisible();
+    await expect(page.getByText("YOU", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Sam", exact: true }).click();
+    const picker = page.getByRole("region", { name: "Pick a look for Sam" });
+    await expect(picker).toBeVisible();
+    await expect(page.getByLabel("2 of 7 this week")).toHaveCount(0);
+
+    await picker.getByRole("button", { name: /Sticker Club v2/ }).click();
+    await expect(page.getByRole("heading", { name: "Bathroom" })).toBeVisible();
+    await expect(page.getByLabel("1 of 7 this week")).toBeVisible();
+  });
+
+  test("keeps the Sticker Club v2 fixed list usable with seven children and six jobs", async ({
+    page,
+    playwright,
+  }) => {
+    await resetFixture(playwright, "/api/__test__/scenario/stress");
+    const themed = await page.request.put("/api/family-members/1/theme", {
+      data: { theme_id: "sticker-club-v2" },
+    });
+    expect(themed.ok()).toBeTruthy();
+
+    for (const width of [390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await expect(
+        page.getByRole("button", { name: "Alex", exact: true }),
+      ).toBeVisible();
+      expect(await page.locator(".child-option").count()).toBe(7);
+      await page.getByRole("button", { name: "Alex", exact: true }).click();
+      await expect(page.locator(".sticker-board")).toBeVisible();
+      const jobs = page.getByRole("list", { name: "Today's checklist" });
+      await expect(jobs.getByRole("checkbox")).toHaveCount(6);
+      await expect(
+        page.getByRole("list", { name: "This week's stickers" }).locator("li"),
+      ).toHaveCount(7);
+
+      const listWindow = page.locator(".sticker-listwindow");
+      const height = await listWindow.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      const scroll = await page.locator(".sticker-jobs").evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+      }));
+      expect(Math.round(height)).toBe(width === 390 ? 190 : 260);
+      expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight);
+
+      await page.getByRole("checkbox", { name: "Refill the soap dispenser" }).scrollIntoViewIfNeeded();
+      await expect(
+        page.getByRole("checkbox", { name: "Refill the soap dispenser" }),
+      ).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("does not inherit a child's Sticker Club v2 theme on admin routes", async ({
+    page,
+    playwright,
+  }) => {
+    await resetFixture(playwright, "/api/__test__/scenario/sticker");
+    await page.goto("/");
+    await page.getByRole("button", { name: "Alex", exact: true }).click();
+    await page
+      .getByRole("region", { name: "Pick a look for Alex" })
+      .getByRole("button", { name: /Sticker Club v2/ })
+      .click();
+    await expect(page.locator(".sticker-board")).toBeVisible();
 
     await page.goto("/admin");
     await expect(page.locator(".theme-scope")).toHaveAttribute(
