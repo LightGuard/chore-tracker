@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matchday — concept board</title>
+<style>:root { --accent: #1e6b3f; --display: "Avenir Next Condensed", "Avenir Next", sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1800px; height: 1170px; overflow: hidden; }
+body {
+  font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif; color: #1c1a17;
+  background-color: #f1eee7;
+  background-image:
+    radial-gradient(700px 500px at 94% -10%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 65%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.026) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.02) 0 1px, transparent 1px 30px);
+  position: relative;
+}
+body::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent); }
+.wrap { position: relative; padding: 40px 50px 0; height: 1170px; }
+.topline { display: flex; align-items: center; justify-content: space-between; font-family: Menlo, "SF Mono", monospace; font-size: 9.5px; letter-spacing: .17em; text-transform: uppercase; color: #8a8378; }
+.topline b { color: #1c1a17; font-weight: 500; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-top: 26px; }
+.headleft { min-width: 0; }
+h1 { font-family: var(--display); font-size: 68px; line-height: .88; letter-spacing: -.01em; font-weight: 700; }
+h1 em { font-style: normal; color: var(--accent); }
+.tagline { font-size: 18px; line-height: 1.5; color: #5c564d; margin-top: 13px; max-width: 810px; }
+.palette { flex: none; padding-bottom: 2px; }
+.pallabel { font-family: Menlo, monospace; font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: #8a8378; margin-bottom: 8px; text-align: right; }
+.swatches { display: flex; gap: 8px; }
+.sw { width: 44px; }
+.sw i { display: block; width: 44px; height: 38px; border: 1px solid rgba(0,0,0,.15); }
+.sw span { display: block; font-family: Menlo, monospace; font-size: 5.6px; letter-spacing: .01em; color: #8a8378; margin-top: 5px; text-align: center; }
+.sw em { display: block; font-family: Menlo, monospace; font-size: 5.2px; letter-spacing: .01em; color: #aaa397; text-align: center; font-style: normal; margin-top: 2px; }
+.rule { height: 1px; background: #c9c2b5; margin-top: 22px; }
+.main { display: grid; grid-template-columns: 656px 1fr; gap: 30px; margin-top: 16px; }
+.phones { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+figure { margin: 0; min-width: 0; }
+.cap { display: flex; align-items: baseline; justify-content: space-between; font-family: Menlo, monospace; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: #8a8378; margin-bottom: 7px; }
+.cap b { color: #1c1a17; font-weight: 500; }
+.phoneimg { display: block; width: 100%; height: auto; border-radius: 25px; border: 1px solid rgba(0,0,0,.22); box-shadow: 0 26px 44px -34px rgba(0,0,0,.6); background: #000; }
+.deskfig { min-width: 0; }
+.deskimg { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid rgba(0,0,0,.18); box-shadow: 0 30px 60px -48px rgba(0,0,0,.6); }
+.desknote { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding-top: 10px; border-top: 1px solid #c9c2b5; }
+.desknote span { font-family: Menlo, monospace; font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: #8a8378; white-space: nowrap; padding-top: 2px; }
+.desknote p { font-size: 13px; line-height: 1.45; color: #5c564d; }
+.footer { display: grid; grid-template-columns: 1.02fr 1.08fr 0.9fr; gap: 40px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #c9c2b5; }
+.footer h2 { display: flex; align-items: center; gap: 7px; font-family: Menlo, monospace; font-size: 8px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; color: #6e675c; }
+.footer h2::before { content: ""; width: 5px; height: 5px; background: var(--accent); display: block; }
+.footer ul { list-style: none; margin-top: 8px; }
+.footer li { position: relative; padding-left: 12px; font-size: 12.5px; line-height: 1.45; color: #4e4a42; margin-top: 5px; }
+.footer li::before { content: ""; position: absolute; left: 0; top: 7px; width: 4px; height: 1px; background: var(--accent); }
+.footer .best p { font-size: 12.5px; line-height: 1.5; color: #4e4a42; margin-top: 8px; }
+.tag { display: inline-block; margin-top: 10px; padding: 5px 8px; border: 1px solid #1c1a17; font-family: Menlo, monospace; font-size: 6.5px; letter-spacing: .11em; text-transform: uppercase; color: #1c1a17; }
+.footline { position: absolute; left: 50px; right: 50px; bottom: 22px; display: flex; align-items: center; justify-content: space-between; font-family: Menlo, monospace; font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: #9a9387; border-top: 1px solid #d5cec1; padding-top: 8px; }
+.footline b { color: #1c1a17; font-weight: 500; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline"><span>Chore Tracker / Iteration 02 &middot; two new directions</span><span>Option <b>01</b> / 02</span></div>
+  <div class="head">
+    <div class="headleft">
+      <h1>Matchday</h1>
+      <p class="tagline">A household club, not a reward system. Team sheet, scoreboard, full-time whistle &mdash; built only from today&rsquo;s checklist and the week you already track.</p>
+    </div>
+    <div class="palette">
+      <div class="pallabel">Palette / CSS tokens</div>
+      <div class="swatches"><div class="sw"><i style="background:#F7F0DF"></i><span>#F7F0DF</span><em>Cream</em></div><div class="sw"><i style="background:#12140F"></i><span>#12140F</span><em>Ink</em></div><div class="sw"><i style="background:#1E6B3F"></i><span>#1E6B3F</span><em>Pitch</em></div><div class="sw"><i style="background:#FF5A2B"></i><span>#FF5A2B</span><em>Orange</em></div><div class="sw"><i style="background:#F4C84B"></i><span>#F4C84B</span><em>Gold</em></div></div>
+    </div>
+  </div>
+  <div class="rule"></div>
+
+  <div class="main">
+    <div class="phones">
+      <figure>
+        <div class="cap"><span>Phone &middot; today</span><b>390 × 844</b></div>
+        <img class="phoneimg" src="../shots/06-matchday-phone.png" alt="Matchday phone screen">
+      </figure>
+      <figure>
+        <div class="cap"><span>Phone &middot; full time</span><b>390 × 844</b></div>
+        <img class="phoneimg" src="../shots/06-matchday-phone-fulltime.png" alt="Matchday second phone screen">
+      </figure>
+    </div>
+    <figure class="deskfig">
+      <div class="cap"><span>Desktop &middot; clubhouse board</span><b>1440 × 900</b></div>
+      <img class="deskimg" src="../shots/06-matchday-desktop.png" alt="Matchday desktop screen">
+      <div class="desknote"><span>Desktop note</span><p>The shared screen turns the week into a team sheet &mdash; same players, same chores, no ranking.</p></div>
+    </figure>
+  </div>
+
+  <div class="footer">
+    <div>
+      <h2>Why it works on a phone</h2>
+      <ul><li>A one-tap squad strip replaces the child dropdown; every player stays visible.</li><li>The fixture card makes the chore and the 2/3 score legible at arm&rsquo;s length.</li><li>Full time is the payoff: a checkered flag, 3/3, and the next fixture.</li></ul>
+    </div>
+    <div>
+      <h2>Built from what exists</h2>
+      <ul><li>The score is today&rsquo;s checklist; the form guide is the same daily completion history.</li><li>No XP, rewards, household goals, or leaderboard. No new tables or endpoints.</li><li>Jersey numbers and the club crest are visual dressing, not stored fields.</li></ul>
+    </div>
+    <div class="best">
+      <h2>CSS + best fit</h2>
+      <ul><li>Condensed display type, cream/green/orange, ticket rules, and one checkered-flag SVG.</li><li>Same Reshaped controls; the profile picker is four buttons instead of a Select.</li><li>Sport is the shared language &mdash; playful for smaller kids, credible for teens.</li></ul>
+      <p>A family that wants playful, teen-safe energy without adding a reward economy.</p>
+      <span class="tag">Phone-first &middot; no new systems</span>
+    </div>
+  </div>
+
+  <div class="footline"><span>Concept 06 &mdash; <b>Matchday</b></span><span>React 19 · Reshaped · CSS</span></div>
+</div>
+</body>
+</html>

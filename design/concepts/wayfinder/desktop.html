@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wayfinder — guild board</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f8ebd1; --paper2: #fff6e2; --ink: #241b12; --muted: #806d55; --faint: #ad987a;
+  --green: #245c3e; --green-deep: #163d28; --wall: #10291c; --moss: #8db25a; --gold: #f4b63e;
+  --coral: #e85c3a; --sky: #68c4d8; --plum: #6f4b7c; --line: #d6c09b;
+  --serif: "Iowan Old Style", Baskerville, "Palatino Linotype", Georgia, serif;
+  --copper: Copperplate, "Copperplate Gothic Light", "Iowan Old Style", serif;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --hand: "Bradley Hand", "Chalkboard SE", cursive;
+}
+body.desk {
+  width: 1440px; height: 900px; overflow: hidden; color: var(--paper2);
+  background-color: var(--wall);
+  background-image:
+    radial-gradient(circle at 82% 4%, rgba(141,178,90,.2) 0%, rgba(141,178,90,0) 36%),
+    repeating-linear-gradient(115deg, rgba(244,182,62,.035) 0 1px, transparent 1px 13px);
+  position: relative;
+}
+body.desk::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 110%, rgba(0,0,0,.55) 0%, transparent 60%); pointer-events: none; }
+.dmain { position: relative; z-index: 2; width: 1280px; margin: 0 auto; padding-top: 20px; }
+.sign { position: relative; display: flex; align-items: center; justify-content: space-between; height: 66px; padding: 0 18px; background: linear-gradient(180deg,#2c6a49,#1d4f35); border: 2px solid var(--gold); border-radius: 10px; box-shadow: 0 5px 0 rgba(0,0,0,.45); }
+.sign::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(244,182,62,.4); border-radius: 6px; pointer-events: none; }
+.sign .stud { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+.sign .stud.a{left:7px;top:7px}.sign .stud.b{right:7px;top:7px}.sign .stud.c{left:7px;bottom:7px}.sign .stud.d{right:7px;bottom:7px}
+.brand { display: flex; align-items: center; gap: 11px; position: relative; z-index: 1; }
+.compass { width: 38px; height: 38px; color: var(--gold); }
+.brandname { font-family: var(--copper); font-size: 18px; letter-spacing: .2em; line-height: 1; color: var(--paper2); }
+.brandsub { font-family: var(--copper); font-size: 5.5px; letter-spacing: .2em; color: rgba(255,246,226,.62); margin-top: 4px; }
+.dnav { display: flex; gap: 24px; align-items: center; position: relative; z-index: 1; }
+.dnav a { font-family: var(--copper); font-size: 6.5px; letter-spacing: .14em; color: rgba(255,246,226,.62); text-decoration: none; padding: 7px 0; border-bottom: 2px solid transparent; }
+.dnav a.active { color: var(--gold); border-bottom-color: var(--gold); }
+.signright { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+.weekflag { width: 49px; height: 43px; background: var(--gold); color: var(--ink); clip-path: polygon(0 0,100% 0,100% 100%,50% 78%,0 100%); display: flex; flex-direction: column; align-items: center; padding-top: 6px; transform: rotate(2deg); }
+.weekflag b { font-family: var(--copper); font-size: 9px; line-height: 1; }
+.weekflag span { font-family: var(--copper); font-size: 4.5px; letter-spacing: .07em; margin-top: 2px; }
+.weekmeta { font-family: var(--copper); font-size: 5.5px; letter-spacing: .1em; color: rgba(255,246,226,.75); text-align: right; line-height: 1.7; }
+.d20badge { width: 34px; height: 34px; border: 1px solid var(--gold); border-radius: 50%; display: grid; place-items: center; color: var(--gold); }
+.d20badge svg { width: 18px; height: 18px; }
+
+.headline { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 92px; padding-top: 12px; }
+.kicker { display: flex; align-items: center; gap: 7px; font-family: var(--copper); font-size: 6.5px; letter-spacing: .16em; color: rgba(255,246,226,.62); text-transform: uppercase; }
+.kicker::before { content: ""; width: 5px; height: 5px; background: var(--gold); transform: rotate(45deg); }
+.headline h1 { font-family: var(--serif); font-size: 42px; font-weight: 400; line-height: 1; letter-spacing: -.025em; margin-top: 6px; color: var(--paper2); }
+.headline p { font-family: var(--hand); font-size: 14px; color: rgba(255,246,226,.72); margin-top: 5px; transform: rotate(-.6deg); }
+.headright { display: flex; align-items: center; gap: 16px; }
+.tally { display: flex; align-items: center; gap: 9px; background: var(--gold); color: var(--ink); border: 2px solid var(--ink); border-radius: 9px; padding: 6px 10px; box-shadow: 3px 3px 0 rgba(0,0,0,.4); transform: rotate(1.5deg); }
+.tally b { font-family: var(--serif); font-size: 23px; line-height: .8; }
+.tally b span { font-family: var(--sans); font-size: 10px; color: var(--muted); }
+.tally em { font-family: var(--copper); font-size: 4.8px; font-style: normal; line-height: 1.5; letter-spacing: .08em; }
+.mascot { position: relative; width: 62px; height: 68px; }
+.speech { position: absolute; right: 56px; top: 2px; background: var(--paper2); color: var(--ink); border: 1.5px solid var(--ink); border-radius: 10px; padding: 4px 7px; font-family: var(--hand); font-size: 12px; transform: rotate(-2deg); box-shadow: 2px 2px 0 rgba(0,0,0,.3); white-space: nowrap; }
+.speech::after { content: ""; position: absolute; right: -5px; top: 50%; width: 8px; height: 8px; background: var(--paper2); border-right: 1.5px solid var(--ink); border-top: 1.5px solid var(--ink); transform: translateY(-50%) rotate(45deg); }
+
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 10px; }
+.card { position: relative; background: var(--paper2); border: 2px solid var(--ink); border-radius: 15px; box-shadow: 5px 5px 0 rgba(0,0,0,.4); color: var(--ink); transform: rotate(-1deg); overflow: hidden; }
+.card:nth-child(2) { transform: rotate(.8deg); } .card:nth-child(3) { transform: rotate(-.6deg); } .card:nth-child(4) { transform: rotate(1deg); }
+.card.active { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold), 5px 5px 0 rgba(0,0,0,.45); }
+.pin { position: absolute; left: 50%; top: -7px; transform: translateX(-50%); width: 17px; height: 17px; border-radius: 50%; background: var(--gold); border: 2px solid var(--ink); z-index: 5; box-shadow: 1px 2px 0 rgba(0,0,0,.35); }
+.star-pin { position: absolute; right: 9px; top: 8px; color: var(--gold); font-size: 14px; z-index: 5; text-shadow: 0 1px 0 var(--ink); }
+.cover { position: relative; height: 83px; border-bottom: 2px solid var(--ink); background: var(--cover); overflow: hidden; }
+.cover::before { content: ""; position: absolute; width: 130px; height: 130px; border: 1px solid rgba(255,246,226,.22); border-radius: 50%; right: -48px; top: -64px; }
+.cover::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,246,226,.18) 1px, transparent 1px); background-size: 9px 9px; opacity: .5; }
+.cover .art { position: absolute; left: 14px; top: 12px; width: 60px; height: 60px; color: var(--paper2); z-index: 1; }
+.cover .num { position: absolute; right: 10px; bottom: 7px; font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: rgba(255,246,226,.75); z-index: 1; }
+.cardhead { display: flex; align-items: center; gap: 7px; padding: 9px 11px 0; }
+.minishield { width: 24px; height: 27px; background: var(--gold); clip-path: polygon(50% 0,96% 13%,96% 66%,50% 100%,4% 66%,4% 13%); padding: 1.5px; flex: none; }
+.minishield span { display: grid; place-items: center; width: 100%; height: 100%; clip-path: polygon(50% 0,96% 13%,96% 66%,50% 100%,4% 66%,4% 13%); background: var(--accent); color: var(--paper2); font-family: var(--serif); font-size: 10px; }
+.pname { font-family: var(--serif); font-size: 17px; line-height: 1; flex: 1; }
+.pchore { font-family: var(--copper); font-size: 4.5px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+.cardbody { padding: 6px 11px 9px; }
+.cardbody h3 { font-family: var(--serif); font-size: 25px; font-weight: 400; line-height: .95; letter-spacing: -.02em; }
+.cardbody .cd { font-family: var(--serif); font-style: italic; font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+.mini { margin-top: 6px; }
+.mrow { display: flex; align-items: center; gap: 6px; height: 23px; border-top: 1px dashed var(--line); font-size: 9.5px; }
+.mrow:first-child { border-top: 0; }
+.mrow .tick { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; flex: none; background: var(--paper2); color: transparent; }
+.mrow.done .tick { background: var(--green); border-color: var(--green); color: var(--gold); }
+.mrow .tick svg { width: 7px; height: 7px; }
+.mrow.done span { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(36,27,18,.3); }
+.mrow.open .tick { border-color: var(--coral); }
+.mrow.open .tick::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--coral); }
+.mrow .status { margin-left: auto; font-family: var(--copper); font-size: 4.5px; letter-spacing: .08em; color: var(--green); }
+.mrow.open .status { color: var(--coral); }
+.cardfoot { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-top: 8px; padding-top: 7px; border-top: 1.5px solid var(--ink); }
+.progress { display: flex; align-items: baseline; gap: 3px; font-family: var(--serif); font-size: 20px; line-height: .8; }
+.progress span { font-family: var(--sans); font-size: 8px; color: var(--muted); }
+.trail7 { display: flex; gap: 3px; }
+.trail7 i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; }
+.trail7 i.on { background: var(--green); border-color: var(--green); }
+.trail7 i.today { background: var(--gold); border-color: var(--ink); }
+.trail7 i.future { border-style: dotted; }
+.cardnote { font-family: var(--hand); font-size: 10px; color: var(--coral); margin-top: 5px; transform: rotate(-1deg); }
+
+.trailcard { position: relative; margin-top: 15px; background: var(--paper2); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 rgba(0,0,0,.35); color: var(--ink); padding: 10px 14px 9px; }
+.trailhead { display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px; border-bottom: 1.5px solid var(--ink); }
+.trailhead .tl { display: flex; align-items: center; gap: 6px; font-family: var(--copper); font-size: 6.5px; letter-spacing: .14em; text-transform: uppercase; }
+.trailhead .tl svg { width: 13px; height: 13px; color: var(--green); }
+.trailhead .tr { font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: var(--muted); }
+.trow { display: grid; grid-template-columns: 148px repeat(7, 1fr) 54px; align-items: center; height: 31px; border-bottom: 1px dashed var(--line); }
+.trow:last-of-type { border-bottom: 0; }
+.tchild { display: flex; align-items: center; gap: 6px; font-family: var(--serif); font-size: 11px; }
+.tchild .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); border: 1px solid var(--ink); }
+.tcell { display: flex; justify-content: center; }
+.stone { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; background: var(--paper); }
+.stone.full { background: var(--green); border-color: var(--ink); }
+.stone.full::after { content: ""; width: 6px; height: 3.5px; border-left: 1.4px solid var(--gold); border-bottom: 1.4px solid var(--gold); transform: rotate(-45deg) translate(0,-1px); }
+.stone.today { background: var(--gold); border-color: var(--ink); }
+.stone.today::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--coral); }
+.stone.none { border-style: dotted; border-color: #c8b48f; }
+.ttotal { text-align: right; font-family: var(--copper); font-size: 6px; color: var(--muted); }
+.ttotal b { color: var(--ink); }
+.daylab { display: grid; grid-template-columns: 148px repeat(7,1fr) 54px; padding: 3px 0 0; }
+.daylab span { font-family: var(--copper); font-size: 5px; letter-spacing: .07em; color: var(--faint); text-align: center; }
+.daylab span:first-child { text-align: left; }
+.daylab span:last-child { text-align: right; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-family: var(--copper); font-size: 5.5px; letter-spacing: .1em; color: rgba(255,246,226,.55); text-transform: uppercase; }
+.foot b { color: var(--gold); font-weight: 400; }
+.compassmark { position: absolute; left: 50%; bottom: 46px; width: 290px; height: 290px; transform: translateX(-50%); color: var(--gold); opacity: .13; z-index: 0; pointer-events: none; }
+.hills { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; z-index: 1; pointer-events: none; }
+.hills svg { width: 100%; height: 100%; display: block; }
+.tabbar, .homebar { display: none; }
+</style>
+</head>
+<body class="desk">
+  <div class="dmain">
+    <header class="sign">
+      <span class="stud a"></span><span class="stud b"></span><span class="stud c"></span><span class="stud d"></span>
+      <div class="brand">
+        <svg class="compass" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width=".7" stroke-dasharray="1.5 2"/><path d="m12 5 1.6 5.4L19 12l-5.4 1.6L12 19l-1.6-5.4L5 12l5.4-1.6L12 5Z" fill="currentColor"/></svg>
+        <div><div class="brandname">WAYFINDER</div><div class="brandsub">A HOUSEHOLD GUILD</div></div>
+      </div>
+      <nav class="dnav"><a class="active" href="#">Guild board</a><a href="#">Trail</a><a href="#">Chronicle</a><a href="#">Party</a></nav>
+      <div class="signright">
+        <div class="weekmeta">WEEK 48<br>DAY 3</div>
+        <div class="weekflag"><b>03</b><span>DAY</span></div>
+        <span class="d20badge"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M10 1.6 18 6.2v7.6L10 18.4 2 13.8V6.2L10 1.6Z"/><path d="m10 1.6-3.5 6.6h7L10 1.6Z"/><path d="M2 6.2l4.5 2M18 6.2l-4.5 2M6.5 8.2 10 18.4M13.5 8.2 10 18.4"/></svg></span>
+      </div>
+    </header>
+
+    <section class="headline">
+      <div>
+        <div class="kicker">The guild hall &middot; Wednesday 25 November</div>
+        <h1>Today at the guild.</h1>
+        <p>Four quests, one party. Pick a card and begin.</p>
+      </div>
+      <div class="headright">
+        <span class="speech">All four are at it!</span>
+        <svg class="mascot" viewBox="0 0 60 64" aria-hidden="true">
+          <path d="M17 20C13 12 14 7 18 5c4 2 5 7 4 13" fill="#4e7a37" stroke="#241b12" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M43 20c4-8 3-13-1-15-4 2-5 7-4 13" fill="#4e7a37" stroke="#241b12" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="30" cy="35" r="21" fill="#78a64d" stroke="#241b12" stroke-width="2"/>
+          <ellipse cx="30" cy="41" rx="12" ry="10" fill="#a9c778" opacity=".7"/>
+          <circle cx="23" cy="33" r="2.4" fill="#241b12"/><circle cx="37" cy="33" r="2.4" fill="#241b12"/>
+          <path d="M26 39c2.4 2 5.6 2 8 0" stroke="#241b12" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <path d="M30 15v4" stroke="#241b12" stroke-width="2" stroke-linecap="round"/>
+          <rect x="43" y="43" width="12" height="15" rx="3" fill="#f4b63e" stroke="#241b12" stroke-width="1.6"/>
+          <path d="M46 43v-3c0-1.7 1.3-3 3-3s3 1.3 3 3v3" stroke="#241b12" stroke-width="1.4" fill="none"/>
+          <path d="M49 48v4" stroke="#fff6e2" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <div class="tally"><b>7<span>/11</span></b><em>TASKS<br>DONE</em></div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <article class="card active" style="--accent:#2f6b47; --cover:#2f6b47">
+        <span class="pin"></span><span class="star-pin">★</span>
+        <div class="cover">
+          <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 35h42v9c0 5-4 9-9 9H20c-5 0-9-4-9-9v-9Z"/><path d="M9 35c3-2 6-2 9 0M23 35c3-2 6-2 9 0M37 35c3-2 6-2 9 0M51 35c3-2 6-2 9 0" opacity=".7"/><path d="M18 35V23c0-3 2-5 5-5h18c3 0 5 2 5 5v12M24 9c-2 3-2 5 0 7M32 6c-2 4-2 7 0 10M40 9c-2 3-2 5 0 7"/></svg>
+          <span class="num">KITCHEN &middot; 01</span>
+        </div>
+        <div class="cardhead"><span class="minishield" style="--accent:#2f6b47"><span>A</span></span><div><div class="pname">Alex</div><div class="pchore">Wayfarer &middot; 09</div></div></div>
+        <div class="cardbody">
+          <h3>Kitchen</h3><p class="cd">Wipe and sweep after dinner.</p>
+          <div class="mini">
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Wipe counters</span><span class="status">DONE</span></div>
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Sweep floor</span><span class="status">DONE</span></div>
+            <div class="mrow open"><span class="tick"></span><span>Take out trash</span><span class="status">NEXT</span></div>
+          </div>
+          <div class="cardfoot"><span class="progress">2<span>/3</span></span><div class="trail7"><i class="on"></i><i class="on"></i><i class="today"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+          <div class="cardnote">One left. Finish strong!</div>
+        </div>
+      </article>
+
+      <article class="card" style="--accent:#c95a3f; --cover:#b95038">
+        <span class="pin"></span>
+        <div class="cover">
+          <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 32h44v8c0 7-5 12-12 12H22c-7 0-12-5-12-12v-8Z"/><path d="M7 32h50"/><path d="M20 32V17M44 32V17"/><path d="M14 12c2-3 5-3 7 0M26 8c2-3 5-3 7 0M38 12c2-3 5-3 7 0" opacity=".8"/><circle cx="22" cy="38" r="1.5" fill="currentColor"/><circle cx="32" cy="42" r="1.5" fill="currentColor"/><circle cx="42" cy="37" r="1.5" fill="currentColor"/></svg>
+          <span class="num">BATHROOM &middot; 02</span>
+        </div>
+        <div class="cardhead"><span class="minishield" style="--accent:#c95a3f"><span>S</span></span><div><div class="pname">Sam</div><div class="pchore">Wayfarer &middot; 07</div></div></div>
+        <div class="cardbody">
+          <h3>Bathroom</h3><p class="cd">Clean the bathroom.</p>
+          <div class="mini">
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Clean sink</span><span class="status">DONE</span></div>
+            <div class="mrow open"><span class="tick"></span><span>Scrub tub</span><span class="status">NEXT</span></div>
+          </div>
+          <div class="cardfoot"><span class="progress">1<span>/2</span></span><div class="trail7"><i class="on"></i><i class="today"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+          <div class="cardnote">The tub awaits.</div>
+        </div>
+      </article>
+
+      <article class="card" style="--accent:#4c9aab; --cover:#3f8899">
+        <span class="pin"></span>
+        <div class="cover">
+          <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 12c8 10 15 16 15 27a15 15 0 0 1-30 0c0-11 7-17 15-27Z"/><path d="M32 26v19M32 35l7-6M32 40l-6-5"/></svg>
+          <span class="num">YARD &middot; 03</span>
+        </div>
+        <div class="cardhead"><span class="minishield" style="--accent:#4c9aab"><span>R</span></span><div><div class="pname">Riley</div><div class="pchore">Wayfarer &middot; 11</div></div></div>
+        <div class="cardbody">
+          <h3>Yard</h3><p class="cd">Maintain the yard.</p>
+          <div class="mini">
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Mow lawn</span><span class="status">DONE</span></div>
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Rake leaves</span><span class="status">DONE</span></div>
+          </div>
+          <div class="cardfoot"><span class="progress">2<span>/2</span></span><div class="trail7"><i class="on"></i><i class="on"></i><i class="today"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+          <div class="cardnote">Clear and bright.</div>
+        </div>
+      </article>
+
+      <article class="card" style="--accent:#6d4b7c; --cover:#5d3f6a">
+        <span class="pin"></span>
+        <div class="cover">
+          <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 15 12 30l10 7 4-4v18h12V33l4 4 10-7-10-15-5 3-5-3-5 3-5-3Z"/><path d="M28 44h8" opacity=".7"/></svg>
+          <span class="num">LAUNDRY &middot; 04</span>
+        </div>
+        <div class="cardhead"><span class="minishield" style="--accent:#6d4b7c"><span>A</span></span><div><div class="pname">Avery</div><div class="pchore">Wayfarer &middot; 04</div></div></div>
+        <div class="cardbody">
+          <h3>Laundry</h3><p class="cd">Wash and fold clothes.</p>
+          <div class="mini">
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Wash clothes</span><span class="status">DONE</span></div>
+            <div class="mrow done"><span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Fold clothes</span><span class="status">DONE</span></div>
+          </div>
+          <div class="cardfoot"><span class="progress">2<span>/2</span></span><div class="trail7"><i class="on"></i><i class="on"></i><i class="today"></i><i class="future"></i><i class="future"></i><i class="future"></i><i class="future"></i></div></div>
+          <div class="cardnote">Basket empty.</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="trailcard">
+      <div class="trailhead"><span class="tl"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 14.5 6.5 4l3 6 2.8-3 3.2 7.5"/><path d="M2.5 14.5h13"/></svg>The week&rsquo;s trail</span><span class="tr">Week 48 &middot; Nov 23&ndash;29</span></div>
+      <div class="daylab"><span>Wayfarer</span><span>MON 23</span><span>TUE 24</span><span>WED 25</span><span>THU 26</span><span>FRI 27</span><span>SAT 28</span><span>SUN 29</span><span>DAYS</span></div>
+      <div class="trow" style="--c:#2f6b47"><div class="tchild"><span class="dot"></span>Alex</div><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone today"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="ttotal"><b>2</b> / 7</span></div>
+      <div class="trow" style="--c:#c95a3f"><div class="tchild"><span class="dot"></span>Sam</div><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone today"></i></span><span class="tcell"><i class="stone today"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="ttotal"><b>1</b> / 7</span></div>
+      <div class="trow" style="--c:#4c9aab"><div class="tchild"><span class="dot"></span>Riley</div><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="ttotal"><b>3</b> / 7</span></div>
+      <div class="trow" style="--c:#6d4b7c"><div class="tchild"><span class="dot"></span>Avery</div><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone full"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="tcell"><i class="stone none"></i></span><span class="ttotal"><b>3</b> / 7</span></div>
+    </section>
+
+    <div class="foot"><span>Guild total &middot; <b>7 / 11 tasks today</b></span><span>The path is the point &middot; Week 48</span><span>Wayfinder &middot; No. 48</span></div>
+  </div>
+
+  <svg class="compassmark" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="1"/>
+    <circle cx="100" cy="100" r="73" stroke="currentColor" stroke-width=".7" stroke-dasharray="2 4"/>
+    <circle cx="100" cy="100" r="46" stroke="currentColor" stroke-width=".8"/>
+    <path d="M100 8v38M100 154v38M8 100h38M154 100h38M35 35l27 27M138 138l27 27M165 35l-27 27M62 138l-27 27" stroke="currentColor" stroke-width="1"/>
+    <path d="m100 38 12 50 50 12-50 12-12 50-12-50-50-12 50-12 12-50Z" fill="currentColor" opacity=".75"/>
+    <circle cx="100" cy="100" r="7" fill="#10291c" stroke="currentColor" stroke-width="1.2"/>
+  </svg>
+
+  <div class="hills" aria-hidden="true">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0 68c120-32 230-8 330 8 140 22 240-20 380-16 156 4 200 36 330 28 154-10 220-40 400-18v50H0Z" fill="#1b4b32"/>
+      <path d="M0 88c120-18 260 2 380 4 150 3 220-14 360-8 160 7 250 28 400 16 120-9 200-22 300-14v34H0Z" fill="#123b27"/>
+      <g fill="#0c2a1b">
+        <path d="M120 88l-12-18-12 18h7v10h10V88h7Z"/><path d="M190 92l-9-14-9 14h5v8h8v-8h5Z"/>
+        <path d="M1210 84l-13-20-13 20h8v12h10V84h8Z"/><path d="M1280 90l-9-14-9 14h5v9h8v-9h5Z"/>
+      </g>
+    </svg>
+  </div>
+</body>
+</html>

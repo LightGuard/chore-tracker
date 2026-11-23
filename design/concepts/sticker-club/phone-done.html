@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Club — all done</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --cream: #fff9ec; --paper: #fffdf6; --ink: #202033; --blue: #2f53ff;
+  --sky: #dce6ff; --yellow: #ffd447; --coral: #ff6b4a; --mint: #7be0b0; --lilac: #c9b8ff;
+  --muted: #6d6b80; --round: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif;
+}
+body { font-family: var(--sans); color: var(--ink); background-color: var(--cream); background-image: radial-gradient(#e7dcc3 1.15px, transparent 1.15px); background-size: 22px 22px; }
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 18px 30px; }
+.top { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; height: 38px; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo .badge { width: 30px; height: 30px; background: var(--yellow); border: 2px solid var(--ink); border-radius: 8px; display: grid; place-items: center; transform: rotate(-5deg); box-shadow: 2px 2px 0 var(--ink); }
+.logo .badge svg { width: 15px; height: 15px; }
+.logo .word { font-family: var(--round); font-size: 15px; }
+.logo .word span { color: var(--blue); }
+.close { width: 32px; height: 32px; border: 2px solid var(--ink); border-radius: 50%; background: var(--paper); display: grid; place-items: center; box-shadow: 2px 2px 0 var(--ink); }
+.close svg { width: 13px; height: 13px; }
+
+.hero { position: relative; margin-top: 10px; text-align: center; }
+.rays { position: absolute; left: 50%; top: 6px; width: 300px; height: 300px; transform: translateX(-50%); opacity: .9; }
+.medal { position: relative; width: 168px; height: 168px; margin: 14px auto 0; }
+.medal .sticker {
+  width: 168px; height: 168px; border-radius: 50%; background: var(--yellow);
+  border: 3px solid var(--ink); box-shadow: 0 0 0 7px #fff, 0 0 0 9px var(--ink), 7px 10px 0 rgba(32,32,51,.9);
+  display: grid; place-items: center; position: relative; transform: rotate(-7deg);
+}
+.medal .sticker::after { content: ""; position: absolute; inset: 11px; border: 2px dashed rgba(32,32,51,.35); border-radius: 50%; }
+.medal .sticker svg { width: 84px; height: 84px; color: var(--blue); filter: drop-shadow(0 3px 0 rgba(32,32,51,.28)); }
+.spark { position: absolute; }
+.spark svg { width: 100%; height: 100%; }
+.spark.s1 { width: 24px; height: 24px; left: -40px; top: 56px; }
+.spark.s2 { width: 16px; height: 16px; right: -36px; top: 26px; }
+.spark.s3 { width: 18px; height: 18px; right: -28px; bottom: 30px; }
+.spark.s4 { width: 12px; height: 12px; left: -26px; bottom: 20px; }
+
+h1 { font-family: var(--round); font-size: 41px; line-height: 1; letter-spacing: -.025em; margin-top: 17px; }
+h1 em { font-style: normal; color: var(--blue); }
+.hero p { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-top: 6px; }
+
+.pills { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.pill { display: flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border: 2px solid var(--ink); border-radius: 99px; background: var(--paper); font-family: var(--round); font-size: 11px; box-shadow: 2px 2px 0 var(--ink); }
+.pill svg { width: 14px; height: 14px; }
+.pill.hot { background: #fff1e8; }
+.pill.coin { background: #fffbdf; }
+
+.sticker-card {
+  position: relative; margin-top: 17px; padding: 13px; display: flex; align-items: center; gap: 13px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; box-shadow: 4px 4px 0 var(--ink);
+}
+.sc-sticker { width: 64px; height: 64px; flex: none; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 4px #fff, 0 0 0 5px var(--ink); margin: 2px 4px 2px 2px; }
+.sc-sticker svg { width: 32px; height: 32px; color: var(--blue); }
+.sc-body { flex: 1; }
+.sc-label { font-size: 7.5px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+.sc-title { font-family: var(--round); font-size: 18px; margin-top: 1px; }
+.sc-meta { font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.new { position: absolute; right: 12px; top: -10px; background: var(--coral); color: #fff; border: 2px solid var(--ink); border-radius: 5px; padding: 2px 6px; font-family: var(--round); font-size: 8px; letter-spacing: .08em; transform: rotate(4deg); box-shadow: 1px 1px 0 var(--ink); }
+
+.book { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.book span { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.book b { color: var(--ink); }
+.book-bar { display: flex; gap: 3px; }
+.book-bar i { width: 12px; height: 6px; border-radius: 2px; background: #e7dcc3; }
+.book-bar i.on { background: var(--yellow); border: 1px solid rgba(32,32,51,.35); }
+
+.week { margin-top: 15px; padding: 0 4px; }
+.wk-head { display: flex; align-items: baseline; justify-content: space-between; }
+.wk-head span { font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.wk-head b { color: var(--ink); }
+.week-days { display: flex; justify-content: space-between; margin-top: 6px; }
+.wd { width: 38px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.wd em { font-style: normal; font-size: 7.5px; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+.wd i { width: 25px; height: 25px; border-radius: 50%; border: 1.5px dashed #d5c8ab; display: grid; place-items: center; }
+.wd i svg { width: 13px; height: 13px; }
+.wd.done i { background: var(--yellow); border: 2px solid var(--ink); color: var(--ink); box-shadow: 1px 1px 0 rgba(32,32,51,.7); }
+.wd.done i svg { color: var(--blue); }
+.wd.today em { color: var(--blue); }
+.wd.today i { box-shadow: 0 0 0 2px var(--sky), 1px 1px 0 rgba(32,32,51,.7); }
+
+.cta { width: 100%; height: 52px; margin-top: 16px; border: 2px solid var(--ink); border-radius: 15px; background: var(--blue); color: #fff; box-shadow: 4px 4px 0 var(--ink); font-family: var(--round); font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.cta svg { width: 16px; height: 16px; }
+.link { text-align: center; font-family: var(--round); font-size: 11px; color: var(--blue); margin-top: 13px; }
+
+.confetti { position: absolute; border-radius: 2px; }
+.confetti.round { border-radius: 50%; }
+.homebar { background: var(--ink); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">9:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="top">
+      <div class="logo">
+        <span class="badge"><svg viewBox="0 0 24 24" fill="#202033"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></span>
+        <span class="word">CHORE <span>CLUB</span></span>
+      </div>
+      <button class="close" aria-label="Close">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2 2 12"/></svg>
+      </button>
+    </header>
+
+    <section class="hero">
+      <svg class="rays" viewBox="0 0 300 300" fill="none" aria-hidden="true">
+        <g stroke="#ffd447" stroke-width="7" stroke-linecap="round" opacity=".55">
+          <path d="M150 12v30M150 258v30M12 150h30M258 150h30M52 52l21 21M227 227l21 21M248 52l-21 21M73 227l-21 21"/>
+        </g>
+      </svg>
+      <div class="medal">
+        <div class="sticker">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2l2.9 6.1 6.7.9-4.9 4.6 1.2 6.7-5.9-3.2-5.9 3.2 1.2-6.7L3.4 9.2l6.7-.9L12 2.2Z"/></svg>
+        </div>
+        <span class="spark s1"><svg viewBox="0 0 24 24" fill="#ff6b4a"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6L12 0Z"/></svg></span>
+        <span class="spark s2"><svg viewBox="0 0 24 24" fill="#7be0b0"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6L12 0Z"/></svg></span>
+        <span class="spark s3"><svg viewBox="0 0 24 24" fill="#c9b8ff"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6L12 0Z"/></svg></span>
+        <span class="spark s4"><svg viewBox="0 0 24 24" fill="#2f53ff"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6L12 0Z"/></svg></span>
+      </div>
+      <h1>All <em>done!</em></h1>
+      <p>Kitchen is sparkling. That&rsquo;s a wrap.</p>
+    </section>
+
+    <div class="pills">
+      <span class="pill coin"><svg viewBox="0 0 24 24" fill="#ffd447" stroke="#202033" stroke-width="1.6"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg> +10 stars</span>
+      <span class="pill hot"><svg viewBox="0 0 16 16" fill="#ff6b4a"><path d="M8.6 1.2c.3 2.5-1.5 3.1-2.3 4.7-.5 1-.4 2.1.5 2.8.1-1.3.8-2 1.6-2.7.9 1 2 1.8 2 3.4a3.1 3.1 0 0 1-6.2 0c0-2.9 1.8-4.3 2.8-5.9.6-1 .9-1.8 1.6-2.3Z"/></svg> 3 day streak</span>
+    </div>
+
+    <section class="sticker-card">
+      <span class="new">NEW!</span>
+      <div class="sc-sticker">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2l2.9 6.1 6.7.9-4.9 4.6 1.2 6.7-5.9-3.2-5.9 3.2 1.2-6.7L3.4 9.2l6.7-.9L12 2.2Z"/></svg>
+      </div>
+      <div class="sc-body">
+        <div class="sc-label">Today&rsquo;s sticker</div>
+        <div class="sc-title">Kitchen Star</div>
+        <div class="sc-meta">Collected Wed, Nov 25 &middot; first one this week</div>
+      </div>
+    </section>
+
+    <div class="book">
+      <span>Sticker book &middot; <b>24 of 50</b></span>
+      <div class="book-bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+    </div>
+
+    <section class="week">
+      <div class="wk-head"><span>This week</span><span><b>3</b> of 7 stickers</span></div>
+      <div class="week-days">
+        <div class="wd done"><em>MON</em><i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></i></div>
+        <div class="wd done"><em>TUE</em><i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></i></div>
+        <div class="wd done today"><em>WED</em><i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg></i></div>
+        <div class="wd"><em>THU</em><i></i></div>
+        <div class="wd"><em>FRI</em><i></i></div>
+        <div class="wd"><em>SAT</em><i></i></div>
+        <div class="wd"><em>SUN</em><i></i></div>
+      </div>
+    </section>
+
+    <button class="cta">
+      Back to today
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+    </button>
+    <div class="link">Open my sticker book</div>
+
+    <!-- confetti -->
+    <span class="confetti" style="width:9px;height:14px;background:#ff6b4a;left:36px;top:92px;transform:rotate(18deg)"></span>
+    <span class="confetti round" style="width:7px;height:7px;background:#7be0b0;right:44px;top:120px"></span>
+    <span class="confetti" style="width:7px;height:7px;background:#2f53ff;left:64px;top:180px;transform:rotate(-24deg)"></span>
+    <span class="confetti round" style="width:9px;height:9px;background:#ffd447;right:64px;top:188px"></span>
+    <span class="confetti" style="width:5px;height:12px;background:#c9b8ff;left:222px;top:78px;transform:rotate(36deg)"></span>
+    <span class="confetti" style="width:12px;height:5px;background:#ffd447;right:100px;top:64px;transform:rotate(-14deg)"></span>
+    <span class="confetti round" style="width:6px;height:6px;background:#2f53ff;left:98px;top:128px"></span>
+    <span class="confetti" style="width:6px;height:10px;background:#ff6b4a;right:130px;top:56px;transform:rotate(24deg)"></span>
+  </div>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

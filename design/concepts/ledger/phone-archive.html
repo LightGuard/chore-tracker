@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger — archive</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f7f3e8; --paper2: #fbf8f0; --ink: #111110; --muted: #706a5e; --faint: #999183;
+  --line: #d8d1c2; --blue: #1e3bff; --acid: #e6fa4a;
+  --serif: "Bodoni 72", Didot, "Times New Roman", serif;
+  --sans: "Helvetica Neue", "Avenir Next", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(420px 320px at 92% -8%, #fdfbf4 0%, rgba(253,251,244,0) 70%),
+    linear-gradient(180deg, #f8f4ea 0%, #f4efe3 100%);
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 22px 18px; }
+
+.masthead { display: flex; align-items: center; justify-content: space-between; height: 26px; margin-top: 8px; }
+.masthead .brand { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 7.5px; font-weight: 600; letter-spacing: .16em; }
+.masthead .brand::before { content: ""; width: 6px; height: 6px; background: var(--blue); display: block; }
+.masthead .issue { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--muted); }
+.rule { height: 1px; background: var(--ink); margin-top: 5px; }
+.topnav { display: flex; align-items: center; gap: 17px; margin-top: 11px; }
+.topnav a { font-family: var(--mono); font-size: 7px; letter-spacing: .14em; color: var(--faint); text-decoration: none; padding-bottom: 3px; }
+.topnav a.active { color: var(--ink); border-bottom: 1.5px solid var(--blue); }
+
+.people { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
+.person { font-family: var(--mono); font-size: 7.5px; letter-spacing: .12em; color: var(--muted); padding: 5px 7px; }
+.person.active { background: var(--ink); color: var(--paper2); }
+.person + .person::before { content: "/"; color: var(--line); margin-right: 9px; }
+
+.hero { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 20px; }
+.eyebrow { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+.eyebrow::before { content: ""; width: 15px; height: 1px; background: var(--blue); }
+.hero h1 { font-family: var(--serif); font-size: 51px; font-weight: 400; line-height: .9; letter-spacing: -.035em; margin-top: 6px; }
+.hero .count { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--faint); text-align: right; padding-bottom: 3px; }
+.hero .count b { display: block; font-family: var(--serif); font-size: 24px; font-weight: 400; letter-spacing: 0; color: var(--ink); margin-top: 2px; }
+
+.featured { position: relative; margin-top: 14px; background: var(--ink); color: var(--paper2); padding: 13px 15px 12px; }
+.featured .ftop { display: flex; align-items: center; justify-content: space-between; }
+.featured .wk { font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .16em; color: var(--acid); }
+.featured .dates { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: #9c978c; }
+.fbody { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 7px; }
+.fbig { font-family: var(--serif); font-size: 64px; line-height: .78; letter-spacing: -.05em; color: var(--paper2); }
+.fbig span { font-size: 22px; letter-spacing: 0; color: #8f8b80; margin-left: 1px; }
+.fright { text-align: right; padding-bottom: 2px; }
+.fright .chore { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--paper2); }
+.fright .mini { display: flex; gap: 4px; margin-top: 8px; justify-content: flex-end; }
+.fright .mini i { width: 13px; height: 13px; border: 1px solid rgba(251,248,240,.25); display: block; }
+.fright .mini i.on { background: var(--acid); border-color: var(--acid); }
+.ffoot { display: flex; align-items: center; justify-content: space-between; margin-top: 11px; padding-top: 9px; border-top: 1px solid rgba(251,248,240,.18); }
+.ffoot span { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; color: #9c978c; }
+.ffoot a { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--acid); text-decoration: none; }
+
+.listhead { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-bottom: 5px; border-bottom: 1px solid var(--ink); }
+.listhead span { font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .15em; color: var(--muted); }
+.wrow { display: grid; grid-template-columns: 58px 1fr 44px; align-items: center; gap: 10px; height: 54px; border-bottom: 1px solid var(--line); }
+.when .no { font-family: var(--mono); font-size: 7.5px; letter-spacing: .05em; }
+.when .dt { font-family: var(--mono); font-size: 5.5px; letter-spacing: .03em; color: var(--faint); margin-top: 3px; }
+.mid { min-width: 0; }
+.mid .ch { font-family: var(--serif); font-size: 15px; }
+.mid .mini { display: flex; gap: 3px; margin-top: 5px; }
+.mid .mini i { width: 8px; height: 8px; border: 1px solid var(--line); display: block; }
+.mid .mini i.on { background: var(--blue); border-color: var(--blue); }
+.mid .mini i.miss { background: transparent; border-color: #c9c1b1; }
+.pct { text-align: right; }
+.pct b { font-family: var(--serif); font-size: 20px; font-weight: 400; letter-spacing: -.02em; }
+.pct b span { font-family: var(--serif); font-size: 10px; color: var(--faint); }
+.pct .perfect { display: block; font-family: var(--mono); font-size: 5px; letter-spacing: .1em; color: var(--blue); margin-top: 1px; }
+
+.month { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--ink); }
+.month .label { font-family: var(--mono); font-size: 6px; letter-spacing: .13em; color: var(--muted); }
+.month .mbig { font-family: var(--serif); font-size: 46px; line-height: .8; letter-spacing: -.04em; margin-top: 5px; }
+.month .mbig span { font-size: 16px; color: var(--faint); }
+.month .mleft { width: 130px; }
+.mbar { height: 3px; background: var(--line); margin-top: 7px; }
+.mbar i { display: block; height: 100%; width: 83%; background: var(--blue); }
+.mright { text-align: right; }
+.mright .days { font-family: var(--mono); font-size: 6px; letter-spacing: .08em; color: var(--muted); }
+.mright .best { font-family: var(--mono); font-size: 5.5px; letter-spacing: .08em; color: var(--faint); margin-top: 3px; }
+
+.footerline { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .12em; color: var(--faint); text-transform: uppercase; }
+.homebar { background: var(--ink); opacity: .65; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">8:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="masthead">
+      <span class="brand">CHORE TRACKER</span>
+      <span class="issue">ARCHIVE &middot; 2026</span>
+    </header>
+    <div class="rule"></div>
+
+    <nav class="topnav" aria-label="App sections">
+      <a href="#">Today</a>
+      <a href="#">Week</a>
+      <a class="active" href="#">Archive</a>
+    </nav>
+
+    <nav class="people" aria-label="Choose a family member">
+      <button class="person active">ALEX</button>
+      <button class="person">SAM</button>
+      <button class="person">RILEY</button>
+      <button class="person">AVERY</button>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">History / Alex</div>
+        <h1>The archive.</h1>
+      </div>
+      <div class="count">Weeks on record<b>04</b></div>
+    </section>
+
+    <section class="featured">
+      <div class="ftop">
+        <span class="wk">WEEK 47</span>
+        <span class="dates">NOV 16 &ndash; 22</span>
+      </div>
+      <div class="fbody">
+        <div class="fbig">5<span>/7</span></div>
+        <div class="fright">
+          <div class="chore">Kitchen</div>
+          <div class="mini"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i></div>
+        </div>
+      </div>
+      <div class="ffoot">
+        <span>5 OF 7 DAYS COMPLETE</span>
+        <a href="#">VIEW WEEK &rarr;</a>
+      </div>
+    </section>
+
+    <div class="listhead">
+      <span>Previous weeks</span>
+      <span>Days</span>
+    </div>
+
+    <div class="wrow">
+      <div class="when"><div class="no">WK 46</div><div class="dt">NOV 9&ndash;15</div></div>
+      <div class="mid">
+        <div class="ch">Yard</div>
+        <div class="mini"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      </div>
+      <div class="pct"><b>7<span>/7</span></b><span class="perfect">PERFECT</span></div>
+    </div>
+
+    <div class="wrow">
+      <div class="when"><div class="no">WK 45</div><div class="dt">NOV 2&ndash;8</div></div>
+      <div class="mid">
+        <div class="ch">Bathroom</div>
+        <div class="mini"><i class="on"></i><i class="on"></i><i class="miss"></i><i class="on"></i><i class="miss"></i><i class="miss"></i><i class="on"></i></div>
+      </div>
+      <div class="pct"><b>4<span>/7</span></b></div>
+    </div>
+
+    <div class="wrow">
+      <div class="when"><div class="no">WK 44</div><div class="dt">OCT 26&ndash;NOV 1</div></div>
+      <div class="mid">
+        <div class="ch">Laundry</div>
+        <div class="mini"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="miss"></i></div>
+      </div>
+      <div class="pct"><b>6<span>/7</span></b></div>
+    </div>
+
+    <div class="wrow">
+      <div class="when"><div class="no">WK 43</div><div class="dt">OCT 19&ndash;25</div></div>
+      <div class="mid">
+        <div class="ch">Kitchen</div>
+        <div class="mini"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      </div>
+      <div class="pct"><b>7<span>/7</span></b><span class="perfect">PERFECT</span></div>
+    </div>
+
+    <section class="month">
+      <div class="mleft">
+        <div class="label">MONTH TO DATE</div>
+        <div class="mbig">83<span>%</span></div>
+        <div class="mbar"><i></i></div>
+      </div>
+      <div class="mright">
+        <div class="days">29 OF 35 DAYS</div>
+        <div class="best">BEST WEEK &middot; NO. 46</div>
+      </div>
+    </section>
+
+    <div class="footerline">
+      <span>Alex &middot; household of six</span>
+      <span>Updated Nov 23</span>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

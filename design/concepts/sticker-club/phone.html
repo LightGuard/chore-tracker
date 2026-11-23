@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Club — phone</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --cream: #fff9ec;
+  --paper: #fffdf6;
+  --ink: #202033;
+  --blue: #2f53ff;
+  --sky: #dce6ff;
+  --yellow: #ffd447;
+  --coral: #ff6b4a;
+  --mint: #7be0b0;
+  --lilac: #c9b8ff;
+  --muted: #6d6b80;
+  --line: #202033;
+  --round: "Arial Rounded MT Bold", "Avenir Next", "Helvetica Neue", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background-color: var(--cream);
+  background-image: radial-gradient(#e7dcc3 1.15px, transparent 1.15px);
+  background-size: 22px 22px;
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 18px 26px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; height: 38px; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo .badge {
+  width: 32px; height: 32px; background: var(--yellow); border: 2px solid var(--ink);
+  border-radius: 9px; display: grid; place-items: center; transform: rotate(-5deg);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.logo .badge svg { width: 16px; height: 16px; }
+.logo .word { font-family: var(--round); font-size: 16px; letter-spacing: .015em; }
+.logo .word span { color: var(--blue); }
+.stars-pill {
+  display: flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 99px;
+  box-shadow: 2px 2px 0 var(--ink); font-family: var(--round); font-size: 13px;
+}
+.stars-pill svg { width: 15px; height: 15px; color: var(--yellow); -webkit-text-stroke: 0; filter: drop-shadow(0 1px 0 rgba(32,32,51,.25)); }
+
+.intro { margin-top: 14px; }
+.kicker { font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.intro h1 { font-family: var(--round); font-size: 31px; line-height: 1.05; letter-spacing: -.015em; margin-top: 4px; }
+.intro h1 em { font-style: normal; color: var(--blue); }
+.subrow { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+.streak {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px;
+  background: #fff1e8; border: 1.5px solid var(--coral); border-radius: 99px;
+  font-size: 10px; font-weight: 800; color: #b93b1f;
+}
+.streak svg { width: 12px; height: 12px; }
+.subrow .left { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+
+.people { display: flex; justify-content: space-between; margin-top: 13px; padding: 0 4px; }
+.person { width: 74px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pavatar {
+  width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-size: 27px; line-height: 1;
+  box-shadow: 2px 2px 0 rgba(32,32,51,.85); position: relative;
+}
+.person.active .pavatar { border-color: var(--blue); box-shadow: 0 0 0 3px var(--sky), 2px 2px 0 var(--blue); }
+.pname { font-family: var(--round); font-size: 11px; color: var(--muted); }
+.person.active .pname { color: var(--blue); }
+.person.active .pname::after {
+  content: ""; display: block; width: 16px; height: 3px; border-radius: 2px;
+  background: var(--blue); margin: 2px auto 0;
+}
+
+.mission {
+  position: relative; margin-top: 13px; padding: 15px 17px 14px; border-radius: 22px;
+  background: var(--blue); border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+  color: #fff; overflow: hidden;
+}
+.mission::before {
+  content: ""; position: absolute; right: -38px; top: -52px; width: 150px; height: 150px;
+  border-radius: 50%; border: 18px solid rgba(255,255,255,.1);
+}
+.mission::after {
+  content: ""; position: absolute; right: 20px; top: 64px; width: 7px; height: 7px;
+  border-radius: 50%; background: rgba(255,255,255,.4);
+}
+.mtop { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+.tag {
+  font-size: 8.5px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase;
+  background: var(--yellow); color: var(--ink); border: 1.5px solid var(--ink);
+  padding: 4px 7px; border-radius: 6px; transform: rotate(-2deg);
+}
+.week { font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #c8d3ff; }
+.mtitle { font-family: var(--round); font-size: 47px; line-height: 1; letter-spacing: -.025em; margin-top: 9px; position: relative; z-index: 1; }
+.mdesc { font-size: 12.5px; font-weight: 600; color: #dbe2ff; margin-top: 4px; position: relative; z-index: 1; }
+.mprog { display: flex; align-items: center; gap: 7px; margin-top: 11px; position: relative; z-index: 1; }
+.mprog .star { width: 26px; height: 26px; }
+.mprog .star.on { color: var(--yellow); filter: drop-shadow(0 2px 0 rgba(0,0,0,.18)); }
+.mprog .star.off { color: rgba(255,255,255,.2); }
+.mprog .lab { margin-left: auto; font-family: var(--round); font-size: 12px; color: #dbe2ff; }
+.mprog .lab b { color: #fff; font-size: 15px; }
+
+.checklist { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
+.chore {
+  position: relative; display: flex; align-items: center; gap: 11px; height: 58px;
+  padding: 0 12px 0 13px; background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 16px; box-shadow: 3px 3px 0 rgba(32,32,51,.9);
+}
+.chore.done { background: #f2fff8; }
+.chore.todo { background: #fffdf6; box-shadow: 4px 4px 0 var(--coral); border-color: var(--ink); }
+.tick {
+  width: 28px; height: 28px; flex: none; border: 2px solid var(--ink); border-radius: 50%;
+  background: #fff; display: grid; place-items: center; color: transparent;
+}
+.chore.done .tick { background: var(--yellow); color: var(--ink); }
+.tick svg { width: 14px; height: 14px; }
+.label { flex: 1; font-family: var(--round); font-size: 14.5px; letter-spacing: -.01em; }
+.chore.done .label { color: #55536a; }
+.icon-tile {
+  width: 33px; height: 33px; flex: none; border: 2px solid var(--ink); border-radius: 10px;
+  display: grid; place-items: center; transform: rotate(3deg);
+}
+.icon-tile svg { width: 17px; height: 17px; }
+.chore:nth-child(2) .icon-tile { transform: rotate(-3deg); }
+.one-left {
+  position: absolute; top: -9px; right: 12px; background: var(--coral); color: #fff;
+  border: 2px solid var(--ink); border-radius: 5px; padding: 2px 6px;
+  font-family: var(--round); font-size: 8px; letter-spacing: .06em; transform: rotate(3deg);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.bottom { margin-top: 14px; }
+.cta {
+  width: 100%; height: 51px; border-radius: 15px; background: var(--yellow);
+  border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: var(--round); font-size: 15.5px; color: var(--ink);
+}
+.cta svg { width: 17px; height: 17px; }
+.hint { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 9px; }
+.hint b { color: var(--blue); }
+
+.tabbar { display: none; }
+.homebar { background: var(--ink); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">9:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/>
+      <rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/>
+      <rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/>
+      <rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/>
+      <rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/>
+      <path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="top">
+      <div class="logo">
+        <span class="badge">
+          <svg viewBox="0 0 24 24" fill="#202033"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        </span>
+        <span class="word">CHORE <span>CLUB</span></span>
+      </div>
+      <div class="stars-pill">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        12
+      </div>
+    </header>
+
+    <section class="intro">
+      <div class="kicker">Wednesday &middot; Nov 25</div>
+      <h1>Hey, <em>Alex!</em></h1>
+      <div class="subrow">
+        <span class="streak">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.6 1.2c.3 2.5-1.5 3.1-2.3 4.7-.5 1-.4 2.1.5 2.8.1-1.3.8-2 1.6-2.7.9 1 2 1.8 2 3.4a3.1 3.1 0 0 1-6.2 0c0-2.9 1.8-4.3 2.8-5.9.6-1 .9-1.8 1.6-2.3Z"/></svg>
+          3 day streak
+        </span>
+        <span class="left">One chore left today</span>
+      </div>
+    </section>
+
+    <nav class="people" aria-label="Choose your name">
+      <button class="person active">
+        <span class="pavatar" style="background:#ffe1c4">🦊</span>
+        <span class="pname">Alex</span>
+      </button>
+      <button class="person">
+        <span class="pavatar" style="background:#d9ecff">🐼</span>
+        <span class="pname">Sam</span>
+      </button>
+      <button class="person">
+        <span class="pavatar" style="background:#d9ffe9">🐸</span>
+        <span class="pname">Riley</span>
+      </button>
+      <button class="person">
+        <span class="pavatar" style="background:#ede1ff">🐯</span>
+        <span class="pname">Avery</span>
+      </button>
+    </nav>
+
+    <section class="mission">
+      <div class="mtop">
+        <span class="tag">Today&rsquo;s chore</span>
+        <span class="week">Week 48</span>
+      </div>
+      <h2 class="mtitle">Kitchen</h2>
+      <p class="mdesc">Wipe and sweep after dinner.</p>
+      <div class="mprog" aria-label="2 of 3 stickers earned">
+        <svg class="star on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        <svg class="star on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        <svg class="star off" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+        <span class="lab"><b>2</b> / 3 stars</span>
+      </div>
+    </section>
+
+    <ul class="checklist" aria-label="Today&rsquo;s checklist">
+      <li class="chore done">
+        <span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.4 3 3 6.2-6.8"/></svg></span>
+        <span class="label">Wipe counters</span>
+        <span class="icon-tile" style="background:var(--mint)">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#202033" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.4 8.2c1.4-1.3 2.9-1.3 4.3 0 1.4 1.3 2.9 1.3 4.3 0 1.4-1.3 2.9-1.3 4.3 0"/>
+            <path d="M3.8 8.4v5.2c0 1.5 1.2 2.7 2.7 2.7h7c1.5 0 2.7-1.2 2.7-2.7V8.4"/>
+            <path d="M7.4 12.1h.1M10.1 13.6h.1M12.7 12.1h.1"/>
+          </svg>
+        </span>
+      </li>
+      <li class="chore done">
+        <span class="tick"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.4 3 3 6.2-6.8"/></svg></span>
+        <span class="label">Sweep floor</span>
+        <span class="icon-tile" style="background:var(--yellow)">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#202033" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16.2 3.2 7.8 12.1"/><path d="M7.1 11.4 4 14.5c-.6.6-.6 1.5 0 2.1l.4.4c.6.6 1.5.6 2.1 0l3.1-3.1-2.5-2.5Z"/><path d="m4.8 14.9 1 1"/>
+          </svg>
+        </span>
+      </li>
+      <li class="chore todo">
+        <span class="one-left">ONE LEFT</span>
+        <span class="tick"></span>
+        <span class="label">Take out trash</span>
+        <span class="icon-tile" style="background:var(--coral)">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#202033" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 5.5h13M7.6 5.5V3.9c0-.4.3-.7.7-.7h3.4c.4 0 .7.3.7.7v1.6"/>
+            <path d="M5.2 5.5l.7 11c0 .9.8 1.6 1.7 1.6h5.8c.9 0 1.7-.7 1.7-1.6l.7-11"/><path d="M8.3 9v5.4M11.7 9v5.4"/>
+          </svg>
+        </span>
+      </li>
+    </ul>
+
+    <div class="bottom">
+      <button class="cta">
+        Finish 1 more
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2-5.6-3-5.6 3 1.2-6.2L3 9.1l6.3-.8L12 2.6Z"/></svg>
+      </button>
+      <p class="hint">Earn all <b>3 stars</b> to unlock today&rsquo;s sticker</p>
+    </div>
+  </div>
+
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

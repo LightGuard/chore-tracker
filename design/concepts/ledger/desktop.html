@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger — weekly report</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f7f3e8; --paper2: #fbf8f0; --ink: #111110; --muted: #706a5e; --faint: #999183;
+  --line: #d8d1c2; --blue: #1e3bff; --acid: #e6fa4a;
+  --serif: "Bodoni 72", Didot, "Times New Roman", serif;
+  --sans: "Helvetica Neue", "Avenir Next", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body.desk {
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(620px 460px at 96% -8%, #fdfbf4 0%, rgba(253,251,244,0) 65%),
+    linear-gradient(180deg, #f8f4ea 0%, #f4efe3 100%);
+}
+.topbar { height: 62px; padding: 0 56px; background: var(--ink); color: var(--paper2); display: flex; align-items: center; justify-content: space-between; }
+.wordmark { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .18em; }
+.wordmark::before { content: ""; width: 6px; height: 6px; background: var(--blue); display: block; }
+.topbar nav { display: flex; gap: 27px; align-items: center; }
+.topbar nav a { font-family: var(--mono); font-size: 7px; font-weight: 500; letter-spacing: .15em; color: #a8a398; text-decoration: none; padding: 6px 0; }
+.topbar nav a.active { color: var(--acid); border-bottom: 1.5px solid var(--acid); }
+.topbar .right { display: flex; align-items: center; gap: 12px; }
+.topbar .admin { font-family: var(--mono); font-size: 6.5px; letter-spacing: .12em; color: #a8a398; }
+.topbar .avatar { width: 28px; height: 28px; background: var(--paper2); color: var(--ink); display: grid; place-items: center; font-family: var(--mono); font-size: 7px; font-weight: 600; }
+
+.dmain { width: 1280px; margin: 0 auto; padding-top: 26px; }
+.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 17px; border-bottom: 1px solid var(--ink); }
+.kicker { font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+.hero h1 { font-family: var(--serif); font-size: 55px; font-weight: 400; line-height: .95; letter-spacing: -.03em; margin-top: 6px; }
+.hero h1 em { font-style: italic; }
+.hero p { font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--muted); margin-top: 9px; max-width: 620px; }
+.bigscore { display: flex; align-items: flex-end; gap: 14px; padding-bottom: 1px; flex: none; }
+.bigscore .num { font-family: var(--serif); font-size: 124px; font-weight: 400; line-height: .72; letter-spacing: -.06em; color: var(--blue); }
+.bigscore .num span { font-size: 38px; letter-spacing: -.02em; }
+.bigscore .cap { font-family: var(--mono); font-size: 6.5px; line-height: 1.7; letter-spacing: .12em; color: var(--muted); padding-bottom: 4px; }
+.bigscore .cap b { display: block; color: var(--ink); font-weight: 600; }
+
+.statband { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--ink); padding: 11px 0 10px; }
+.stat { padding-left: 22px; border-left: 1px solid var(--line); }
+.stat:first-child { padding-left: 0; border-left: 0; }
+.stat b { font-family: var(--serif); font-size: 31px; font-weight: 400; line-height: 1; letter-spacing: -.02em; }
+.stat b span { font-size: 12px; color: var(--faint); }
+.stat p { font-family: var(--mono); font-size: 6px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+.bodygrid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; margin-top: 18px; }
+.report { min-width: 0; }
+.rtitle { display: flex; align-items: baseline; justify-content: space-between; }
+.rtitle h2 { font-family: var(--serif); font-size: 24px; font-weight: 400; letter-spacing: -.02em; }
+.rtitle span { font-family: var(--mono); font-size: 6px; letter-spacing: .14em; color: var(--faint); }
+.rhead, .rrow { display: grid; grid-template-columns: 232px 106px repeat(7, 1fr) 76px; align-items: center; }
+.rhead { height: 34px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin-top: 7px; }
+.rhead .h { font-family: var(--mono); font-size: 6px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rhead .dayh { text-align: center; }
+.rhead .dayh span { display: block; font-family: var(--mono); font-size: 5.8px; letter-spacing: .1em; color: var(--faint); }
+.rhead .dayh b { display: block; font-family: var(--serif); font-size: 12px; font-weight: 400; color: var(--ink); margin-top: 1px; }
+.rhead .hweek { text-align: right; padding-right: 3px; }
+.rrow { height: 65px; border-bottom: 1px solid var(--line); }
+.rrow.perfect { background: rgba(30,59,255,.045); }
+.rchild { display: flex; align-items: center; gap: 9px; }
+.ridx { font-family: var(--mono); font-size: 6.5px; color: var(--faint); width: 16px; }
+.rname { font-family: var(--serif); font-size: 19px; letter-spacing: -.01em; }
+.rchore { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+.cell { display: flex; justify-content: center; }
+.mark { width: 19px; height: 19px; display: grid; place-items: center; border: 1px solid #c8c1b2; background: rgba(255,255,255,.25); }
+.mark.done { background: var(--blue); border-color: var(--blue); }
+.mark.done svg { width: 9px; height: 9px; color: #fff; }
+.mark.miss::after { content: ""; width: 9px; height: 1px; background: #c8c1b2; transform: rotate(-45deg); }
+.rweek { text-align: right; padding-right: 3px; }
+.rweek b { font-family: var(--serif); font-size: 23px; font-weight: 400; letter-spacing: -.02em; }
+.rweek b span { font-size: 11px; color: var(--muted); }
+.rweek .bar { width: 42px; height: 2px; background: var(--line); margin: 3px 0 0 auto; }
+.rweek .bar i { display: block; height: 100%; background: var(--blue); }
+.childperfect { font-family: var(--mono); font-size: 5.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--blue); border: 1px solid rgba(30,59,255,.35); padding: 2px 4px; margin-left: 4px; }
+.rfoot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--ink); margin-top: -1px; padding-top: 8px; }
+.rfoot span { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.rfoot b { color: var(--ink); font-weight: 600; }
+
+.side { display: flex; flex-direction: column; gap: 15px; }
+.snap { background: var(--ink); color: var(--paper2); padding: 14px 15px 13px; border-top: 3px solid var(--blue); }
+.snap .sk { font-family: var(--mono); font-size: 6px; letter-spacing: .15em; color: var(--acid); text-transform: uppercase; }
+.snap .sbig { font-family: var(--serif); font-size: 34px; line-height: 1; margin-top: 6px; }
+.snap .sline { font-family: var(--mono); font-size: 6px; letter-spacing: .1em; color: #a8a398; line-height: 1.8; margin-top: 2px; }
+.snap .sline b { color: var(--paper2); font-weight: 500; }
+.snap .btn { margin-top: 10px; height: 31px; background: var(--acid); color: var(--ink); display: flex; align-items: center; justify-content: space-between; padding: 0 9px; font-family: var(--mono); font-size: 6px; letter-spacing: .13em; text-decoration: none; }
+.snap .btn svg { width: 11px; height: 11px; }
+
+.note { border-top: 1px solid var(--ink); padding-top: 9px; }
+.note .k { font-family: var(--mono); font-size: 6px; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+.note p { font-family: var(--serif); font-style: italic; font-size: 16px; line-height: 1.45; margin-top: 6px; color: var(--ink); }
+.note .src { font-family: var(--mono); font-size: 5.5px; letter-spacing: .1em; color: var(--faint); margin-top: 7px; }
+
+.perfectbox { border-top: 1px solid var(--ink); padding-top: 9px; display: flex; align-items: flex-end; justify-content: space-between; }
+.perfectbox .k { font-family: var(--mono); font-size: 6px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+.perfectbox .pname { font-family: var(--serif); font-style: italic; font-size: 15px; margin-top: 4px; }
+.perfectbox .pbig { font-family: var(--serif); font-size: 37px; line-height: .8; color: var(--blue); letter-spacing: -.03em; }
+.perfectbox .pbig span { font-size: 14px; color: var(--faint); }
+
+.daily { display: grid; grid-template-columns: 232px 1fr 160px; align-items: center; gap: 26px; margin-top: 16px; padding: 11px 0 9px; border-top: 1px solid var(--ink); }
+.daily .k { font-family: var(--mono); font-size: 6px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+.daily h3 { font-family: var(--serif); font-size: 20px; font-weight: 400; letter-spacing: -.01em; margin-top: 2px; }
+.dchart { display: flex; align-items: flex-end; gap: 11px; height: 50px; border-bottom: 1px solid var(--line); }
+.dbar { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.dbar .v { font-family: var(--serif); font-size: 10px; color: var(--muted); line-height: 1; }
+.dbar i { width: 58%; background: var(--blue); display: block; }
+.dbar.best i { background: var(--ink); }
+.dlabels { display: flex; gap: 11px; margin-top: 4px; }
+.dlabels span { flex: 1; text-align: center; font-family: var(--mono); font-size: 5.5px; letter-spacing: .08em; color: var(--faint); }
+.dlabels span.best { color: var(--ink); font-weight: 600; }
+.daily .dright { text-align: right; font-family: var(--mono); font-size: 6px; line-height: 1.7; letter-spacing: .1em; color: var(--faint); }
+.daily .dright b { display: block; font-family: var(--serif); font-size: 17px; font-weight: 400; letter-spacing: 0; color: var(--ink); }
+.bottombar { display: flex; align-items: center; justify-content: space-between; height: 50px; margin-top: 16px; padding: 0 17px; background: var(--ink); color: var(--paper2); }
+.bottombar .next { font-family: var(--mono); font-size: 6px; letter-spacing: .13em; color: var(--acid); }
+.bottombar a { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 6.5px; letter-spacing: .12em; color: var(--paper2); text-decoration: none; }
+.bottombar a svg { width: 12px; height: 12px; }
+.dfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+</style>
+</head>
+<body class="desk">
+  <header class="topbar">
+    <div class="wordmark">CHORE TRACKER</div>
+    <nav>
+      <a href="#">Today</a>
+      <a href="#">Week</a>
+      <a class="active" href="#">Reports</a>
+      <a href="#">Family</a>
+    </nav>
+    <div class="right">
+      <span class="admin">ADMIN / JP</span>
+      <span class="avatar">JP</span>
+    </div>
+  </header>
+
+  <main class="dmain">
+    <section class="hero">
+      <div>
+        <div class="kicker">Weekly report &middot; No. 47 &middot; 2026</div>
+        <h1>Week of <em>November 16</em></h1>
+        <p>A record of four children, seven days, and twenty-one completed days. No scores, no rankings &mdash; just the week as it happened.</p>
+      </div>
+      <div class="bigscore">
+        <div class="num">75<span>%</span></div>
+        <div class="cap">Days complete<b>21 of 28</b></div>
+      </div>
+    </section>
+
+    <div class="statband">
+      <div class="stat"><b>4</b><p>Children with assignments</p></div>
+      <div class="stat"><b>21<span>/28</span></b><p>Days complete</p></div>
+      <div class="stat"><b>7</b><p>Days missed</p></div>
+      <div class="stat"><b>1</b><p>Perfect week</p></div>
+    </div>
+
+    <div class="bodygrid">
+      <section class="report">
+        <div class="rtitle">
+          <h2>The week, by child</h2>
+          <span>MONDAY 16 &mdash; SUNDAY 22 NOVEMBER</span>
+        </div>
+
+        <div class="rhead">
+          <span class="h">Child</span>
+          <span class="h">Chore</span>
+          <span class="dayh"><span>MON</span><b>16</b></span>
+          <span class="dayh"><span>TUE</span><b>17</b></span>
+          <span class="dayh"><span>WED</span><b>18</b></span>
+          <span class="dayh"><span>THU</span><b>19</b></span>
+          <span class="dayh"><span>FRI</span><b>20</b></span>
+          <span class="dayh"><span>SAT</span><b>21</b></span>
+          <span class="dayh"><span>SUN</span><b>22</b></span>
+          <span class="h hweek">Week</span>
+        </div>
+
+        <div class="rrow">
+          <div class="rchild"><span class="ridx">01</span><span class="rname">Alex</span></div>
+          <span class="rchore">Kitchen</span>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="rweek"><b>5<span>/7</span></b><div class="bar"><i style="width:71%"></i></div></div>
+        </div>
+
+        <div class="rrow">
+          <div class="rchild"><span class="ridx">02</span><span class="rname">Sam</span></div>
+          <span class="rchore">Bathroom</span>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="rweek"><b>4<span>/7</span></b><div class="bar"><i style="width:57%"></i></div></div>
+        </div>
+
+        <div class="rrow perfect">
+          <div class="rchild"><span class="ridx">03</span><span class="rname">Riley</span><span class="childperfect">Perfect week</span></div>
+          <span class="rchore">Yard</span>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="rweek"><b>7<span>/7</span></b><div class="bar"><i style="width:100%"></i></div></div>
+        </div>
+
+        <div class="rrow">
+          <div class="rchild"><span class="ridx">04</span><span class="rname">Avery</span></div>
+          <span class="rchore">Laundry</span>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="cell"><span class="mark miss"></span></div>
+          <div class="cell"><span class="mark done"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span></div>
+          <div class="rweek"><b>5<span>/7</span></b><div class="bar"><i style="width:71%"></i></div></div>
+        </div>
+
+        <div class="rfoot">
+          <span>Household total <b>21 / 28 days</b></span>
+          <span>An immutable record &middot; generated Monday 03:00</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="snap">
+          <div class="sk">Snapshot</div>
+          <div class="sbig">Nov 23</div>
+          <div class="sline">Generated <b>03:00 MST</b></div>
+          <div class="sline"><b>4 entries</b> &middot; finalized</div>
+          <a class="btn" href="#">EXPORT PDF
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.8v7.4M4 6.4l3 3 3-3M2.2 11.8h9.6"/></svg>
+          </a>
+        </div>
+
+        <div class="note">
+          <div class="k">A note on the week</div>
+          <p>Riley closed every day. Sam found his rhythm midweek &mdash; the weekend finished strong.</p>
+          <div class="src">DRAWN FROM COMPLETION DATA &middot; NO. 47</div>
+        </div>
+
+        <div class="perfectbox">
+          <div>
+            <div class="k">Perfect week</div>
+            <div class="pname">Riley &middot; Yard</div>
+          </div>
+          <div class="pbig">7<span>/7</span></div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="daily">
+      <div>
+        <div class="k">The week, day by day</div>
+        <h3>Children complete</h3>
+      </div>
+      <div>
+        <div class="dchart">
+          <div class="dbar"><span class="v">3</span><i style="height:33px"></i></div>
+          <div class="dbar"><span class="v">3</span><i style="height:33px"></i></div>
+          <div class="dbar"><span class="v">3</span><i style="height:33px"></i></div>
+          <div class="dbar"><span class="v">3</span><i style="height:33px"></i></div>
+          <div class="dbar"><span class="v">2</span><i style="height:22px"></i></div>
+          <div class="dbar best"><span class="v">4</span><i style="height:44px"></i></div>
+          <div class="dbar"><span class="v">3</span><i style="height:33px"></i></div>
+        </div>
+        <div class="dlabels"><span>MON 16</span><span>TUE 17</span><span>WED 18</span><span>THU 19</span><span>FRI 20</span><span class="best">SAT 21</span><span>SUN 22</span></div>
+      </div>
+      <div class="dright">
+        BEST DAY
+        <b>Saturday &middot; 4/4</b>
+        OF 7 DAYS TRACKED
+      </div>
+    </section>
+
+    <div class="bottombar">
+      <span class="next">NEXT REPORT &middot; MONDAY, NOV 30 &middot; 03:00</span>
+      <a href="#">BACK TO ALL REPORTS
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+      </a>
+    </div>
+
+    <div class="dfoot">
+      <span>Chore Tracker &middot; weekly ledger</span>
+      <span>Monday&ndash;Sunday &middot; America/Denver</span>
+      <span>No. 47 / 2026</span>
+    </div>
+  </main>
+</body>
+</html>

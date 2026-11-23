@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eleven UI directions — overview</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1800px; height: 1600px; overflow: hidden; }
+body { font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif; color: #1c1a17; background-color: #f1eee7;
+  background-image: radial-gradient(800px 500px at 92% -10%, #fff 0%, rgba(255,255,255,0) 62%), repeating-linear-gradient(0deg, rgba(0,0,0,.025) 0 1px, transparent 1px 30px), repeating-linear-gradient(90deg, rgba(0,0,0,.02) 0 1px, transparent 1px 30px); }
+.wrap { padding: 38px 56px 0; height: 1600px; position: relative; }
+.topline { display: flex; align-items: center; justify-content: space-between; font-family: Menlo, monospace; font-size: 9.5px; letter-spacing: .17em; text-transform: uppercase; color: #8a8378; }
+.topline b { color: #1c1a17; font-weight: 500; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-top: 17px; padding-bottom: 16px; border-bottom: 1px solid #c9c2b5; }
+h1 { font-size: 50px; font-weight: 500; line-height: .95; letter-spacing: -.035em; }
+h1 em { font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-style: italic; font-weight: 400; }
+.sub { font-size: 13.5px; line-height: 1.5; color: #5c564d; margin-top: 8px; max-width: 950px; }
+.sub b { color: #1c1a17; font-weight: 500; }
+.meta { text-align: right; font-family: Menlo, monospace; font-size: 7.5px; line-height: 1.8; letter-spacing: .12em; text-transform: uppercase; color: #8a8378; white-space: nowrap; padding-bottom: 2px; }
+.meta b { display: block; color: #1c1a17; font-weight: 500; font-size: 8.5px; }
+.rows { display: flex; flex-direction: column; gap: 15px; margin-top: 17px; }
+.row { display: grid; grid-template-columns: repeat(6, 250px); gap: 18px; justify-content: center; width: 100%; }
+.card { min-width: 0; }
+.cardtop { height: 3px; background: var(--accent); margin-bottom: 6px; }
+.card .cap { display: flex; align-items: baseline; justify-content: space-between; font-family: Menlo, monospace; font-size: 5.8px; letter-spacing: .07em; text-transform: uppercase; color: #8a8378; margin-bottom: 5px; }
+.card .cap span:last-child { color: #a59c8d; letter-spacing: .03em; }
+.card img { display: block; width: 100%; height: auto; border-radius: 19px; border: 1px solid rgba(0,0,0,.22); box-shadow: 0 22px 36px -32px rgba(0,0,0,.55); background: #000; }
+.card h2 { font-family: var(--display); font-size: 19px; font-weight: var(--fontw); letter-spacing: -.015em; margin-top: 7px; line-height: .95; }
+.card p { font-size: 8.3px; line-height: 1.38; color: #5c564d; margin-top: 4px; min-height: 34px; }
+.card .dots { display: flex; gap: 4px; margin-top: 5px; }
+.card .dots i { width: 10px; height: 10px; border: 1px solid rgba(0,0,0,.12); display: block; }
+.info { background: #1b3a2f; color: #f6eddb; border-radius: 19px; height: 541px; padding: 24px 20px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #0f261c; box-shadow: 0 22px 36px -32px rgba(0,0,0,.55); }
+.info .k { font-family: Menlo, monospace; font-size: 7px; letter-spacing: .14em; text-transform: uppercase; color: #c9a24a; }
+.info h2 { font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-size: 28px; font-weight: 400; line-height: 1; margin-top: 10px; }
+.info p { font-size: 10.5px; line-height: 1.55; color: #c7bcab; margin-top: 12px; }
+.info .stats { border-top: 1px solid rgba(246,237,219,.2); padding-top: 11px; margin-top: 16px; }
+.info .stat { display: flex; align-items: baseline; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(246,237,219,.12); }
+.info .stat b { font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-size: 24px; font-weight: 400; color: #f4b63e; }
+.info .stat span { font-family: Menlo, monospace; font-size: 5.7px; letter-spacing: .08em; color: #9b9180; text-transform: uppercase; text-align: right; }
+.info .link { font-family: Menlo, monospace; font-size: 6.5px; letter-spacing: .07em; color: #f4b63e; line-height: 1.7; }
+.info .link b { color: #f6eddb; font-weight: 500; }
+.footline { position: absolute; left: 56px; right: 56px; bottom: 20px; display: flex; justify-content: space-between; align-items: center; padding-top: 7px; border-top: 1px solid #d5cec1; font-family: Menlo, monospace; font-size: 6.5px; letter-spacing: .12em; text-transform: uppercase; color: #9a9387; }
+.footline b { color: #1c1a17; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline"><span>Chore Tracker / Design archive</span><span>Overview &middot; <b>phone-first</b></span></div>
+  <div class="head">
+    <div><h1>Eleven directions. <em>One app.</em></h1>
+      <p class="sub">The original nine, plus two stress-test iterations: <b>Sticker Club v2</b> is entirely type and color; <b>Quest Light</b> is the HUD in daylight. Both use seven children and six-item lists that scroll.</p>
+    </div>
+    <div class="meta">Primary surface<b>Phone &middot; 390 × 844</b>Secondary surface<b>Desktop &middot; 1440 × 900</b></div>
+  </div>
+  <div class="rows">
+    <div class="row"><div class="card" style="--accent:#b9552f; --display:"Iowan Old Style", Baskerville, Georgia, serif; --fontw:400">
+  <div class="cardtop"></div>
+  <div class="cap"><span>01 / homestead</span><span>Round 01</span></div>
+  <img src="../shots/01-homestead-phone.png" alt="Homestead phone concept">
+  <h2>Homestead</h2>
+  <p>Warm paper ledger, serif type, a stamped finish.</p>
+  <div class="dots"><i style="background:#F6F0E2"></i><i style="background:#2B241B"></i><i style="background:#B9552F"></i><i style="background:#67724B"></i><i style="background:#D9A441"></i></div>
+</div><div class="card" style="--accent:#2f53ff; --display:"Arial Rounded MT Bold", "Avenir Next", sans-serif; --fontw:400">
+  <div class="cardtop"></div>
+  <div class="cap"><span>02 / sticker&nbsp;club</span><span>Round 01</span></div>
+  <img src="../shots/02-sticker-club-phone.png" alt="Sticker Club phone concept">
+  <h2>Sticker Club</h2>
+  <p>Collectible sticker chart with stars and a reward jar.</p>
+  <div class="dots"><i style="background:#FFF9EC"></i><i style="background:#202033"></i><i style="background:#2F53FF"></i><i style="background:#FFD447"></i><i style="background:#7BE0B0"></i></div>
+</div><div class="card" style="--accent:#2f4a3b; --display:"Avenir Next", "Helvetica Neue", sans-serif; --fontw:300">
+  <div class="cardtop"></div>
+  <div class="cap"><span>03 / still</span><span>Round 01</span></div>
+  <img src="../shots/03-still-phone.png" alt="Still phone concept">
+  <h2>Still</h2>
+  <p>Calm focus mode: one chore, one ring, little noise.</p>
+  <div class="dots"><i style="background:#F3F5EF"></i><i style="background:#22302A"></i><i style="background:#2F4A3B"></i><i style="background:#A9BFA8"></i><i style="background:#C99F8B"></i></div>
+</div><div class="card" style="--accent:#c9f45d; --display:"Avenir Next Condensed", "Avenir Next", sans-serif; --fontw:700">
+  <div class="cardtop"></div>
+  <div class="cap"><span>04 / quest</span><span>Round 01</span></div>
+  <img src="../shots/04-quest-phone.png" alt="Quest phone concept">
+  <h2>Quest</h2>
+  <p>Dark co-op HUD: XP, streaks, family leaderboard.</p>
+  <div class="dots"><i style="background:#080B10"></i><i style="background:#F2F6F0"></i><i style="background:#C9F45D"></i><i style="background:#58E7D6"></i><i style="background:#FFA24C"></i></div>
+</div><div class="card" style="--accent:#1e3bff; --display:"Bodoni 72", Didot, "Times New Roman", serif; --fontw:400">
+  <div class="cardtop"></div>
+  <div class="cap"><span>05 / ledger</span><span>Round 01</span></div>
+  <img src="../shots/05-ledger-phone.png" alt="Ledger phone concept">
+  <h2>Ledger</h2>
+  <p>Editorial broadsheet: big numerals, strict rules, archive.</p>
+  <div class="dots"><i style="background:#F7F3E8"></i><i style="background:#111110"></i><i style="background:#1E3BFF"></i><i style="background:#E6FA4A"></i><i style="background:#D8D1C2"></i></div>
+</div><div class="card" style="--accent:#1e6b3f; --display:"Avenir Next Condensed", "Avenir Next", sans-serif; --fontw:700">
+  <div class="cardtop"></div>
+  <div class="cap"><span>06 / matchday</span><span>Round 02</span></div>
+  <img src="../shots/06-matchday-phone.png" alt="Matchday phone concept">
+  <h2>Matchday</h2>
+  <p>A household sports club: team sheet, fixture, full time.</p>
+  <div class="dots"><i style="background:#F7F0DF"></i><i style="background:#12140F"></i><i style="background:#1E6B3F"></i><i style="background:#FF5A2B"></i><i style="background:#F4C84B"></i></div>
+</div></div>
+    <div class="row"><div class="card" style="--accent:#2b3bff; --display:"Avenir Next Condensed", "Avenir Next", sans-serif; --fontw:700">
+  <div class="cardtop"></div>
+  <div class="cap"><span>07 / checkpoint</span><span>Round 02</span></div>
+  <img src="../shots/07-checkpoint-phone.png" alt="Checkpoint phone concept">
+  <h2>Checkpoint</h2>
+  <p>Sticker Club × Quest: blue/acid zine, three checkpoints.</p>
+  <div class="dots"><i style="background:#2B3BFF"></i><i style="background:#D7F24D"></i><i style="background:#F8F2E6"></i><i style="background:#12110D"></i><i style="background:#FF5A2B"></i></div>
+</div><div class="card" style="--accent:#245c3e; --display:"Iowan Old Style", Baskerville, Georgia, serif; --fontw:400">
+  <div class="cardtop"></div>
+  <div class="cap"><span>08 / wayfinder</span><span>Round 03 · revised</span></div>
+  <img src="../shots/08-wayfinder-phone.png" alt="Wayfinder phone concept">
+  <h2>Wayfinder</h2>
+  <p>Storybook guild board: icons, mascot, illustrated quest cards.</p>
+  <div class="dots"><i style="background:#F8EBD1"></i><i style="background:#241B12"></i><i style="background:#245C3E"></i><i style="background:#F4B63E"></i><i style="background:#E85C3A"></i></div>
+</div><div class="card" style="--accent:#5ce0e3; --display:"Avenir Next", Avenir, sans-serif; --fontw:600">
+  <div class="cardtop"></div>
+  <div class="cap"><span>09 / homescreen</span><span>Round 03 · achievements</span></div>
+  <img src="../shots/09-homescreen-phone.png" alt="Homescreen phone concept">
+  <h2>Homescreen</h2>
+  <p>Console home with chore tiles and an achievement shelf.</p>
+  <div class="dots"><i style="background:#080D18"></i><i style="background:#F4F7FF"></i><i style="background:#5CE0E3"></i><i style="background:#F2C85B"></i><i style="background:#E07A4A"></i></div>
+</div><div class="card" style="--accent:#2f53ff; --display:"Arial Rounded MT Bold", "Avenir Next", sans-serif; --fontw:400">
+  <div class="cardtop"></div>
+  <div class="cap"><span>10 / sticker&nbsp;club&nbsp;v2</span><span>Iteration · stress test</span></div>
+  <img src="../shots/10-sticker-club-v2-phone.png" alt="Sticker Club v2 phone concept">
+  <h2>Sticker Club v2</h2>
+  <p>No person or chore pictograms. Seven kids, six jobs, scroll.</p>
+  <div class="dots"><i style="background:#FFF9EC"></i><i style="background:#202033"></i><i style="background:#2F53FF"></i><i style="background:#FFD447"></i><i style="background:#FF6B4A"></i></div>
+</div><div class="card" style="--accent:#0e9aa8; --display:"Avenir Next Condensed", "Avenir Next", sans-serif; --fontw:700">
+  <div class="cardtop"></div>
+  <div class="cap"><span>11 / quest&nbsp;light</span><span>Iteration · stress test</span></div>
+  <img src="../shots/11-quest-light-phone.png" alt="Quest Light phone concept">
+  <h2>Quest Light</h2>
+  <p>Sunlight Quest: seven players, six objectives, fixed scroll.</p>
+  <div class="dots"><i style="background:#F2EFE6"></i><i style="background:#12160F"></i><i style="background:#C9F45D"></i><i style="background:#0E9AA8"></i><i style="background:#DF6B2C"></i></div>
+</div><div class="info">
+      <div><div class="k">The archive</div><h2>Browse it live.</h2><p>Every board is a clickable detail page with phone hotspots, four-screen detail, and a full-size lightbox.</p></div>
+      <div><div class="stats">
+        <div class="stat"><b>11</b><span>Directions</span></div>
+        <div class="stat"><b>04</b><span>Tracks</span></div>
+        <div class="stat"><b>24</b><span>Phone screens</span></div>
+        <div class="stat"><b>11</b><span>Desktops</span></div>
+      </div><div class="link" style="margin-top:12px">OPEN THE INTERACTIVE ARCHIVE<br><b>design/index.html</b> &middot; local server</div></div>
+    </div></div>
+  </div>
+  <div class="footline"><span>Chore Tracker &middot; <b>Eleven directions</b></span><span>No app code changed &middot; design-only artifacts</span></div>
+</div>
+</body>
+</html>

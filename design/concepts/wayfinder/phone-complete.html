@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wayfinder — quest complete</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f8ebd1; --paper2: #fff6e2; --ink: #241b12; --muted: #806d55; --faint: #ad987a;
+  --green: #245c3e; --green-deep: #163d28; --moss: #8db25a; --gold: #f4b63e; --gold-deep: #d99522;
+  --coral: #e85c3a; --sky: #68c4d8; --plum: #6f4b7c; --line: #d6c09b;
+  --serif: "Iowan Old Style", Baskerville, "Palatino Linotype", Georgia, serif;
+  --copper: Copperplate, "Copperplate Gothic Light", "Iowan Old Style", serif;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --hand: "Bradley Hand", "Chalkboard SE", cursive;
+  --mono: Menlo, "SF Mono", monospace;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at 86% -4%, rgba(141,178,90,.22) 0%, rgba(141,178,90,0) 36%),
+    repeating-radial-gradient(circle at 82% 16%, transparent 0 26px, rgba(36,27,18,.033) 27px 28px),
+    radial-gradient(rgba(128,109,85,.12) 1px, transparent 1px);
+  background-size: auto, auto, 24px 24px;
+}
+.phone::before {
+  content: ""; position: absolute; width: 210px; height: 210px; right: -92px; top: 84px;
+  border: 1px dashed rgba(128,109,85,.25); border-radius: 50%; pointer-events: none;
+}
+.phone::after {
+  content: ""; position: absolute; width: 150px; height: 150px; right: -62px; top: 115px;
+  border: 1px solid rgba(128,109,85,.18); border-radius: 50%; pointer-events: none;
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 17px 78px; }
+
+.plaque {
+  position: relative; display: flex; align-items: center; justify-content: space-between;
+  height: 44px; margin-top: 8px; padding: 0 10px; background: linear-gradient(180deg, #2c6a49, #1d4f35);
+  border: 2px solid var(--ink); border-radius: 9px; box-shadow: 3px 3px 0 rgba(36,27,18,.85);
+  color: var(--paper2);
+}
+.plaque::before { content: ""; position: absolute; inset: 3px; border: 1px solid rgba(244,182,62,.55); border-radius: 6px; pointer-events: none; }
+.plaque .stud { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 1px rgba(36,27,18,.7); }
+.plaque .stud.a { left: 5px; top: 5px; } .plaque .stud.b { right: 5px; top: 5px; }
+.plaque .stud.c { left: 5px; bottom: 5px; } .plaque .stud.d { right: 5px; bottom: 5px; }
+.brand { display: flex; align-items: center; gap: 8px; position: relative; z-index: 1; }
+.compass { width: 27px; height: 27px; color: var(--gold); }
+.brandname { font-family: var(--copper); font-size: 14px; letter-spacing: .18em; line-height: 1; color: var(--paper2); }
+.brandsub { font-family: var(--copper); font-size: 5px; letter-spacing: .2em; color: rgba(255,246,226,.66); margin-top: 3px; }
+.dayflag { position: relative; z-index: 1; display: flex; align-items: center; gap: 6px; }
+.flag { width: 41px; height: 35px; background: var(--gold); color: var(--ink); clip-path: polygon(0 0,100% 0,100% 100%,50% 78%,0 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 5px; transform: rotate(2deg); }
+.flag b { font-family: var(--copper); font-size: 8px; letter-spacing: .06em; line-height: 1; }
+.flag span { font-family: var(--copper); font-size: 4.5px; letter-spacing: .08em; margin-top: 2px; }
+.dayflag .wk { font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: rgba(255,246,226,.8); text-align: right; line-height: 1.6; }
+
+.party { margin-top: 12px; }
+.partyhead { display: flex; align-items: center; justify-content: space-between; }
+.partyhead .pl { display: flex; align-items: center; gap: 5px; font-family: var(--copper); font-size: 6px; letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+.d20 { width: 12px; height: 12px; color: var(--green); flex: none; }
+.partyhead .pr { font-family: var(--copper); font-size: 5.5px; letter-spacing: .1em; color: var(--faint); text-transform: uppercase; }
+.members { display: flex; justify-content: space-between; margin-top: 8px; padding: 0 5px; }
+.member { width: 76px; text-align: center; position: relative; }
+.shieldwrap { position: relative; display: block; width: 53px; height: 59px; margin: 0 auto; background: var(--ink); clip-path: polygon(50% 0,96% 13%,96% 66%,50% 100%,4% 66%,4% 13%); padding: 2px; }
+.member.active .shieldwrap { background: var(--gold); }
+.shield { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; clip-path: polygon(50% 0,96% 13%,96% 66%,50% 100%,4% 66%,4% 13%); background: var(--clr); }
+.shield svg { width: 23px; height: 23px; color: var(--paper2); }
+.member .mname { display: block; font-family: var(--copper); font-size: 5.5px; letter-spacing: .1em; color: var(--muted); margin-top: 6px; }
+.member.active .mname { color: var(--ink); }
+.member .star { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 11px; text-shadow: 0 1px 0 var(--ink); z-index: 2; }
+.member .you { position: absolute; right: 0; top: 2px; background: var(--coral); color: var(--paper2); border: 1.5px solid var(--ink); font-family: var(--copper); font-size: 4.5px; letter-spacing: .08em; padding: 1px 3px; transform: rotate(7deg); }
+
+.quest {
+  position: relative; margin-top: 13px; background: var(--paper2); border: 2px solid var(--ink);
+  border-radius: 17px; box-shadow: 4px 4px 0 rgba(36,27,18,.9); overflow: visible;
+}
+.ribbon { position: relative; margin: -2px -2px 0; height: 31px; background: linear-gradient(180deg, #2c6a49, #1d4f35); border-bottom: 2px solid var(--ink); border-radius: 15px 15px 0 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; color: var(--paper2); }
+.ribbon::after { content: ""; position: absolute; left: 13px; right: 13px; bottom: 3px; border-bottom: 1px solid rgba(244,182,62,.5); }
+.ribbon .rk { font-family: var(--copper); font-size: 5.8px; letter-spacing: .16em; color: var(--gold); }
+.ribbon .rw { font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: rgba(255,246,226,.7); }
+.questbody { padding: 11px 13px 12px; position: relative; }
+.confetti { position: absolute; z-index: 4; line-height: 1; pointer-events: none; }
+.confetti.c1 { left: -6px; top: 80px; color: var(--gold); font-size: 13px; transform: rotate(-12deg); }
+.confetti.c2 { right: 24px; top: 132px; color: var(--coral); font-size: 9px; transform: rotate(18deg); }
+.confetti.c3 { left: 52px; bottom: 7px; color: var(--sky); font-size: 11px; }
+.confetti.c4 { right: -3px; top: 58px; color: var(--moss); font-size: 12px; transform: rotate(22deg); }
+.quest h1 { font-family: var(--serif); font-size: 47px; font-weight: 400; line-height: .92; letter-spacing: -.025em; }
+.quest .desc { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.mascot { position: absolute; right: 7px; top: -5px; width: 56px; height: 60px; z-index: 3; }
+.speech { position: absolute; right: 54px; top: 2px; background: var(--paper2); border: 1.5px solid var(--ink); border-radius: 9px; padding: 3px 6px; font-family: var(--hand); font-size: 10px; line-height: 1.1; color: var(--ink); transform: rotate(-3deg); box-shadow: 1.5px 1.5px 0 rgba(36,27,18,.35); z-index: 4; }
+.speech::after { content: ""; position: absolute; right: -5px; top: 50%; width: 7px; height: 7px; background: var(--paper2); border-right: 1.5px solid var(--ink); border-top: 1.5px solid var(--ink); transform: translateY(-50%) rotate(45deg); }
+.trail { position: relative; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 3px; }
+.trail::before { content: ""; position: absolute; left: 35px; right: 40px; top: 29px; border-top: 2px dashed rgba(201,162,74,.6); }
+.stop { position: relative; z-index: 1; width: 62px; text-align: center; }
+.stop .icon { width: 52px; height: 52px; margin: 0 auto; border: 2px solid var(--ink); border-radius: 50%; background: var(--tile); display: grid; place-items: center; position: relative; box-shadow: 2px 2px 0 rgba(36,27,18,.55); }
+.stop .icon svg { width: 25px; height: 25px; color: var(--ink); }
+.stop.done .icon { background: var(--green); }
+.stop.done .icon svg { color: var(--gold); }
+.stop.done .icon::after { content: "✓"; position: absolute; right: -6px; bottom: -4px; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); border: 1.5px solid var(--ink); font-family: var(--sans); font-size: 11px; font-weight: 700; display: grid; place-items: center; color: var(--ink); }
+.stop.open .icon { background: var(--paper2); border-style: dashed; }
+.stop.open .icon::after { content: "!"; position: absolute; right: -7px; top: -6px; width: 19px; height: 19px; border-radius: 50%; background: var(--coral); border: 1.5px solid var(--ink); color: var(--paper2); font-family: var(--sans); font-size: 11px; font-weight: 700; display: grid; place-items: center; transform: rotate(7deg); }
+.stop .slabel { font-family: var(--copper); font-size: 5px; letter-spacing: .08em; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+.trailright { position: relative; z-index: 1; width: 47px; height: 52px; border: 2px solid var(--ink); border-radius: 12px; background: var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 2px 2px 0 rgba(36,27,18,.55); transform: rotate(2deg); }
+.trailright b { font-family: var(--serif); font-size: 21px; font-weight: 500; line-height: .8; }
+.trailright b span { font-size: 9px; color: var(--muted); }
+.trailright em { font-family: var(--copper); font-size: 4.5px; font-style: normal; letter-spacing: .1em; color: var(--ink); margin-top: 4px; }
+
+.objhead { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; }
+.objhead .ol { display: flex; align-items: center; gap: 5px; font-family: var(--copper); font-size: 6px; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+.objhead .ol svg { width: 11px; height: 11px; color: var(--green); }
+.objhead .or { font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: var(--faint); }
+.obj {
+  position: relative; display: flex; align-items: center; gap: 9px; height: 58px; margin-top: 7px;
+  padding: 0 9px; background: var(--paper2); border: 2px solid var(--ink); border-radius: 11px;
+  box-shadow: 2.5px 2.5px 0 rgba(36,27,18,.75);
+}
+.obj.open { background: #fff0dd; }
+.objicon { width: 38px; height: 38px; flex: none; border: 1.5px solid var(--ink); border-radius: 9px; background: var(--tile); display: grid; place-items: center; transform: rotate(-2deg); }
+.objicon svg { width: 20px; height: 20px; color: var(--ink); }
+.obj:nth-of-type(3) .objicon { transform: rotate(2deg); }
+.obj .ot { flex: 1; font-family: var(--serif); font-size: 15.5px; }
+.obj.done .ot { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(36,27,18,.35); }
+.obj .stamp { font-family: var(--copper); font-size: 5px; letter-spacing: .08em; color: var(--green); border: 1px solid var(--green); padding: 2px 4px; transform: rotate(-5deg); }
+.obj.open .stamp { color: var(--coral); border-color: var(--coral); transform: rotate(4deg); }
+.obj .check { width: 26px; height: 26px; flex: none; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; background: var(--paper2); color: transparent; }
+.obj.done .check { background: var(--green); border-color: var(--green); color: var(--gold); }
+.obj .check svg { width: 12px; height: 12px; }
+.obj.open .check { background: var(--paper2); border-color: var(--coral); }
+.obj.open .check::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--coral); }
+
+.week { margin-top: 12px; }
+.weekhead { display: flex; align-items: center; justify-content: space-between; }
+.weekhead .wl { display: flex; align-items: center; gap: 5px; font-family: var(--copper); font-size: 6px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+.weekhead .wl svg { width: 11px; height: 11px; color: var(--green); }
+.weekhead .wr { font-family: var(--copper); font-size: 5px; letter-spacing: .1em; color: var(--faint); }
+.days { display: flex; justify-content: space-between; margin-top: 8px; position: relative; }
+
+.day { position: relative; z-index: 1; width: 38px; text-align: center; }
+.day span { font-family: var(--copper); font-size: 6.5px; letter-spacing: .05em; color: #6a5943; }
+.day i { display: grid; place-items: center; width: 25px; height: 25px; margin: 3px auto 0; border-radius: 50%; border: 1.5px solid var(--line); background: var(--paper2); }
+.day.done i { background: var(--green); border-color: var(--ink); }
+.day.done i::after { content: ""; width: 8px; height: 4.5px; border-left: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold); transform: rotate(-45deg) translate(0,-1px); }
+.day.today i { background: var(--gold); border-color: var(--ink); position: relative; }
+.day.today i::after { content: ""; position: absolute; top: -10px; width: 14px; height: 12px; background: var(--coral); clip-path: polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
+.day.today span { color: var(--ink); }
+.day.future i { border-style: dotted; border-color: rgba(128,109,85,.4); }
+.quote { font-family: var(--hand); font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; transform: rotate(-.7deg); }
+
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; padding: 8px 27px 0; background: var(--green-deep); border-top: 2px solid var(--ink); display: flex; justify-content: space-between; z-index: 10; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--copper); font-size: 5.5px; letter-spacing: .12em; color: rgba(255,246,226,.55); padding: 5px 12px; border-radius: 9px; }
+.tab svg { width: 17px; height: 17px; }
+.tab.active { color: var(--ink); background: var(--gold); box-shadow: 2px 2px 0 rgba(36,27,18,.8); }
+.day.done.today i { background: var(--green); border: 2px solid var(--coral); box-shadow: 0 0 0 2px rgba(232,92,58,.12); position: relative; }
+.day.done.today i::before { display: none; }
+.day.done.today i::after { content: ""; position: absolute; top: 50%; left: 50%; width: 8px; height: 4.5px; border-left: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold); transform: translate(-50%,-55%) rotate(-45deg); background: none; clip-path: none; }
+.day.done.today span { color: var(--coral); }
+.homebar { background: rgba(244,182,62,.8); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">8:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="plaque">
+      <span class="stud a"></span><span class="stud b"></span><span class="stud c"></span><span class="stud d"></span>
+      <div class="brand">
+        <svg class="compass" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width=".8" stroke-dasharray="1.5 2"/>
+          <path d="m12 5 1.6 5.4L19 12l-5.4 1.6L12 19l-1.6-5.4L5 12l5.4-1.6L12 5Z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="1.2" fill="#245c3e"/>
+        </svg>
+        <div><div class="brandname">WAYFINDER</div><div class="brandsub">A HOUSEHOLD GUILD</div></div>
+      </div>
+      <div class="dayflag">
+        <span class="wk">WEEK 48<br>DAY 3</span>
+        <span class="flag"><b>03</b><span>DAY</span></span>
+      </div>
+    </header>
+
+    <section class="party">
+      <div class="partyhead"><span class="pl"><svg class="d20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M10 1.6 18 6.2v7.6L10 18.4 2 13.8V6.2L10 1.6Z"/><path d="m10 1.6-3.5 6.6h7L10 1.6Z"/><path d="M2 6.2l4.5 2M18 6.2l-4.5 2M6.5 8.2 10 18.4M13.5 8.2 10 18.4"/></svg>Your party</span><span class="pr">Switch hero</span></div>
+      <div class="members" aria-label="Choose a party member">
+        <button class="member active"><span class="star">★</span><span class="shieldwrap"><span class="shield" style="--clr:#2f6b47"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="m12 5 1.7 5.3L19 12l-5.3 1.7L12 19l-1.7-5.3L5 12l5.3-1.7L12 5Z" fill="currentColor"/></svg></span></span><span class="mname">ALEX</span></button>
+        <button class="member"><span class="shieldwrap"><span class="shield" style="--clr:#c95a3f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 11c0-4 3-7 7-7s7 3 7 7" fill="currentColor" opacity=".9"/><path d="M8 11h8M9 11v6c0 1 .8 2 2 2h2c1.2 0 2-1 2-2v-6"/><path d="M9 8.5h.1M15 8.5h.1"/></svg></span></span><span class="mname">SAM</span></button>
+        <button class="member"><span class="shieldwrap"><span class="shield" style="--clr:#4c9aab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c4-7 12-7 16 0-4 7-12 7-16 0Z" fill="currentColor" opacity=".9"/><path d="M4 12c4 2 8 2 16 0M12 5v3"/></svg></span></span><span class="mname">RILEY</span></button>
+        <button class="member"><span class="shieldwrap"><span class="shield" style="--clr:#6d4b7c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M15.5 4.2A8.2 8.2 0 1 0 19.8 16 6.5 6.5 0 0 1 15.5 4.2Z" fill="currentColor" opacity=".9"/><path d="M17 3.5h.1M20 7.5h.1M13 2.5h.1"/></svg></span></span><span class="mname">AVERY</span></button>
+      </div>
+    </section>
+
+    <section class="quest">
+      <div class="ribbon"><span class="rk">QUEST COMPLETE</span></div>
+      <div class="speech">We did it!</div>
+      <svg class="mascot" viewBox="0 0 60 64" aria-hidden="true">
+        <path d="M17 20C13 12 14 7 18 5c4 2 5 7 4 13" fill="#4e7a37" stroke="#241b12" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M43 20c4-8 3-13-1-15-4 2-5 7-4 13" fill="#4e7a37" stroke="#241b12" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="30" cy="35" r="21" fill="#78a64d" stroke="#241b12" stroke-width="2"/>
+        <ellipse cx="30" cy="41" rx="12" ry="10" fill="#a9c778" opacity=".7"/>
+        <circle cx="23" cy="33" r="2.4" fill="#241b12"/><circle cx="37" cy="33" r="2.4" fill="#241b12"/>
+        <path d="M26 39c2.4 2 5.6 2 8 0" stroke="#241b12" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <circle cx="18" cy="38" r="2.4" fill="#e85c3a" opacity=".5"/><circle cx="42" cy="38" r="2.4" fill="#e85c3a" opacity=".5"/>
+        <path d="M30 15v4" stroke="#241b12" stroke-width="2" stroke-linecap="round"/>
+        <rect x="43" y="43" width="12" height="15" rx="3" fill="#f4b63e" stroke="#241b12" stroke-width="1.6"/>
+        <path d="M46 43v-3c0-1.7 1.3-3 3-3s3 1.3 3 3v3" stroke="#241b12" stroke-width="1.4" fill="none"/>
+        <path d="M49 48v4" stroke="#fff6e2" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <span class="confetti c1">★</span><span class="confetti c2">◆</span><span class="confetti c3">✦</span><span class="confetti c4">★</span>
+      <div class="questbody">
+        <h1>Kitchen</h1>
+        <p class="desc">The kitchen is restored. See you tomorrow.</p>
+        <div class="trail">
+          <div class="stop done"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0"/><path d="M4.5 9.8v6c0 1.8 1.4 3.2 3.2 3.2h8.6c1.8 0 3.2-1.4 3.2-3.2v-6"/><path d="M8.5 14h.1M12 15.8h.1M15.5 14h.1"/></svg></span><span class="slabel">Counters</span></div>
+          <div class="stop done"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 3.5 9.8 14.1"/><path d="M10.1 13.4 6 17.5c-.8.8-.8 2 0 2.8l.5.5c.8.8 2 .8 2.8 0l4.1-4.1-3.3-3.3Z"/><path d="m6.8 16.8 1.2 1.2M13.5 15.2l2 2"/></svg></span><span class="slabel">Floor</span></div>
+          <div class="stop done"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M8.5 7V5.2c0-.7.5-1.2 1.2-1.2h4.6c.7 0 1.2.5 1.2 1.2V7"/><path d="m6.8 7 .8 12c0 1 .9 2 2 2h4.8c1.1 0 2-1 2-2l.8-12"/><path d="M10 11v6M14 11v6"/></svg></span><span class="slabel">Trash</span></div>
+          <div class="trailright"><b>3<span>/3</span></b><em>DONE</em></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="objectives">
+      <div class="objhead"><span class="ol"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 2.5h8l2.5 2.5v10.5H4z"/><path d="M12 2.5V5h2.5M6.5 8h5M6.5 11h5"/></svg>Quest objectives</span><span class="or">3 of 3</span></div>
+      <div class="obj done">
+        <span class="objicon" style="--tile:#a8cf7c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9c1.4-1.4 2.9-1.4 4.3 0s2.9 1.4 4.3 0 2.9-1.4 4.3 0 2.9 1.4 4.3 0"/><path d="M4.4 9.3v6.2c0 1.7 1.4 3 3 3h9.2c1.6 0 3-1.3 3-3V9.3"/><path d="M8.5 13.5h.1M12 15.2h.1M15.5 13.5h.1"/></svg></span>
+        <span class="ot">Wipe counters</span>
+        <span class="stamp">CLEARED</span>
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+      </div>
+      <div class="obj done">
+        <span class="objicon" style="--tile:#f4b63e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 3.5 9.8 14.1"/><path d="M10.1 13.4 6 17.5c-.8.8-.8 2 0 2.8l.5.5c.8.8 2 .8 2.8 0l4.1-4.1-3.3-3.3Z"/></svg></span>
+        <span class="ot">Sweep floor</span>
+        <span class="stamp">CLEARED</span>
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+      </div>
+      <div class="obj done">
+        <span class="objicon" style="--tile:#f58a68"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M8.5 7V5.2c0-.7.5-1.2 1.2-1.2h4.6c.7 0 1.2.5 1.2 1.2V7"/><path d="m6.8 7 .8 12c0 1 .9 2 2 2h4.8c1.1 0 2-1 2-2l.8-12"/><path d="M10 11v6M14 11v6"/></svg></span>
+        <span class="ot">Take out trash</span>
+        <span class="stamp">CLEARED</span>
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+      </div>
+    </section>
+
+    <section class="week">
+      <div class="weekhead"><span class="wl"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 14.5 6.5 4l3 6 2.8-3 3.2 7.5"/><path d="M2.5 14.5h13"/></svg>The week&rsquo;s trail</span><span class="wr">3 OF 7</span></div>
+      <div class="days" aria-label="Week of November 23">
+        <div class="day done"><span>M</span><i></i></div>
+        <div class="day done"><span>T</span><i></i></div>
+        <div class="day done today"><span>W</span><i></i></div>
+        <div class="day future"><span>T</span><i></i></div>
+        <div class="day future"><span>F</span><i></i></div>
+        <div class="day future"><span>S</span><i></i></div>
+        <div class="day future"><span>S</span><i></i></div>
+      </div>
+      <p class="quote">&ldquo;The trail is walked. Rest well, wayfarer.&rdquo;</p>
+    </section>
+  </div>
+
+  <nav class="tabbar" aria-label="App sections">
+    <button class="tab active">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><circle cx="9" cy="9" r="6.8"/><path d="m12.8 5.2-2 4.7-4.7 2 2-4.7 4.7-2Z"/></svg>
+      QUEST
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 14.8 6.7 3.8l3 6.2 2.8-3.2 2.8 8"/><path d="M2.5 14.8h13"/></svg>
+      TRAIL
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M9 1.6 16 5.4v7.2L9 16.4 2 12.6V5.4L9 1.6Z"/><path d="m6.2 9.4 2.8 2.2 2.8-2.2"/></svg>
+      GUILD
+    </button>
+  </nav>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

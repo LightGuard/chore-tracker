@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matchday — full time</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --cream: #f7f0df; --paper: #fffbf2; --ink: #12140f; --green: #1e6b3f; --deep: #123d27;
+  --orange: #ff5a2b; --gold: #f4c84b; --line: #d8cfbb; --muted: #7d7668;
+  --cond: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background-color: var(--cream);
+  background-image: repeating-linear-gradient(0deg, rgba(18,20,15,.022) 0 1px, transparent 1px 32px);
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 18px 82px; }
+.label { font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+.masthead { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; height: 40px; }
+.club { display: flex; align-items: center; gap: 9px; }
+.crest { width: 34px; height: 39px; flex: none; }
+.clubname { font-family: var(--cond); font-size: 19px; font-weight: 800; letter-spacing: .1em; line-height: 1; }
+.matchday { font-family: var(--mono); font-size: 6px; letter-spacing: .1em; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+.home-tag { background: var(--orange); color: var(--cream); border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .12em; padding: 4px 7px; transform: rotate(-2deg); }
+
+.squad { margin-top: 15px; }
+.squadhead { display: flex; align-items: center; justify-content: space-between; }
+.players { display: flex; gap: 8px; margin-top: 7px; }
+.player {
+  position: relative; width: 81px; height: 58px; background: var(--paper);
+  border: 1.5px solid var(--ink); border-radius: 7px; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-shadow: 1.5px 1.5px 0 rgba(18,20,15,.14);
+}
+.player .num { position: absolute; top: 4px; right: 5px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .05em; color: var(--muted); }
+.player .init { font-family: var(--cond); font-size: 23px; font-weight: 800; line-height: .9; }
+.player .name { font-family: var(--mono); font-size: 6px; font-weight: 600; letter-spacing: .12em; color: var(--muted); }
+.player.active { background: var(--green); border-color: var(--ink); color: var(--cream); box-shadow: 2.5px 2.5px 0 var(--ink); }
+.player.active .num, .player.active .name { color: rgba(247,240,223,.7); }
+.player.active .init { color: var(--cream); }
+.player.active::before { content: "★"; position: absolute; top: 3px; left: 5px; font-size: 7px; color: var(--gold); }
+
+.fixture {
+  position: relative; margin-top: 16px; background: var(--green); color: var(--cream);
+  border: 1.5px solid var(--ink); border-radius: 12px; padding: 14px 16px 0; overflow: hidden;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.fixture::before { content: ""; position: absolute; width: 240px; height: 240px; border: 1px solid rgba(247,240,223,.14); border-radius: 50%; right: -100px; top: -78px; }
+.fixture::after { content: ""; position: absolute; left: 63%; top: 0; bottom: 0; width: 1px; background: rgba(247,240,223,.1); }
+.ftop { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
+.ftop span { font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(247,240,223,.78); }
+.fixture h1 { position: relative; z-index: 1; font-family: var(--cond); font-size: 57px; font-weight: 800; line-height: .84; letter-spacing: .005em; margin-top: 8px; }
+.fdesc { position: relative; z-index: 1; font-size: 11.5px; line-height: 1.4; color: rgba(247,240,223,.78); margin-top: 5px; }
+.ftflag { position: absolute; z-index: 2; width: 62px; height: 67px; right: 13px; top: 38px; transform: rotate(5deg); filter: drop-shadow(2px 2px 0 rgba(18,20,15,.35)); }
+.scorebar {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 11px;
+  margin: 13px -16px 0; padding: 9px 16px 10px; background: var(--cream);
+  color: var(--ink); border-top: 2px dashed rgba(18,20,15,.3);
+}
+.score { display: flex; align-items: baseline; font-family: var(--cond); font-size: 44px; font-weight: 800; line-height: .78; letter-spacing: -.01em; }
+.score span { font-family: var(--sans); font-size: 17px; font-weight: 500; color: var(--muted); margin: 0 2px 0 1px; }
+.scoreleft { display: flex; align-items: center; gap: 9px; }
+.scorelabel { font-family: var(--mono); font-size: 6px; line-height: 1.55; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+.scorelabel b { display: block; color: var(--ink); font-weight: 600; }
+.pips { margin-left: auto; display: flex; gap: 5px; }
+.pips i { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--green); display: block; }
+.pips i.on { background: var(--green); }
+
+.checklist { margin-top: 15px; }
+.chead { display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px; border-bottom: 1px solid var(--ink); }
+.chore {
+  display: flex; align-items: center; gap: 9px; height: 60px; margin-top: 7px; padding: 0 11px;
+  background: var(--paper); border: 1.5px solid var(--ink); border-left: 4px solid var(--green);
+  border-radius: 8px; box-shadow: 2px 2px 0 rgba(18,20,15,.12);
+}
+.chore.open { border-left-color: var(--orange); background: #fff5e7; }
+.check { width: 27px; height: 27px; flex: none; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--cream); display: grid; place-items: center; color: transparent; }
+.check svg { width: 13px; height: 13px; }
+.chore.done .check { background: var(--green); border-color: var(--green); color: var(--cream); }
+.chore.open .check { background: transparent; border-color: var(--ink); }
+.chore .num { font-family: var(--mono); font-size: 6px; letter-spacing: .04em; color: var(--muted); padding-top: 1px; }
+.chore .txt { flex: 1; font-size: 14.5px; font-weight: 500; letter-spacing: -.005em; }
+.chore.done .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(30,107,63,.4); }
+.chore .status { font-family: var(--mono); font-size: 5.8px; font-weight: 600; letter-spacing: .12em; color: var(--green); }
+.chore.open .status { color: var(--orange); }
+
+.form { margin-top: 14px; }
+.formhead { display: flex; align-items: center; justify-content: space-between; }
+.days { display: flex; justify-content: space-between; margin-top: 6px; }
+.day { width: 39px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.day span { font-family: var(--mono); font-size: 5.8px; letter-spacing: .08em; color: var(--muted); }
+.day i { width: 21px; height: 21px; border-radius: 50%; border: 1.4px solid var(--line); background: var(--paper); display: grid; place-items: center; }
+.day.done i { background: var(--green); border-color: var(--green); }
+.day.done i::after { content: ""; width: 7px; height: 4px; border-left: 1.4px solid var(--cream); border-bottom: 1.4px solid var(--cream); transform: rotate(-45deg) translate(0,-1px); }
+.day.today i { border: 2px solid var(--orange); background: var(--paper); box-shadow: 0 0 0 3px rgba(255,90,43,.1); }
+.day.today i::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); border: 0; }
+.day.today span { color: var(--orange); }
+.day.done.today i { background: var(--green); border: 2px solid var(--green); box-shadow: 0 0 0 3px rgba(255,90,43,.2); }
+.day.done.today i::after { content: ""; width: 7px; height: 4px; border-left: 1.4px solid var(--cream); border-bottom: 1.4px solid var(--cream); transform: rotate(-45deg) translate(0,-1px); border-radius: 0; background: transparent; }
+.day.done.today span { color: var(--orange); }
+.day.future i { border-style: dashed; border-color: #d9cfbb; }
+
+.next {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 13px;
+  border: 1.5px solid var(--ink); background: var(--paper); padding: 8px 10px; border-radius: 6px;
+}
+.next .k { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; color: var(--muted); }
+.next b { font-family: var(--cond); font-size: 13px; font-weight: 700; letter-spacing: .06em; }
+.next .arrow { font-family: var(--sans); font-size: 14px; }
+
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 72px; padding: 8px 30px 0;
+  background: var(--ink); color: var(--cream); display: flex; justify-content: space-between;
+  z-index: 10;
+}
+.tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--mono); font-size: 6px; letter-spacing: .13em; color: rgba(247,240,223,.55); padding: 2px 12px; }
+.tab svg { width: 16px; height: 16px; }
+.tab.active { color: var(--orange); }
+.homebar { background: rgba(247,240,223,.8); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">8:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="masthead">
+      <div class="club">
+        <svg class="crest" viewBox="0 0 34 39" fill="none" aria-hidden="true">
+          <path d="M17 1.5 32 7v13.2c0 8.3-6.1 14.1-15 17.3C8.1 34.3 2 28.5 2 20.2V7L17 1.5Z" fill="#1e6b3f" stroke="#12140f" stroke-width="2"/>
+          <path d="M17 6.4 27.6 10v9.7c0 5.9-4.3 10.1-10.6 12.5C10.7 29.8 6.4 25.6 6.4 19.7V10L17 6.4Z" fill="#fffbf2" stroke="#12140f" stroke-width="1"/>
+          <path d="m11.7 18.8 3.2 3.3 6.6-7" stroke="#1e6b3f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div><div class="clubname">HOME TEAM</div><div class="matchday">Matchday 48 &middot; Wed 25 Nov</div></div>
+      </div>
+      <span class="home-tag">HOME</span>
+    </header>
+
+    <section class="squad">
+      <div class="squadhead"><span class="label">The squad</span><span class="label">Switch player</span></div>
+      <div class="players" aria-label="Choose a player">
+        <button class="player active"><span class="num">09</span><span class="init">A</span><span class="name">ALEX</span></button>
+        <button class="player"><span class="num">07</span><span class="init">S</span><span class="name">SAM</span></button>
+        <button class="player"><span class="num">11</span><span class="init">R</span><span class="name">RILEY</span></button>
+        <button class="player"><span class="num">04</span><span class="init">A</span><span class="name">AVERY</span></button>
+      </div>
+    </section>
+
+    <section class="fixture">
+      <div class="ftop"><span>Full time</span><span>Week 48</span></div>
+      <svg class="ftflag" viewBox="0 0 72 78" fill="none" aria-hidden="true">
+        <path d="M9 4v70" stroke="#f7f0df" stroke-width="3.4" stroke-linecap="round"/>
+        <g transform="translate(12 8)">
+          <rect width="52" height="31" fill="#f7f0df" stroke="#12140f" stroke-width="1.8"/>
+          <g fill="#12140f">
+            <rect x="0" y="0" width="13" height="7.75"/><rect x="26" y="0" width="13" height="7.75"/>
+            <rect x="13" y="7.75" width="13" height="7.75"/><rect x="39" y="7.75" width="13" height="7.75"/>
+            <rect x="0" y="15.5" width="13" height="7.75"/><rect x="26" y="15.5" width="13" height="7.75"/>
+            <rect x="13" y="23.25" width="13" height="7.75"/><rect x="39" y="23.25" width="13" height="7.75"/>
+          </g>
+        </g>
+      </svg>
+      <h1>KITCHEN</h1>
+      <p class="fdesc">Clean kitchen. Clean sheet. See you tomorrow.</p>
+      <div class="scorebar">
+        <div class="scoreleft">
+          <div class="score">3<span>/</span>3</div>
+          <div class="scorelabel"><b>All items done</b>Clean sheet</div>
+        </div>
+        <div class="pips" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      </div>
+    </section>
+
+    <section class="checklist">
+      <div class="chead"><span class="label">The lineup</span><span class="label">Status</span></div>
+      <div class="chore done">
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+        <span class="num">01</span>
+        <span class="txt">Wipe counters</span>
+        <span class="status">DONE</span>
+      </div>
+      <div class="chore done">
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+        <span class="num">02</span>
+        <span class="txt">Sweep floor</span>
+        <span class="status">DONE</span>
+      </div>
+      <div class="chore done">
+        <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+        <span class="num">03</span>
+        <span class="txt">Take out trash</span>
+        <span class="status">DONE</span>
+      </div>
+    </section>
+
+    <section class="form">
+      <div class="formhead"><span class="label">This week</span><span class="label">3 / 7 days</span></div>
+      <div class="days" aria-label="Week of November 23">
+        <div class="day done"><span>MON</span><i></i></div>
+        <div class="day done"><span>TUE</span><i></i></div>
+        <div class="day done today"><span>WED</span><i></i></div>
+        <div class="day future"><span>THU</span><i></i></div>
+        <div class="day future"><span>FRI</span><i></i></div>
+        <div class="day future"><span>SAT</span><i></i></div>
+        <div class="day future"><span>SUN</span><i></i></div>
+      </div>
+    </section>
+
+    <div class="next">
+      <span class="k">NEXT FIXTURE</span>
+      <b>TOMORROW &middot; KITCHEN</b>
+      <span class="arrow">&rarr;</span>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="App sections">
+    <button class="tab active">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.6"/><path d="m6.2 9.2 2 2 3.9-4.2"/></svg>
+      TODAY
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.6" y="3.6" width="12.8" height="11.8" rx="1.5"/><path d="M2.6 7.2h12.8M6.3 2v3M11.7 2v3"/></svg>
+      WEEK
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 1.8 16 5.6v6.8L9 16.2 2 12.4V5.6L9 1.8Z"/><path d="m6.2 7 2.8 2.7L14 6"/></svg>
+      CLUB
+    </button>
+  </nav>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

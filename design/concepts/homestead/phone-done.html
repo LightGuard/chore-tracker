@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Homestead — phone (complete)</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f6f0e2;
+  --card: #fcf8ee;
+  --ink: #2b241b;
+  --muted: #7c7060;
+  --faint: #a29683;
+  --line: #dcd0ba;
+  --terra: #b9552f;
+  --terra-deep: #8f3f22;
+  --olive: #67724b;
+  --gold: #d9a441;
+  --serif: "Iowan Old Style", Baskerville, "Palatino Linotype", Georgia, serif;
+  --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --hand: "Bradley Hand", "Chalkboard SE", cursive;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(900px 600px at 12% -10%, #fcf8ee 0%, rgba(252,248,238,0) 62%),
+    radial-gradient(700px 500px at 100% 105%, #efe5d1 0%, rgba(239,229,209,0) 60%),
+    var(--paper);
+}
+.phone::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: repeating-linear-gradient(0deg, rgba(90,70,40,.028) 0 1px, transparent 1px 3px);
+}
+.statusbar { color: var(--ink); }
+
+.page { position: relative; height: 725px; padding: 0 22px; overflow: hidden; }
+
+.top { display: flex; align-items: center; justify-content: space-between; height: 34px; margin-top: 10px; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand .mark {
+  width: 27px; height: 27px; border: 1px solid var(--ink); border-radius: 50%;
+  display: grid; place-items: center;
+}
+.brand .mark svg { width: 13px; height: 13px; }
+.brand span:last-child { font-size: 10px; font-weight: 650; letter-spacing: .19em; }
+.icon-btn {
+  width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%;
+  display: grid; place-items: center; background: rgba(252,248,238,.55);
+}
+.icon-btn svg { width: 15px; height: 15px; }
+
+.intro { margin-top: 20px; }
+.kicker {
+  font-size: 9.5px; font-weight: 650; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--olive);
+}
+.intro .kicker { color: var(--muted); }
+.greet {
+  font-family: var(--serif); font-size: 33px; font-weight: 500; line-height: 1.08;
+  letter-spacing: -.015em; margin-top: 5px;
+}
+.greet em { font-style: italic; color: var(--terra); }
+
+.people {
+  margin-top: 15px; display: flex; align-items: center; justify-content: space-between;
+  padding: 4px; border: 1px solid var(--line); border-radius: 99px;
+  background: rgba(252,248,238,.72);
+}
+.person {
+  height: 32px; padding: 0 11px; border-radius: 99px; font-size: 12px;
+  font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px;
+}
+.person i {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--faint); display: block;
+}
+.person.active { background: var(--terra); color: #fbf5e7; }
+.person.active i { background: #f0c9a8; }
+
+.card {
+  position: relative; margin-top: 16px; padding: 21px 21px 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(80,60,30,.08), 0 12px 28px -24px rgba(60,40,20,.5);
+}
+.card::after {
+  content: ""; position: absolute; z-index: -1; left: 7px; right: -6px; top: 7px; bottom: -6px;
+  border: 1px solid #e4d8c3; border-radius: 10px; background: #f1e8d7;
+}
+.card-head { display: flex; align-items: center; justify-content: space-between; }
+.week-tag { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--faint); }
+.chore {
+  font-family: var(--serif); font-size: 53px; font-weight: 500; line-height: 1;
+  letter-spacing: -.03em; margin-top: 8px;
+}
+.desc {
+  font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--muted);
+  margin-top: 5px;
+}
+.rule { height: 1px; margin: 13px 0 12px; background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px); }
+
+.progress-meta { display: flex; align-items: baseline; justify-content: space-between; }
+.progress-meta span:first-child { font-size: 10.5px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+.progress-meta b { font-family: var(--serif); font-size: 16px; font-weight: 600; }
+.progress-meta span:last-child { font-size: 11.5px; color: var(--muted); }
+.segments { display: flex; gap: 4px; margin-top: 6px; }
+.segments i { height: 5px; flex: 1; border-radius: 3px; background: #e6dac4; }
+.segments i.on { background: var(--terra); }
+
+.checklist { margin-top: 6px; }
+.checklist li {
+  display: flex; align-items: center; gap: 12px; min-height: 51px;
+  border-top: 1px dotted var(--line);
+}
+.checklist li:first-child { border-top: 0; }
+.box {
+  width: 25px; height: 25px; flex: none; border: 1.4px solid var(--ink); border-radius: 4px;
+  display: grid; place-items: center; background: transparent;
+}
+.box svg { width: 13px; height: 13px; color: var(--card); }
+.done .box { background: var(--terra); border-color: var(--terra); }
+.label { font-size: 16px; font-weight: 500; flex: 1; }
+.done .label {
+  color: var(--muted); text-decoration: line-through;
+  text-decoration-color: rgba(185,85,47,.55); text-decoration-thickness: 1px;
+}
+.todo .box { background: #fffdf7; box-shadow: inset 0 0 0 1px rgba(255,255,255,.8); }
+.last-note {
+  font-family: var(--hand); font-size: 15px; color: var(--terra-deep);
+  transform: rotate(-1.5deg); white-space: nowrap;
+}
+.tip {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 12px;
+  border-top: 1px dotted var(--line); color: var(--muted);
+}
+.tip svg { width: 14px; height: 14px; flex: none; color: var(--olive); }
+.tip span { font-family: var(--hand); font-size: 15.5px; color: var(--olive); transform: rotate(-.6deg); }
+
+.stamp {
+  position: absolute; top: 43px; right: -7px; width: 104px; height: 104px; border-radius: 50%;
+  border: 2.5px solid rgba(185,85,47,.78); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px; transform: rotate(-11deg);
+  color: rgba(185,85,47,.86); mix-blend-mode: multiply; z-index: 3;
+}
+.stamp::before {
+  content: ""; position: absolute; inset: 6px; border: 1px dashed rgba(185,85,47,.6); border-radius: 50%;
+}
+.stamp-top { font-size: 7.5px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.stamp strong { font-family: var(--serif); font-size: 21px; font-weight: 600; line-height: 1; letter-spacing: -.01em; }
+.stamp-bottom { font-size: 7px; font-weight: 650; letter-spacing: .13em; text-transform: uppercase; margin-top: 2px; }
+
+.day.done.today i { background: var(--terra); border-color: var(--terra); box-shadow: 0 0 0 3px rgba(185,85,47,.14); }
+.day.done.today i::after {
+  content: ""; width: 9px; height: 5px; border-left: 1.6px solid #fbf5e7;
+  border-bottom: 1.6px solid #fbf5e7; transform: rotate(-45deg) translate(1px,-1px);
+  border-radius: 0; background: transparent;
+}
+.done .label { text-decoration-color: rgba(185,85,47,.38); }
+
+.week { margin-top: 15px; }
+.week-head { display: flex; align-items: center; justify-content: space-between; }
+.streak { font-family: var(--hand); font-size: 15px; color: var(--terra); }
+.days { display: flex; justify-content: space-between; margin-top: 7px; }
+.day { width: 38px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.day span { font-size: 9px; font-weight: 650; letter-spacing: .1em; color: var(--faint); }
+.day i {
+  width: 23px; height: 23px; border-radius: 50%; border: 1px solid var(--line);
+  display: grid; place-items: center; font-style: normal; background: rgba(252,248,238,.5);
+}
+.day.done i { background: var(--terra); border-color: var(--terra); }
+.day.done i::after {
+  content: ""; width: 9px; height: 5px; border-left: 1.6px solid #fbf5e7;
+  border-bottom: 1.6px solid #fbf5e7; transform: rotate(-45deg) translate(1px,-1px);
+}
+.day.today i { border-color: var(--terra); border-width: 1.6px; background: #fffaf0; box-shadow: 0 0 0 3px rgba(185,85,47,.1); }
+.day.today i::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--terra); }
+.day.future i { border-style: dashed; border-color: #dfd4c0; }
+.day.today span { color: var(--terra); }
+
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 72px; padding: 8px 26px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  background: linear-gradient(180deg, rgba(246,240,226,0) 0%, #f6f0e2 32%);
+  border-top: 1px solid rgba(220,208,186,.75); z-index: 10;
+}
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 6px 10px; }
+.tab svg { width: 17px; height: 17px; }
+.tab.active { color: var(--ink); }
+.tab.active svg { color: var(--terra); }
+.homebar { background: var(--ink); opacity: .8; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">9:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/>
+      <rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/>
+      <rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/>
+      <rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/>
+      <rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/>
+      <path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="top">
+      <div class="brand">
+        <span class="mark">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.6 7.2 8 2.7l5.4 4.5v5.5a.7.7 0 0 1-.7.7H3.3a.7.7 0 0 1-.7-.7V7.2Z"/>
+            <path d="M6.3 13.4V9.5h3.4v3.9"/>
+          </svg>
+        </span>
+        <span>OUR HOUSE</span>
+      </div>
+      <button class="icon-btn" aria-label="Open calendar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+          <rect x="2.2" y="3.2" width="11.6" height="10.4" rx="1.6"/>
+          <path d="M2.2 6.5h11.6M5.4 1.9v2.6M10.6 1.9v2.6"/>
+        </svg>
+      </button>
+    </header>
+
+    <section class="intro">
+      <div class="kicker">Wednesday, November 25</div>
+      <h1 class="greet"><em>Alex&rsquo;s</em> week</h1>
+    </section>
+
+    <nav class="people" aria-label="Choose a family member">
+      <button class="person active"><i></i>Alex</button>
+      <button class="person"><i></i>Sam</button>
+      <button class="person"><i></i>Riley</button>
+      <button class="person"><i></i>Avery</button>
+    </nav>
+
+    <main class="card">
+      <div class="card-head">
+        <span class="kicker">This week&rsquo;s chore</span>
+        
+      </div>
+      <div class="stamp" aria-label="All done today">
+        <span class="stamp-top">Today</span>
+        <strong>All done</strong>
+        <span class="stamp-bottom">Wed &middot; 25 Nov</span>
+      </div>
+      <h2 class="chore">Kitchen</h2>
+      <p class="desc">Wipe and sweep after dinner.</p>
+      <div class="rule"></div>
+
+      <div class="progress-meta">
+        <span>Today</span>
+        <span><b>3</b> of 3 done</span>
+      </div>
+      <div class="segments" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+
+      <ul class="checklist" aria-label="Today&rsquo;s checklist">
+        <li class="done">
+          <span class="box"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span>
+          <span class="label">Wipe counters</span>
+        </li>
+        <li class="done">
+          <span class="box"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span>
+          <span class="label">Sweep floor</span>
+        </li>
+        <li class="done">
+          <span class="box"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.6 7.3 3 3 5.8-6.4"/></svg></span>
+          <span class="label">Take out trash</span>
+        </li>
+      </ul>
+
+      <div class="tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 1.8l1.8 3.9 4.3.5-3.2 2.9.9 4.2L8 11.1l-3.8 2.2.9-4.2L1.9 6.2l4.3-.5L8 1.8Z"/>
+        </svg>
+        <span>Nice work, Alex. See you tomorrow.</span>
+      </div>
+    </main>
+
+    <section class="week">
+      <div class="week-head">
+        <span class="kicker">This week</span>
+        <span class="streak">three days in a row</span>
+      </div>
+      <div class="days" aria-label="Week of November 23">
+        <div class="day done"><span>MON</span><i></i></div>
+        <div class="day done"><span>TUE</span><i></i></div>
+        <div class="day done today"><span>WED</span><i></i></div>
+        <div class="day future"><span>THU</span><i></i></div>
+        <div class="day future"><span>FRI</span><i></i></div>
+        <div class="day future"><span>SAT</span><i></i></div>
+        <div class="day future"><span>SUN</span><i></i></div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="tabbar" aria-label="App sections">
+    <button class="tab active">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.6 9 2.8l6 4.8v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7Z"/><path d="M7 15.6v-4.4h4v4.4"/></svg>
+      Today
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.6" y="3.6" width="12.8" height="11.8" rx="1.8"/><path d="M2.6 7.2h12.8M6.3 2v3M11.7 2v3"/></svg>
+      Week
+    </button>
+    <button class="tab">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h12M3 9h12M3 13.5h7"/></svg>
+      History
+    </button>
+  </nav>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

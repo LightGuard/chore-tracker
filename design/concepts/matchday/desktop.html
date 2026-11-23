@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matchday — clubhouse</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --cream: #f7f0df; --paper: #fffbf2; --ink: #12140f; --green: #1e6b3f; --deep: #123d27;
+  --orange: #ff5a2b; --gold: #f4c84b; --line: #d8cfbb; --muted: #7d7668;
+  --cond: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body.desk {
+  font-family: var(--sans); color: var(--ink);
+  background-color: var(--cream);
+  background-image: repeating-linear-gradient(0deg, rgba(18,20,15,.022) 0 1px, transparent 1px 34px);
+}
+.dnav { height: 68px; padding: 0 56px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--green); background: var(--paper); }
+.dbrand { display: flex; align-items: center; gap: 9px; }
+.crest { width: 31px; height: 36px; }
+.dclub { font-family: var(--cond); font-size: 19px; font-weight: 800; letter-spacing: .1em; line-height: 1; }
+.dsub { font-family: var(--mono); font-size: 5.8px; letter-spacing: .12em; color: var(--muted); margin-top: 3px; text-transform: uppercase; }
+.dnav nav { display: flex; gap: 24px; align-items: center; }
+.dnav nav a { font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 7px 0; border-bottom: 2px solid transparent; }
+.dnav nav a.active { color: var(--ink); border-bottom-color: var(--orange); }
+.dnav .right { display: flex; align-items: center; gap: 12px; }
+.dnav .date { font-family: var(--mono); font-size: 6px; letter-spacing: .1em; color: var(--muted); text-align: right; line-height: 1.6; }
+.dnav .date b { display: block; color: var(--ink); font-weight: 600; }
+.dnav .avatar { width: 30px; height: 30px; background: var(--green); color: var(--cream); display: grid; place-items: center; font-family: var(--mono); font-size: 7px; font-weight: 600; }
+
+.dmain { width: 1280px; margin: 0 auto; padding-top: 22px; }
+.hero {
+  position: relative; height: 154px; background: var(--green); color: var(--cream);
+  border: 1.5px solid var(--ink); border-radius: 10px; box-shadow: 4px 4px 0 var(--ink);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 28px;
+  overflow: hidden;
+}
+.hero::before { content: ""; position: absolute; width: 360px; height: 360px; border: 1px solid rgba(247,240,223,.14); border-radius: 50%; left: 36%; top: -175px; }
+.hero::after { content: ""; position: absolute; left: 78%; top: -14px; bottom: -14px; border-left: 2px dashed rgba(18,20,15,.45); }
+.hero-left { position: relative; z-index: 1; }
+.matchday-label { font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: rgba(247,240,223,.78); }
+.hero h1 { font-family: var(--cond); font-size: 46px; font-weight: 800; line-height: .9; letter-spacing: .005em; margin-top: 7px; }
+.hero p { font-size: 11.5px; color: rgba(247,240,223,.78); margin-top: 6px; }
+.scorebox { position: relative; z-index: 1; margin-left: auto; width: 228px; background: var(--cream); color: var(--ink); border: 1.5px solid var(--ink); border-radius: 6px; padding: 11px 14px 10px; box-shadow: 2.5px 2.5px 0 rgba(18,20,15,.4); }
+.scorebox .top { display: flex; align-items: baseline; justify-content: space-between; }
+.scorebox .num { font-family: var(--cond); font-size: 53px; font-weight: 800; line-height: .8; letter-spacing: -.01em; }
+.scorebox .num span { font-family: var(--sans); font-size: 19px; font-weight: 500; color: var(--muted); margin: 0 2px; }
+.scorebox .label { font-family: var(--mono); font-size: 5.8px; line-height: 1.6; letter-spacing: .1em; color: var(--muted); text-align: right; text-transform: uppercase; }
+.scorebox .label b { display: block; color: var(--ink); font-weight: 600; }
+.scorebox .pips { display: flex; gap: 4px; margin-top: 7px; }
+.scorebox .pips i { width: 10px; height: 10px; border-radius: 50%; border: 1.2px solid var(--green); }
+.scorebox .pips i.on { background: var(--green); }
+.hero .home { position: absolute; top: 12px; right: 14px; background: var(--orange); color: var(--cream); border: 1.5px solid var(--ink); font-family: var(--mono); font-size: 6px; letter-spacing: .12em; padding: 3px 6px; transform: rotate(-2deg); z-index: 2; }
+
+.cap-row { display: flex; align-items: baseline; justify-content: space-between; margin-top: 18px; }
+.cap-row h2 { font-family: var(--cond); font-size: 20px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.cap-row span { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 9px; }
+.card { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 8px; overflow: hidden; box-shadow: 2.5px 2.5px 0 rgba(18,20,15,.16); height: 266px; display: flex; flex-direction: column; }
+.card.active { box-shadow: 3px 3px 0 var(--ink); }
+.card-head { display: flex; align-items: center; gap: 9px; padding: 10px 12px; background: var(--cream); border-bottom: 1px solid var(--line); }
+.card.active .card-head { background: var(--green); color: var(--cream); border-bottom-color: var(--green); }
+.jersey { font-family: var(--mono); font-size: 6px; color: var(--muted); }
+.card.active .jersey { color: rgba(247,240,223,.65); }
+.initial { width: 26px; height: 26px; border: 1.5px solid var(--ink); border-radius: 50%; display: grid; place-items: center; font-family: var(--cond); font-size: 14px; font-weight: 800; background: var(--paper); color: var(--ink); }
+.card.active .initial { background: var(--cream); }
+.pname { font-family: var(--cond); font-size: 16px; font-weight: 800; letter-spacing: .06em; flex: 1; }
+.pstate { font-family: var(--mono); font-size: 5.5px; letter-spacing: .08em; color: var(--green); }
+.card.active .pstate { color: var(--gold); }
+.card-body { padding: 10px 13px 0; flex: 1; display: flex; flex-direction: column; }
+.card-foot { margin-top: auto; border-top: 1px dashed var(--line); padding: 7px 0 9px; display: flex; align-items: center; justify-content: space-between; }
+.card-foot .wk { font-family: var(--mono); font-size: 5.2px; letter-spacing: .1em; color: var(--muted); }
+.card-foot .dots { display: flex; gap: 3px; }
+.card-foot .dots i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--line); display: block; }
+.card-foot .dots i.full { background: var(--green); border-color: var(--green); }
+.card-foot .dots i.part { background: #fff1e6; border-color: var(--orange); }
+.card-foot .dots i.none { border-style: dashed; border-color: #d7cbb5; }
+.card-foot .num { font-family: var(--mono); font-size: 5.2px; letter-spacing: .06em; color: var(--muted); }
+.card-foot .num b { color: var(--ink); font-weight: 600; }
+.chore-k { font-family: var(--mono); font-size: 5.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.chore-name { font-family: var(--cond); font-size: 27px; font-weight: 800; line-height: .95; letter-spacing: .01em; margin-top: 3px; }
+.chore-desc { font-size: 9.5px; color: var(--muted); margin-top: 3px; }
+.score-row { display: flex; align-items: baseline; justify-content: space-between; margin-top: 7px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.score-row b { font-family: var(--cond); font-size: 24px; font-weight: 800; }
+.score-row b span { font-family: var(--sans); font-size: 11px; color: var(--muted); font-weight: 500; }
+.score-row .left { font-family: var(--mono); font-size: 5.5px; letter-spacing: .1em; color: var(--orange); }
+.score-row .left.done { color: var(--green); }
+.mini { display: flex; flex-direction: column; }
+.mini-row { display: flex; align-items: center; gap: 7px; height: 23px; border-bottom: 1px dotted var(--line); font-size: 9.5px; color: var(--muted); }
+.mini-row:last-child { border-bottom: 0; }
+.mini-row .mc { width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--green); display: grid; place-items: center; flex: none; }
+.mini-row.done .mc { background: var(--green); color: var(--cream); }
+.mini-row.done .mc svg { width: 7px; height: 7px; }
+.mini-row.done span { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(30,107,63,.35); }
+.mini-row.open { color: var(--ink); }
+.mini-row .st { margin-left: auto; font-family: var(--mono); font-size: 4.8px; letter-spacing: .08em; color: var(--green); }
+.mini-row.open .st { color: var(--orange); }
+
+.form { margin-top: 16px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 8px; box-shadow: 2.5px 2.5px 0 rgba(18,20,15,.16); padding: 12px 16px 10px; }
+.formhead { display: flex; align-items: baseline; justify-content: space-between; }
+.formhead h2 { font-family: var(--cond); font-size: 18px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.formhead .meta { font-family: var(--mono); font-size: 6px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+.legend { display: flex; gap: 12px; align-items: center; font-family: var(--mono); font-size: 5.5px; letter-spacing: .06em; color: var(--muted); }
+.legend span { display: flex; align-items: center; gap: 4px; }
+.legend i { width: 8px; height: 8px; border-radius: 50%; display: block; border: 1px solid var(--line); }
+.legend i.full { background: var(--green); border-color: var(--green); }
+.legend i.part { border-color: var(--orange); background: #fff1e7; }
+.legend i.none { border-style: dashed; }
+.fgrid { display: grid; grid-template-columns: 160px repeat(7, 1fr) 64px; align-items: center; margin-top: 7px; row-gap: 0; }
+.fhead { height: 27px; border-bottom: 1px solid var(--ink); }
+.fhead span { font-family: var(--mono); font-size: 6.2px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+.fhead.dayh { text-align: center; display: flex; align-items: baseline; justify-content: center; gap: 4px; }
+.fhead.dayh b { display: inline; font-family: var(--cond); font-size: 10px; font-weight: 700; color: var(--ink); margin-top: 0; }
+.fhead.dayh.today { color: var(--orange); }
+.fhead.dayh.today b { color: var(--orange); }
+.fhead.totalh { text-align: right; padding-right: 4px; }
+.frow { display: contents; }
+.frow > div { height: 32px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
+.fchild { gap: 7px; font-size: 10.5px; font-weight: 500; }
+.fchild .fi { width: 18px; height: 18px; border-radius: 50%; background: var(--green); color: var(--cream); display: grid; place-items: center; font-family: var(--cond); font-size: 9px; font-weight: 800; flex: none; }
+.fcell { justify-content: center; }
+.fcell.today { background: #fff5e8; }
+.fdot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; }
+.fdot.full { background: var(--green); border-color: var(--green); }
+.fdot.full::after { content: ""; width: 6px; height: 3.5px; border-left: 1.2px solid var(--cream); border-bottom: 1.2px solid var(--cream); transform: rotate(-45deg) translate(0,-1px); }
+.fdot.part { border-color: var(--orange); background: #fff4e9; }
+.fdot.part::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--orange); }
+.fdot.none { border-style: dashed; border-color: #d7cbb5; }
+.ftotal { justify-content: flex-end; padding-right: 4px; font-family: var(--mono); font-size: 6.5px; color: var(--muted); }
+.ftotal b { color: var(--ink); font-weight: 600; margin-right: 2px; }
+
+.dfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 11px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); }
+.tabbar, .homebar { display: none; }
+</style>
+</head>
+<body class="desk">
+  <header class="dnav">
+    <div class="dbrand">
+      <svg class="crest" viewBox="0 0 34 39" fill="none" aria-hidden="true">
+        <path d="M17 1.5 32 7v13.2c0 8.3-6.1 14.1-15 17.3C8.1 34.3 2 28.5 2 20.2V7L17 1.5Z" fill="#1e6b3f" stroke="#12140f" stroke-width="2"/>
+        <path d="M17 6.4 27.6 10v9.7c0 5.9-4.3 10.1-10.6 12.5C10.7 29.8 6.4 25.6 6.4 19.7V10L17 6.4Z" fill="#fffbf2" stroke="#12140f" stroke-width="1"/>
+        <path d="m11.7 18.8 3.2 3.3 6.6-7" stroke="#1e6b3f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div><div class="dclub">HOME TEAM</div><div class="dsub">Chore tracker &middot; clubhouse</div></div>
+    </div>
+    <nav>
+      <a class="active" href="#">Today</a>
+      <a href="#">Form</a>
+      <a href="#">Reports</a>
+      <a href="#">Squad</a>
+    </nav>
+    <div class="right">
+      <span class="date">WED 25 NOV 2026<b>WEEK 48 &middot; MATCHDAY 48</b></span>
+      <span class="avatar">JP</span>
+    </div>
+  </header>
+
+  <main class="dmain">
+    <section class="hero">
+      <span class="home">HOME</span>
+      <div class="hero-left">
+        <div class="matchday-label">Matchday 48 &middot; Wednesday 25 November</div>
+        <h1>ALL FOUR AT HOME.</h1>
+        <p>Today&rsquo;s team sheet, live from the kitchen.</p>
+      </div>
+      <div class="scorebox">
+        <div class="top">
+          <div class="num">7<span>/11</span></div>
+          <div class="label">Tasks done today<b>4 to go</b></div>
+        </div>
+        <div class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <div class="cap-row">
+      <h2>The team sheet</h2>
+      <span>Today &middot; every player, one screen</span>
+    </div>
+
+    <section class="cards">
+      <article class="card active">
+        <div class="card-head"><span class="jersey">09</span><span class="initial">A</span><span class="pname">ALEX</span><span class="pstate">ON IT</span></div>
+        <div class="card-body">
+          <div class="chore-name">KITCHEN</div>
+          <div class="chore-desc">Wipe and sweep after dinner.</div>
+          <div class="score-row"><b>2<span>/3</span></b><span class="left">1 LEFT</span></div>
+          <div class="mini">
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Wipe counters</span><span class="st">DONE</span></div>
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Sweep floor</span><span class="st">DONE</span></div>
+            <div class="mini-row open"><span class="mc"></span><span>Take out trash</span><span class="st">NEXT</span></div>
+          <div class="card-foot"><span class="wk">THIS WEEK</span><div class="dots"><i class="full"></i><i class="full"></i><i class="part"></i><i class="none"></i><i class="none"></i><i class="none"></i><i class="none"></i></div><span class="num"><b>2</b> / 7</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><span class="jersey">07</span><span class="initial">S</span><span class="pname">SAM</span><span class="pstate">ON IT</span></div>
+        <div class="card-body">
+          <div class="chore-name">BATHROOM</div>
+          <div class="chore-desc">Clean the bathroom.</div>
+          <div class="score-row"><b>1<span>/2</span></b><span class="left">1 LEFT</span></div>
+          <div class="mini">
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Clean sink</span><span class="st">DONE</span></div>
+            <div class="mini-row open"><span class="mc"></span><span>Scrub tub</span><span class="st">NEXT</span></div>
+          <div class="card-foot"><span class="wk">THIS WEEK</span><div class="dots"><i class="full"></i><i class="part"></i><i class="part"></i><i class="none"></i><i class="none"></i><i class="none"></i><i class="none"></i></div><span class="num"><b>1</b> / 7</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><span class="jersey">11</span><span class="initial">R</span><span class="pname">RILEY</span><span class="pstate">FULL TIME</span></div>
+        <div class="card-body">
+          <div class="chore-name">YARD</div>
+          <div class="chore-desc">Maintain the yard.</div>
+          <div class="score-row"><b>2<span>/2</span></b><span class="left done">ALL DONE</span></div>
+          <div class="mini">
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Mow lawn</span><span class="st">DONE</span></div>
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Rake leaves</span><span class="st">DONE</span></div>
+          <div class="card-foot"><span class="wk">THIS WEEK</span><div class="dots"><i class="full"></i><i class="full"></i><i class="full"></i><i class="none"></i><i class="none"></i><i class="none"></i><i class="none"></i></div><span class="num"><b>3</b> / 7</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><span class="jersey">04</span><span class="initial">A</span><span class="pname">AVERY</span><span class="pstate">FULL TIME</span></div>
+        <div class="card-body">
+          <div class="chore-name">LAUNDRY</div>
+          <div class="chore-desc">Wash and fold clothes.</div>
+          <div class="score-row"><b>2<span>/2</span></b><span class="left done">ALL DONE</span></div>
+          <div class="mini">
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Wash clothes</span><span class="st">DONE</span></div>
+            <div class="mini-row done"><span class="mc"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span><span>Fold clothes</span><span class="st">DONE</span></div>
+          <div class="card-foot"><span class="wk">THIS WEEK</span><div class="dots"><i class="full"></i><i class="full"></i><i class="full"></i><i class="none"></i><i class="none"></i><i class="none"></i><i class="none"></i></div><span class="num"><b>3</b> / 7</span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="form">
+      <div class="formhead">
+        <h2>Form guide</h2>
+        <div class="legend">
+          <span><i class="full"></i>Complete</span>
+          <span><i class="part"></i>Partial</span>
+          <span><i class="none"></i>Upcoming</span>
+          <span class="meta">WEEK 48 &middot; NOV 23&ndash;29</span>
+        </div>
+      </div>
+      <div class="fgrid">
+        <div class="fhead"><span>Player</span></div>
+        <div class="fhead dayh"><span>MON</span><b>23</b></div>
+        <div class="fhead dayh"><span>TUE</span><b>24</b></div>
+        <div class="fhead dayh today"><span>WED</span><b>25</b></div>
+        <div class="fhead dayh"><span>THU</span><b>26</b></div>
+        <div class="fhead dayh"><span>FRI</span><b>27</b></div>
+        <div class="fhead dayh"><span>SAT</span><b>28</b></div>
+        <div class="fhead dayh"><span>SUN</span><b>29</b></div>
+        <div class="fhead totalh"><span>DAYS</span></div>
+
+        <div class="frow">
+          <div class="fchild"><span class="fi">A</span>Alex</div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell today"><span class="fdot part"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="ftotal"><b>2</b>/7</div>
+        </div>
+        <div class="frow">
+          <div class="fchild"><span class="fi">S</span>Sam</div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot part"></span></div>
+          <div class="fcell today"><span class="fdot part"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="ftotal"><b>1</b>/7</div>
+        </div>
+        <div class="frow">
+          <div class="fchild"><span class="fi">R</span>Riley</div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell today"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="ftotal"><b>3</b>/7</div>
+        </div>
+        <div class="frow">
+          <div class="fchild"><span class="fi">A</span>Avery</div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot full"></span></div>
+          <div class="fcell today"><span class="fdot full"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="fcell"><span class="fdot none"></span></div>
+          <div class="ftotal"><b>3</b>/7</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="dfoot">
+      <span>MATCHDAY 48 &middot; WEEK 48 &middot; 2026</span>
+      <span>THE WHOLE SQUAD &middot; ONE SCREEN</span>
+    </div>
+  </main>
+</body>
+</html>

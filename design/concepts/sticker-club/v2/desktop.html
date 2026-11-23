@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Club v2 — desktop</title>
+<style>
+:root {
+  --cream: #fff9ec; --paper: #fffdf6; --ink: #202033; --blue: #2f53ff; --sky: #dce6ff;
+  --yellow: #ffd447; --coral: #ff6b4a; --mint: #7be0b0; --lilac: #c9b8ff; --pink: #ff9ac5;
+  --muted: #6d6b80; --line: #202033;
+  --round: "Arial Rounded MT Bold", "Avenir Next", "Helvetica Neue", sans-serif;
+  --sans: "Avenir Next", "Helvetica Neue", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1440px; height: 900px; overflow: hidden; }
+body { font-family: var(--sans); color: var(--ink); background-color: var(--cream); background-image: radial-gradient(#e7dcc3 1.15px, transparent 1.15px); background-size: 24px 24px; }
+.nav { height: 66px; padding: 0 56px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--ink); background: rgba(255,249,236,.9); }
+.brand { display: flex; align-items: baseline; gap: 7px; }
+.brand b { font-family: var(--round); font-size: 19px; letter-spacing: -.02em; }
+.brand b span { background: var(--blue); color: #fff; padding: 2px 5px 1px; display: inline-block; transform: rotate(-2deg); }
+.brand em { font-family: var(--mono); font-size: 6px; font-style: normal; letter-spacing: .1em; color: var(--muted); }
+.navlinks { display: flex; gap: 6px; }
+.navlinks span { font-family: var(--round); font-size: 9px; padding: 7px 12px; border: 2px solid transparent; border-radius: 99px; color: var(--muted); }
+.navlinks span.on { background: var(--yellow); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ink); color: var(--ink); }
+.navright { display: flex; align-items: center; gap: 12px; }
+.count { font-family: var(--round); font-size: 10px; background: var(--yellow); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); border-radius: 4px; padding: 6px 9px; transform: rotate(1deg); }
+.count b { font-size: 14px; }
+.miniwho { font-family: var(--round); font-size: 9px; color: var(--blue); border-bottom: 2px solid var(--blue); }
+
+.main { width: 1280px; margin: 0 auto; padding-top: 22px; }
+.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; }
+.kicker { font-family: var(--mono); font-size: 7px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.hero h1 { font-family: var(--round); font-size: 45px; line-height: .95; letter-spacing: -.03em; margin-top: 7px; }
+.hero h1 em { font-style: normal; color: var(--blue); }
+.hero p { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 7px; }
+.hero p b { color: var(--ink); }
+.herostat { flex: none; display: flex; align-items: center; gap: 12px; border: 2px solid var(--ink); border-radius: 12px; background: var(--yellow); padding: 9px 13px; box-shadow: 4px 4px 0 var(--ink); transform: rotate(-.6deg); }
+.herostat .big { font-family: var(--round); font-size: 35px; line-height: .8; }
+.herostat .big span { font-size: 12px; color: #6b5210; }
+.herostat .copy { font-family: var(--mono); font-size: 5.5px; line-height: 1.6; letter-spacing: .05em; text-transform: uppercase; color: #6b5210; }
+.herostat .copy b { display: block; font-family: var(--round); font-size: 9px; color: var(--ink); letter-spacing: 0; text-transform: none; }
+
+.roster { display: grid; grid-template-columns: repeat(7, 1fr); gap: 9px; margin-top: 16px; }
+.kid { position: relative; border: 2px solid var(--ink); border-radius: 8px; background: var(--c); box-shadow: 2px 2px 0 var(--ink); padding: 7px 8px 6px; transform: rotate(var(--t)); }
+.kid .kini { font-family: var(--round); font-size: 17px; line-height: .9; }
+.kid .kname { font-family: var(--round); font-size: 8px; margin-top: 2px; }
+.kid .kmeta { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; font-family: var(--mono); font-size: 5px; letter-spacing: .05em; color: #5f5b73; text-transform: uppercase; }
+.kid .kbar { height: 3px; background: rgba(32,32,51,.15); margin-top: 3px; }
+.kid .kbar i { display: block; height: 100%; width: var(--p); background: var(--ink); }
+.kid.on { outline: 2px solid var(--ink); outline-offset: 2px; transform: translateY(-3px) rotate(0); box-shadow: 3px 4px 0 var(--ink); }
+.kid.on::after { content: "YOU"; position: absolute; top: -7px; right: -4px; background: var(--ink); color: #fff; font-family: var(--round); font-size: 4.5px; letter-spacing: .08em; padding: 2px 3px; border-radius: 2px; transform: rotate(5deg); }
+.kidnote { grid-column: 1 / -1; font-family: var(--mono); font-size: 5.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: right; margin-top: -2px; }
+
+.grid { display: grid; grid-template-columns: 780px 1fr; gap: 18px; margin-top: 12px; }
+.panel { border: 2px solid var(--ink); background: var(--paper); border-radius: 15px; box-shadow: 4px 4px 0 var(--ink); }
+.chore { position: relative; height: 151px; overflow: hidden; background: var(--blue); color: #fff; padding: 12px 15px; }
+.chore::before { content: ""; position: absolute; right: -45px; top: -80px; width: 220px; height: 220px; border: 22px solid rgba(255,255,255,.1); border-radius: 50%; }
+.chore .ctop { display: flex; justify-content: space-between; align-items: center; }
+.chore .tag { background: var(--yellow); color: var(--ink); border: 2px solid var(--ink); font-family: var(--round); font-size: 7px; letter-spacing: .07em; text-transform: uppercase; padding: 3px 6px; transform: rotate(-1.5deg); }
+.chore .wk { font-family: var(--mono); font-size: 6px; letter-spacing: .08em; color: #c8d3ff; text-transform: uppercase; }
+.chore h2 { font-family: var(--round); font-size: 58px; line-height: .9; letter-spacing: -.03em; margin-top: 5px; }
+.chore .cdesc { font-size: 10px; font-weight: 600; color: #dbe2ff; margin-top: 2px; }
+.chore .cprog { display: flex; align-items: flex-end; gap: 9px; margin-top: 7px; }
+.chore .cprog .big { font-family: var(--round); font-size: 25px; line-height: .8; }
+.chore .cprog .big span { font-size: 10px; color: #c8d3ff; }
+.chore .bars { display: flex; gap: 3px; padding-bottom: 1px; }
+.chore .bars i { width: 16px; height: 6px; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.2); transform: skewX(-12deg); }
+.chore .bars i.on { background: var(--yellow); border-color: var(--yellow); }
+.chore .lab { margin-left: auto; font-family: var(--mono); font-size: 5.5px; letter-spacing: .06em; color: #c8d3ff; text-transform: uppercase; padding-bottom: 2px; }
+
+.listhead { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 14px 0; }
+.listhead .l { font-family: var(--round); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.listhead .r { font-family: var(--mono); font-size: 5.5px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.listwrap { position: relative; height: 307px; margin: 5px 14px 0; padding-right: 10px; }
+.list { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; scrollbar-width: none; }
+.list::-webkit-scrollbar { display: none; }
+.listrail { position: absolute; right: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 4px; background: #e7dcc6; }
+.listrail i { position: absolute; left: 0; right: 0; top: 0; height: 58%; background: var(--blue); border-radius: 4px; }
+.listfade { position: absolute; left: 0; right: 10px; bottom: 0; height: 25px; background: linear-gradient(180deg, rgba(255,253,246,0), var(--paper)); pointer-events: none; }
+.job { flex: none; min-height: 53px; display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: var(--paper); border: 2px solid var(--ink); border-radius: 9px; box-shadow: 2px 2px 0 var(--ink); }
+.job .num { font-family: var(--round); font-size: 16px; color: #b8ae98; width: 24px; }
+.job .jt { flex: 1; font-family: var(--round); font-size: 11px; line-height: 1.15; }
+.job .st { font-family: var(--mono); font-size: 5.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.job .box { width: 21px; height: 21px; border: 2px solid var(--ink); border-radius: 4px; display: grid; place-items: center; background: #fff; font-family: var(--round); font-size: 13px; color: transparent; }
+.job.done { background: #e8fff4; }
+.job.done .jt { color: #646176; text-decoration: line-through; text-decoration-color: rgba(47,83,255,.4); }
+.job.done .st { color: #2a8b63; }
+.job.done .box { background: var(--yellow); color: var(--ink); }
+.job.next { background: #fff3ec; box-shadow: 3px 3px 0 var(--coral); }
+.job.next .st { color: var(--coral); }
+.job.next .num { color: var(--coral); }
+.job.next .box { border-color: var(--coral); }
+.listfoot { display: flex; align-items: center; gap: 10px; padding: 7px 14px 10px; }
+.listfoot .cta { height: 41px; border: 2px solid var(--ink); border-radius: 9px; background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); font-family: var(--round); font-size: 11px; padding: 0 16px; }
+.listfoot .note { font-family: var(--mono); font-size: 5.5px; color: var(--muted); line-height: 1.6; text-transform: uppercase; letter-spacing: .04em; }
+
+.side { display: flex; flex-direction: column; gap: 12px; }
+.sheet { height: 300px; padding: 12px 14px; }
+.shead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 7px; border-bottom: 2px solid var(--ink); }
+.shead h3 { font-family: var(--round); font-size: 15px; letter-spacing: -.01em; }
+.shead span { font-family: var(--mono); font-size: 5.5px; letter-spacing: .05em; color: var(--muted); text-transform: uppercase; }
+.srow { display: grid; grid-template-columns: 27px 1fr 58px 42px; align-items: center; gap: 7px; height: 33px; border-bottom: 1px solid #eadfc9; }
+.srow .ini { font-family: var(--round); font-size: 10px; color: var(--blue); }
+.srow .nm { font-family: var(--round); font-size: 8.5px; }
+.srow .bar { height: 6px; background: #ede3ce; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; }
+.srow .bar i { display: block; height: 100%; width: var(--p); background: var(--yellow); border-right: 1px solid var(--ink); }
+.srow .n { font-family: var(--mono); font-size: 5.5px; color: var(--muted); text-align: right; }
+.srow:last-of-type { border-bottom: 0; }
+.sfoot { display: flex; align-items: baseline; justify-content: space-between; margin-top: 5px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.sfoot b { color: var(--ink); }
+.poster { position: relative; overflow: hidden; height: 132px; padding: 13px 15px; background: var(--coral); color: var(--ink); }
+.poster .pk { font-family: var(--mono); font-size: 5.5px; letter-spacing: .09em; text-transform: uppercase; color: #63200f; }
+.poster .pb { font-family: var(--round); font-size: 24px; line-height: .95; letter-spacing: -.025em; margin-top: 5px; }
+.poster .pb span { color: #fff; }
+.poster .circle { position: absolute; right: 16px; bottom: 14px; width: 45px; height: 45px; border: 4px solid var(--ink); border-radius: 50%; }
+.poster .bar { position: absolute; right: 30px; top: 16px; width: 31px; height: 7px; background: var(--ink); transform: rotate(-15deg); }
+.week { height: 80px; padding: 9px 14px; }
+.week .whead { display: flex; justify-content: space-between; align-items: baseline; }
+.week .whead b { font-family: var(--round); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.week .whead span { font-family: var(--mono); font-size: 5.5px; color: var(--muted); text-transform: uppercase; }
+.week .wdays { display: flex; justify-content: space-between; margin-top: 8px; }
+.week .wdays span { width: 31px; height: 24px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 5px; font-family: var(--round); font-size: 7px; background: var(--paper); }
+.week .wdays .on { background: var(--mint); }
+.week .wdays .today { background: var(--yellow); box-shadow: 2px 2px 0 var(--ink); transform: translateY(-1px); }
+.week .wdays .future { border-style: dashed; color: #b8ae98; }
+.foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #d5c8b1; font-family: var(--mono); font-size: 5.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.foot b { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand"><b>CHORE <span>CLUB</span></b><em>NO. 02 / V2</em></div>
+    <nav class="navlinks"><span class="on">Today</span><span>Sticker chart</span><span>Family</span></nav>
+    <div class="navright"><span class="count"><b>12</b> STICKERS</span><span class="miniwho">ALEX</span></div>
+  </header>
+
+  <main class="main">
+    <div class="hero">
+      <div>
+        <div class="kicker">Stress test &middot; 7 kids &middot; 6 jobs &middot; Week 48</div>
+        <h1>Seven kids. <em>One sticker sheet.</em></h1>
+        <p><b>No pictograms anywhere.</b> Names, numbers, type, color, and stickers do all the work.</p>
+      </div>
+      <div class="herostat"><div class="big">2<span>/6</span></div><div class="copy">Kitchen jobs done<b>4 to go &middot; 1 sticker</b></div></div>
+    </div>
+
+    <div class="roster">
+      <div class="kid on" style="--c:#dce6ff;--t:-1.5deg;--p:38%"><div class="kini">A</div><div class="kname">Alex</div><div class="kmeta"><span>2 / 6</span><span>today</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#ffd7cd;--t:1deg;--p:20%"><div class="kini">S</div><div class="kname">Sam</div><div class="kmeta"><span>1 / 6</span><span>today</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#c9f5df;--t:-1deg;--p:100%"><div class="kini">R</div><div class="kname">Riley</div><div class="kmeta"><span>6 / 6</span><span>done</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#e6d9ff;--t:1.6deg;--p:100%"><div class="kini">AV</div><div class="kname">Avery</div><div class="kmeta"><span>6 / 6</span><span>done</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#ffeaa8;--t:-1.2deg;--p:47%"><div class="kini">M</div><div class="kname">Mia</div><div class="kmeta"><span>3 / 6</span><span>today</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#cdeff5;--t:1.2deg;--p:22%"><div class="kini">N</div><div class="kname">Noah</div><div class="kmeta"><span>1 / 6</span><span>today</span></div><div class="kbar"><i></i></div></div>
+      <div class="kid" style="--c:#ffd9e7;--t:-1deg;--p:14%"><div class="kini">Z</div><div class="kname">Zoe</div><div class="kmeta"><span>0 / 6</span><span>today</span></div><div class="kbar"><i></i></div></div>
+      <div class="kidnote">7 in the club &middot; pick a name, no avatars</div>
+    </div>
+
+    <div class="grid">
+      <section>
+        <div class="panel chore">
+          <div class="ctop"><span class="tag">Today&rsquo;s chore</span><span class="wk">Week 48 &middot; 02 / 06</span></div>
+          <h2>Kitchen</h2>
+          <p class="cdesc">Six little jobs after dinner. Scroll the list; the sticker waits at the bottom.</p>
+          <div class="cprog"><span class="big">2<span>/6</span></span><div class="bars"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div><span class="lab">2 done &middot; 4 to go</span></div>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <div class="listhead"><span class="l">The jobs</span><span class="r">6 jobs &middot; fixed window &middot; scrolls</span></div>
+          <div class="listwrap">
+            <div class="list">
+              <div class="job done"><span class="num">01</span><span class="jt">Clear the table</span><span class="st">Done</span><span class="box">&#10003;</span></div>
+              <div class="job done"><span class="num">02</span><span class="jt">Wipe down the cabinet fronts</span><span class="st">Done</span><span class="box">&#10003;</span></div>
+              <div class="job next"><span class="num">03</span><span class="jt">Sweep the floor</span><span class="st">Next</span><span class="box"></span></div>
+              <div class="job"><span class="num">04</span><span class="jt">Take the recycling to the curb</span><span class="st">Open</span><span class="box"></span></div>
+              <div class="job"><span class="num">05</span><span class="jt">Wipe the stovetop</span><span class="st">Open</span><span class="box"></span></div>
+              <div class="job"><span class="num">06</span><span class="jt">Refill the soap dispenser</span><span class="st">Open</span><span class="box"></span></div>
+            </div>
+            <div class="listrail"><i></i></div>
+            <div class="listfade"></div>
+          </div>
+          <div class="listfoot"><button class="cta">Finish 4 jobs</button><span class="note">One chore, six jobs.<br>All six fill one sticker.</span></div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel sheet">
+          <div class="shead"><h3>The sticker sheet</h3><span>Week 48</span></div>
+          <div class="srow"><span class="ini">A</span><span class="nm">Alex</span><div class="bar"><i style="width:38%"></i></div><span class="n">2 / 6</span></div>
+          <div class="srow"><span class="ini">S</span><span class="nm">Sam</span><div class="bar"><i style="width:20%"></i></div><span class="n">1 / 6</span></div>
+          <div class="srow"><span class="ini">R</span><span class="nm">Riley</span><div class="bar"><i style="width:100%"></i></div><span class="n">6 / 6</span></div>
+          <div class="srow"><span class="ini">AV</span><span class="nm">Avery</span><div class="bar"><i style="width:100%"></i></div><span class="n">6 / 6</span></div>
+          <div class="srow"><span class="ini">M</span><span class="nm">Mia</span><div class="bar"><i style="width:47%"></i></div><span class="n">3 / 6</span></div>
+          <div class="srow"><span class="ini">N</span><span class="nm">Noah</span><div class="bar"><i style="width:22%"></i></div><span class="n">1 / 6</span></div>
+          <div class="srow"><span class="ini">Z</span><span class="nm">Zoe</span><div class="bar"><i style="width:14%"></i></div><span class="n">0 / 6</span></div>
+          <div class="sfoot"><span><b>7 kids</b> &middot; one sheet</span><span>No pictograms</span></div>
+        </section>
+
+        <section class="panel poster">
+          <div class="pk">The only rule</div>
+          <div class="pb">Do the job.<br><span>Take the sticker.</span></div>
+          <span class="circle"></span><span class="bar"></span>
+        </section>
+
+        <section class="panel week">
+          <div class="whead"><b>This week</b><span>2 / 7 days</span></div>
+          <div class="wdays"><span class="on">M</span><span class="on">T</span><span class="today">W</span><span class="future">T</span><span class="future">F</span><span class="future">S</span><span class="future">S</span></div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="foot"><span>Sticker Club v2 &middot; <b>stress test</b> &middot; 7 children / 6 jobs</span><span>No person, chore, or subtype pictograms</span></div>
+  </main>
+</body>
+</html>

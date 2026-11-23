@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger — phone</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+:root {
+  --paper: #f7f3e8; --paper2: #fbf8f0; --ink: #111110; --muted: #706a5e; --faint: #999183;
+  --line: #d8d1c2; --blue: #1e3bff; --acid: #e6fa4a; --red: #df4b2a;
+  --serif: "Bodoni 72", Didot, "Times New Roman", serif;
+  --sans: "Helvetica Neue", "Avenir Next", sans-serif; --mono: Menlo, "SF Mono", monospace;
+}
+body {
+  font-family: var(--sans); color: var(--ink);
+  background:
+    radial-gradient(420px 320px at 92% -8%, #fdfbf4 0%, rgba(253,251,244,0) 70%),
+    linear-gradient(180deg, #f8f4ea 0%, #f4efe3 100%);
+}
+.phone::before {
+  content: "48"; position: absolute; right: 14px; top: 56px; font-family: var(--serif);
+  font-size: 132px; line-height: 1; color: rgba(17,17,16,.045); pointer-events: none; letter-spacing: -.05em;
+}
+.statusbar { color: var(--ink); }
+.page { position: relative; min-height: calc(844px - 47px); padding: 0 22px 24px; }
+.mono { font-family: var(--mono); font-size: 7.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
+
+.masthead { display: flex; align-items: center; justify-content: space-between; height: 26px; margin-top: 8px; }
+.masthead .brand { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 7.5px; font-weight: 600; letter-spacing: .16em; }
+.masthead .brand::before { content: ""; width: 6px; height: 6px; background: var(--blue); display: block; }
+.masthead .issue { font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--muted); }
+.rule { height: 1px; background: var(--ink); margin-top: 5px; }
+
+.topnav { display: flex; align-items: center; gap: 17px; margin-top: 11px; }
+.topnav a { font-family: var(--mono); font-size: 7px; letter-spacing: .14em; color: var(--faint); text-decoration: none; padding-bottom: 3px; }
+.topnav a.active { color: var(--ink); border-bottom: 1.5px solid var(--blue); }
+.topnav .vol { margin-left: auto; font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--faint); }
+
+.people { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
+.person { font-family: var(--mono); font-size: 7.5px; letter-spacing: .12em; color: var(--muted); padding: 5px 7px; }
+.person.active { background: var(--ink); color: var(--paper2); }
+.person + .person::before { content: "/"; color: var(--line); margin-right: 9px; }
+.person.active + .person::before { margin-left: -9px; }
+
+.hero { margin-top: 21px; }
+.eyebrow { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 7px; font-weight: 600; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+.eyebrow::before { content: ""; width: 15px; height: 1px; background: var(--blue); }
+.hero h1 { font-family: var(--serif); font-size: 76px; font-weight: 400; line-height: .88; letter-spacing: -.035em; margin-top: 7px; }
+.hero .desc { font-family: var(--serif); font-style: italic; font-size: 15.5px; color: var(--muted); margin-top: 10px; }
+
+.stats { display: block; margin-top: 19px; padding-top: 12px; border-top: 1px solid var(--line); }
+.score { display: flex; align-items: flex-end; gap: 15px; }
+.big { font-family: var(--serif); font-size: 88px; line-height: .78; letter-spacing: -.055em; }
+.big span { font-family: var(--serif); font-size: 26px; letter-spacing: 0; margin-left: 1px; }
+.scorecopy { padding-bottom: 5px; }
+.scorecopy .k { font-family: var(--mono); font-size: 6.5px; letter-spacing: .14em; color: var(--muted); }
+.scorecopy p { font-size: 9.5px; line-height: 1.5; color: var(--muted); margin-top: 4px; }
+.scorecopy p b { color: var(--ink); font-weight: 600; }
+.week { width: 100%; margin-top: 17px; }
+.weekhead { display: flex; align-items: baseline; justify-content: space-between; font-family: var(--mono); font-size: 6.5px; letter-spacing: .1em; color: var(--faint); }
+.weekhead b { color: var(--ink); font-weight: 600; }
+.weekcells { display: flex; justify-content: space-between; margin-top: 8px; }
+.wd { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.wd span { font-family: var(--mono); font-size: 6px; letter-spacing: .06em; color: var(--faint); }
+.wd i { width: 20px; height: 20px; border: 1px solid var(--line); display: grid; place-items: center; }
+.wd.done i { background: var(--blue); border-color: var(--blue); }
+.wd.done i::after { content: ""; width: 5px; height: 2.5px; border-left: 1px solid #fff; border-bottom: 1px solid #fff; transform: rotate(-45deg) translate(0,-1px); }
+.wd.today i { background: var(--ink); border-color: var(--ink); }
+.wd.today i::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--paper2); }
+.wd.today span { color: var(--ink); }
+.wd.future i { border-color: #e2dccd; background: rgba(255,255,255,.3); }
+
+.checklist { margin-top: 18px; }
+.chead { display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px; border-bottom: 1px solid var(--ink); }
+.chead span { font-family: var(--mono); font-size: 6.5px; font-weight: 600; letter-spacing: .15em; color: var(--muted); }
+.chead span:last-child { padding-right: 3px; }
+.checklist ol { list-style: none; }
+.checklist li { position: relative; display: flex; align-items: center; gap: 10px; height: 56px; border-bottom: 1px solid var(--line); }
+.checklist li.open { border-left: 2px solid var(--blue); margin-left: -2px; padding-left: 10px; }
+.checklist .num { font-family: var(--mono); font-size: 7px; letter-spacing: .04em; color: var(--faint); width: 15px; }
+.checklist .label { flex: 1; font-size: 15.5px; letter-spacing: -.01em; }
+.checklist li.done .label { color: var(--muted); }
+.checklist .status { font-family: var(--mono); font-size: 6px; letter-spacing: .13em; color: var(--faint); padding-right: 8px; }
+.checklist li.open .status { color: var(--blue); font-weight: 600; }
+.check { width: 21px; height: 21px; border: 1px solid var(--ink); display: grid; place-items: center; flex: none; }
+.check svg { width: 11px; height: 11px; color: var(--paper2); }
+li.done .check { background: var(--blue); border-color: var(--blue); }
+li.open .check { background: transparent; }
+
+.note { display: flex; align-items: baseline; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--line); }
+.note .k { font-family: var(--mono); font-size: 6px; letter-spacing: .12em; color: var(--faint); white-space: nowrap; }
+.note p { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--muted); }
+
+.cta {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  margin-top: 16px; height: 53px; padding: 0 15px; background: var(--ink); color: #fff; border: 0;
+}
+.cta .left { font-family: var(--mono); font-size: 6.5px; letter-spacing: .14em; color: var(--acid); }
+.cta .right { display: flex; align-items: center; gap: 8px; font-family: var(--sans); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
+.cta svg { width: 13px; height: 13px; }
+.footerline { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; font-family: var(--mono); font-size: 5.5px; letter-spacing: .12em; color: var(--faint); text-transform: uppercase; }
+.homebar { background: var(--ink); opacity: .65; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span class="time">8:41</span>
+    <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+      <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+      <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="masthead">
+      <span class="brand">CHORE TRACKER</span>
+      <span class="issue">WED &middot; 25 NOV &middot; 2026</span>
+    </header>
+    <div class="rule"></div>
+
+    <nav class="topnav" aria-label="App sections">
+      <a class="active" href="#">Today</a>
+      <a href="#">Week</a>
+      <a href="#">Archive</a>
+      
+    </nav>
+
+    <nav class="people" aria-label="Choose a family member">
+      <button class="person active">ALEX</button>
+      <button class="person">SAM</button>
+      <button class="person">RILEY</button>
+      <button class="person">AVERY</button>
+    </nav>
+
+    <section class="hero">
+      <div class="eyebrow">This week&rsquo;s chore &middot; Week 48</div>
+      <h1>Kitchen</h1>
+      <p class="desc">Wipe and sweep after dinner.</p>
+    </section>
+
+    <section class="stats">
+      <div class="score">
+        <div class="big">67<span>%</span></div>
+        <div class="scorecopy">
+          <div class="k">Today&rsquo;s completion</div>
+          <p><b>2 of 3 items</b> done &middot; 1 left<br>About 4 minutes to go</p>
+        </div>
+      </div>
+      <div class="week">
+        <div class="weekhead"><span>This week</span><b>2 / 7</b></div>
+        <div class="weekcells">
+          <div class="wd done"><span>M</span><i></i></div>
+          <div class="wd done"><span>T</span><i></i></div>
+          <div class="wd today"><span>W</span><i></i></div>
+          <div class="wd future"><span>T</span><i></i></div>
+          <div class="wd future"><span>F</span><i></i></div>
+          <div class="wd future"><span>S</span><i></i></div>
+          <div class="wd future"><span>S</span><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="checklist">
+      <div class="chead"><span>Checklist</span><span>Status</span></div>
+      <ol>
+        <li class="done">
+          <span class="num">01</span>
+          <span class="label">Wipe counters</span>
+          <span class="status">DONE</span>
+          <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+        </li>
+        <li class="done">
+          <span class="num">02</span>
+          <span class="label">Sweep floor</span>
+          <span class="status">DONE</span>
+          <span class="check"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.4 7.3 3 3 6.2-6.4"/></svg></span>
+        </li>
+        <li class="open">
+          <span class="num">03</span>
+          <span class="label">Take out trash</span>
+          <span class="status">OPEN</span>
+          <span class="check"></span>
+        </li>
+      </ol>
+    </section>
+
+    <div class="note">
+      <span class="k">Household note</span>
+      <p>Riley closed the yard at 4:10. Sam&rsquo;s still on the tub.</p>
+    </div>
+
+    <button class="cta">
+      <span class="left">1 ITEM REMAINING</span>
+      <span class="right">Take out trash
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+      </span>
+    </button>
+    <div class="footerline">
+      <span>Household of six</span>
+      <span>Week 48 &middot; 2026</span>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Club v2 — phone, scrolled</title>
+<link rel="stylesheet" href="../../base.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="scrolled">
+<div class="phone">
+  <div class="statusbar">
+  <span class="time">9:41</span>
+  <svg viewBox="0 0 66 12" fill="none" aria-hidden="true">
+    <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+    <path d="M25 4.5c3.5-3 8.5-3 12 0M27.7 7.7c2-1.8 5.6-1.8 7.6 0M30.5 10.7c.8-.7 2.2-.7 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="44" y="1.5" width="19" height="9" rx="3" stroke="currentColor" stroke-width="1.1" opacity=".4"/><rect x="46" y="3.4" width="14" height="5.2" rx="1.4" fill="currentColor"/><path d="M64.5 4.3v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+  </svg>
+</div>
+  <div class="page">
+    <header class="top">
+      <div class="logo"><span class="word">CHORE <span>CLUB</span></span><span class="est">NO. 02 / V2</span></div>
+      <div class="stickers"><span class="sq"></span><b>12</b> STICKERS</div>
+    </header>
+
+    <section class="intro">
+      <div class="kicker">Wednesday &middot; Nov 25 &middot; Week 48</div>
+      <h1>Hey, <em>Alex!</em> Pick your sticker.</h1>
+      <p class="subline"><b>7 kids.</b> 6 little jobs. One chore at a time.</p>
+    </section>
+
+    <div class="namelabel"><span class="n">Who&rsquo;s playing?</span><span class="r">7 in the club</span></div>
+    <nav class="names" aria-label="Choose a child"><button class="name active" style="--c:#dce6ff;--tilt:-2deg"><span class="ini">A</span><span class="nm">Alex</span></button><button class="name" style="--c:#ffd7cd;--tilt:1.4deg"><span class="ini">S</span><span class="nm">Sam</span></button><button class="name" style="--c:#c9f5df;--tilt:-1deg"><span class="ini">R</span><span class="nm">Riley</span></button><button class="name" style="--c:#e6d9ff;--tilt:2deg"><span class="ini">AV</span><span class="nm">Avery</span></button><button class="name" style="--c:#ffeaa8;--tilt:-1.6deg"><span class="ini">M</span><span class="nm">Mia</span></button><button class="name" style="--c:#cdeff5;--tilt:1.2deg"><span class="ini">N</span><span class="nm">Noah</span></button><button class="name" style="--c:#ffd9e7;--tilt:-1deg"><span class="ini">Z</span><span class="nm">Zoe</span></button></nav>
+
+    <section class="chore">
+      <div class="ctop"><span class="ctag">Today&rsquo;s chore</span><span class="cweek">Week 48 &middot; 02 / 06</span></div>
+      <h2>Kitchen</h2>
+      <p class="cdesc">Six little jobs after dinner. No pictograms, just the plan.</p>
+      <div class="cprog">
+        <span class="big">2<span>/6</span></span>
+        <div class="bars"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <span class="lab">2 done &middot; 4 to go</span>
+      </div>
+    </section>
+
+    <div class="listhead"><span class="l">The jobs</span><span class="r">Scrolled &middot; 2 above</span></div>
+    <div class="listwindow">
+      <ul class="list" aria-label="Kitchen jobs">
+        <li class="job done"><span class="num">01</span><span class="jt">Clear the table</span><span class="st">Done</span><span class="box">&#10003;</span></li><li class="job done"><span class="num">02</span><span class="jt">Wipe down the cabinet fronts</span><span class="st">Done</span><span class="box">&#10003;</span></li><li class="job next"><span class="num">03</span><span class="jt">Sweep the floor</span><span class="st">Next</span><span class="box"></span></li><li class="job open"><span class="num">04</span><span class="jt">Take the recycling to the curb</span><span class="st">Open</span><span class="box"></span></li><li class="job open"><span class="num">05</span><span class="jt">Wipe the stovetop</span><span class="st">Open</span><span class="box"></span></li><li class="job open"><span class="num">06</span><span class="jt">Refill the soap dispenser</span><span class="st">Open</span><span class="box"></span></li>
+      </ul>
+      <div class="scrollrail"><i></i></div>
+      <div class="listfade"></div>
+    </div>
+    <div class="scrollcue"><span>Scrolled &middot; 2 above</span><span><b>4 / 6 shown</b></span></div>
+
+    <button class="cta">Finish 4 jobs</button>
+    <p class="hint">All <b>6 jobs</b> fill the sticker. No rush.</p>
+
+    <div class="bottomstack">
+      <div class="poster"><div class="pk">No pictograms &middot; just the plan</div><div class="pb">Do the job.<br><span>Take the sticker.</span></div><span class="shape"></span><span class="shape2"></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<script>
+  requestAnimationFrame(function() {
+    var l = document.querySelector('.list');
+    if (l) l.scrollTop = 116;
+  });
+</script>
+</body>
+</html>
