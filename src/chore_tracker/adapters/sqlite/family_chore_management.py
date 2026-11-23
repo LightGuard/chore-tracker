@@ -87,6 +87,8 @@ class SQLiteFamilyChoreManagementPersistence:
                    VALUES (?, ?)""",
                 (display_name, int(is_active)),
             ).lastrowid
+            if member_id is None:
+                raise RuntimeError("The family member insert did not return an ID")
             return self._family_member(connection, member_id)
 
     def get_family_member(self, family_member_id: int):
@@ -121,6 +123,8 @@ class SQLiteFamilyChoreManagementPersistence:
                    VALUES (?, ?, 0)""",
                 (name, description),
             ).lastrowid
+            if chore_id is None:
+                raise RuntimeError("The chore insert did not return an ID")
             return self._serialize_chore(connection, chore_id)
 
     def get_chore(self, chore_id: int):
@@ -159,6 +163,8 @@ class SQLiteFamilyChoreManagementPersistence:
                    VALUES (?, ?, ?)""",
                 (chore_id, label, position),
             ).lastrowid
+            if item_id is None:
+                raise RuntimeError("The checklist item insert did not return an ID")
             item = self._item(connection, chore_id, item_id)
             return {**dict(item), "is_active": bool(item["is_active"])}
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -89,7 +90,7 @@ class SQLiteWeeklyReportPersistence:
                 (report_id, limit, offset),
             ).fetchall()
 
-        grouped: dict[int, tuple[object, list[WeeklyReportDay]]] = {}
+        grouped: dict[int, tuple[sqlite3.Row, list[WeeklyReportDay]]] = {}
         for row in rows:
             entry_id = row["entry_id"]
             if entry_id not in grouped:
@@ -281,6 +282,8 @@ class SQLiteWeeklyReportPersistence:
                     timestamp,
                 ),
             ).lastrowid
+            if report_id is None:
+                raise RuntimeError("The weekly report insert did not return an ID")
             for position, entry in enumerate(draft.entries):
                 entry_id = connection.execute(
                     """
@@ -304,6 +307,10 @@ class SQLiteWeeklyReportPersistence:
                         entry.incomplete_days,
                     ),
                 ).lastrowid
+                if entry_id is None:
+                    raise RuntimeError(
+                        "The weekly report entry insert did not return an ID"
+                    )
                 connection.executemany(
                     """
                     INSERT INTO weekly_report_days (

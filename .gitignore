@@ -15,3 +15,4 @@ data/
 compose.override.yaml
 compose.override.yml
 secrets/
+.mypy_cache/

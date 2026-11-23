@@ -155,8 +155,13 @@ Run these commands from the repository root:
 ```bash
 ruff format --check .
 ruff check .
+mypy
 pytest
 ```
+
+`mypy` checks the `src/chore_tracker` package using the configuration in
+`pyproject.toml`. The pytest suite includes the Alembic migration tests; CI also
+runs those migration tests as a separate pre-test step for visibility.
 
 ### Backend layout
 
@@ -253,6 +258,24 @@ representative family/chore CRUD, and sign-out against the running application.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.
+
+### Continuous integration
+
+The [quality-gate workflow](.github/workflows/ci.yml) runs on pull requests and pushes
+to `main`:
+
+- `backend`: Ruff formatting/lint, `mypy`, migration tests, and the full pytest suite.
+- `frontend`: ESLint, TypeScript type checking, Vitest, and the production build.
+- `e2e`: installs Chromium, runs the Playwright suite against the real FastAPI and Vite
+  processes with an isolated SQLite database, then uploads the HTML report, traces,
+  and screenshots as the `playwright-diagnostics` artifact.
+- `docker`: builds both images and runs the Compose smoke test.
+- `kubernetes`: lints the Helm chart and validates rendered objects with
+  `kubeconform`.
+
+The backend, frontend, and browser commands documented above are the same commands
+used by those jobs. The browser artifact is uploaded even when tests pass; on failure
+it contains the retained traces and screenshots needed to diagnose the run.
 
 ## Docker deployment
 
