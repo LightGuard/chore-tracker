@@ -85,6 +85,7 @@ def test_initial_setup_is_available_once_and_creates_admin_session(
     assert client.get("/auth/me").json() == {
         "id": 1,
         "email": "first@example.test",
+        "theme_id": None,
     }
     with connect(database_path) as connection:
         credential = connection.execute(

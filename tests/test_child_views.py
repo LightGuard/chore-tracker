@@ -101,8 +101,8 @@ def test_active_family_member_selector_is_public_and_excludes_inactive(
 
     assert response.status_code == 200
     assert response.json() == [
-        {"id": 2, "display_name": "Alex"},
-        {"id": 1, "display_name": "Zoe"},
+        {"id": 2, "display_name": "Alex", "theme_id": None},
+        {"id": 1, "display_name": "Zoe", "theme_id": None},
     ]
 
 

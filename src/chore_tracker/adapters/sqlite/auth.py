@@ -191,12 +191,16 @@ class SQLiteAuthPersistence:
     def administrator_for_session(self, token_hash: str, now: str):
         with transaction(self.database_path) as db:
             row = db.execute(
-                """SELECT a.id, a.email FROM administrator_sessions s
+                """SELECT a.id, a.email, a.theme_id FROM administrator_sessions s
                    JOIN administrators a ON a.id = s.administrator_id
                    WHERE s.token_hash = ? AND s.expires_at > ? AND a.is_active = 1""",
                 (token_hash, now),
             ).fetchone()
-        return {"id": row["id"], "email": row["email"]} if row else None
+        return (
+            {"id": row["id"], "email": row["email"], "theme_id": row["theme_id"]}
+            if row
+            else None
+        )
 
     def revoke_session(self, token_hash: str) -> None:
         with transaction(self.database_path) as db:

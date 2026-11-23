@@ -18,7 +18,7 @@ class SQLiteChildViewsPersistence:
     def list_active_family_members(self) -> list[dict[str, Any]]:
         with transaction(self._database_path) as connection:
             rows = connection.execute(
-                """SELECT id, display_name FROM family_members
+                """SELECT id, display_name, theme_id FROM family_members
                    WHERE is_active = 1
                    ORDER BY display_name COLLATE NOCASE, id"""
             ).fetchall()
