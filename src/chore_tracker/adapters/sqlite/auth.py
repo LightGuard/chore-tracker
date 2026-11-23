@@ -33,11 +33,14 @@ class SQLiteAuthPersistence:
                 "SELECT id, email FROM administrators ORDER BY id LIMIT 1"
             ).fetchone()
             if row is None:
-                return db.execute(
+                administrator_id = db.execute(
                     """INSERT INTO administrators
                        (email, webauthn_user_id) VALUES (?, ?)""",
                     (email, user_id),
                 ).lastrowid
+                if administrator_id is None:
+                    raise RuntimeError("The administrator insert did not return an ID")
+                return administrator_id
             if row["email"].casefold() != email.casefold():
                 raise ValueError("Initial administrator setup is already claimed")
             enrolled = db.execute(
@@ -220,6 +223,8 @@ class SQLiteAuthPersistence:
                 raise ValueError(
                     "An administrator with that email already exists"
                 ) from error
+            if administrator_id is None:
+                raise RuntimeError("The administrator insert did not return an ID")
             db.execute(
                 """INSERT INTO administrator_enrollment_tokens
                    (token_hash, administrator_id, expires_at)

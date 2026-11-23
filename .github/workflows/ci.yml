@@ -6,9 +6,13 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
@@ -22,11 +26,16 @@ jobs:
         run: ruff format --check .
       - name: Lint
         run: ruff check .
+      - name: Type check
+        run: mypy
+      - name: Validate migrations
+        run: pytest tests/test_migrations.py
       - name: Run tests
         run: pytest
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
@@ -50,6 +59,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
@@ -75,6 +85,16 @@ jobs:
         working-directory: frontend
         env:
           PYTHON: python
+      - name: Upload Playwright diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 7
 
   docker:
     runs-on: ubuntu-latest
