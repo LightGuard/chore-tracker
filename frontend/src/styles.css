@@ -1145,9 +1145,26 @@ body[data-theme="homestead"] {
 }
 
 .theme-homestead .admin-shell h1 {
-  font-family: "Source Serif 4", Georgia, serif;
-  font-weight: 500;
+  max-width: 100%;
+  font-family: "Source Serif 4", Georgia, serif !important;
+  font-size: clamp(2rem, 6vw, 3.4rem) !important;
+  font-weight: 500 !important;
   letter-spacing: -0.025em;
+  line-height: 1.02 !important;
+  overflow-wrap: anywhere;
+}
+
+.theme-homestead .admin-shell h2 {
+  max-width: 100%;
+  font-family: "Source Serif 4", Georgia, serif !important;
+  font-size: clamp(1.35rem, 4.5vw, 2.1rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.08 !important;
+  overflow-wrap: anywhere;
+}
+
+.theme-homestead .admin-shell {
+  overflow-wrap: anywhere;
 }
 
 .theme-homestead .admin-shell .admin-nav {
@@ -1328,4 +1345,20 @@ body[data-theme="homestead"] {
   .history-heading-row {
     align-items: flex-start;
   }
+}
+
+/* ReShaped's default neutral solid button would disappear on the warm card.
+   Keep the component, but map its theme tokens to the Homestead primary. */
+.theme-homestead button[class*="--variant-solid"][class*="--color-neutral"] {
+  background: var(--hs-terra);
+  color: #fbf5e7;
+}
+
+.theme-homestead button[class*="--variant-solid"][class*="--color-neutral"] span {
+  color: inherit;
+}
+
+.theme-homestead button[class*="--variant-solid"][class*="--color-neutral"]:not(:disabled):hover,
+.theme-homestead button[class*="--variant-solid"][class*="--color-neutral"]:not(:disabled):focus-visible {
+  background: var(--hs-terra-deep);
 }

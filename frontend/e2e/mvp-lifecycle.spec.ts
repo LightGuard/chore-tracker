@@ -4,6 +4,7 @@ import {
   E2E_PRIOR_WEEK,
   E2E_TODAY,
   resetFixture,
+  selectChild,
   setTestToday,
 } from "./test-control";
 
@@ -19,7 +20,7 @@ test.describe.serial("next-day checklist and history", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await selectChild(page, "Alex");
     await expect(
       page.getByRole("heading", { level: 2, name: "Kitchen" }),
     ).toBeVisible();
@@ -31,7 +32,7 @@ test.describe.serial("next-day checklist and history", () => {
 
     await setTestToday(page.request, E2E_NEXT_DAY);
     await page.reload();
-    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await selectChild(page, "Alex");
 
     await expect(page.getByText("0 of 3 complete today")).toBeVisible();
     for (const checkbox of checks(page, [
@@ -133,7 +134,7 @@ test.describe.serial("deterministic weekly assignment generation", () => {
       ["Riley", "Kitchen", ["Wipe counters", "Sweep floor"]],
       ["Sam", "Yard", ["Mow lawn", "Rake leaves"]],
     ] as const) {
-      await page.getByLabel("Child").selectOption({ label: name });
+      await selectChild(page, name);
       await expect(
         page.getByRole("heading", { level: 2, name: chore }),
       ).toBeVisible();
@@ -259,7 +260,7 @@ test.describe.serial("Monday rollover", () => {
       ["Riley", "Yard"],
       ["Sam", "Bathroom"],
     ] as const) {
-      await page.getByLabel("Child").selectOption({ label: name });
+      await selectChild(page, name);
       await expect(
         page.getByRole("heading", { level: 2, name: chore }),
       ).toBeVisible();

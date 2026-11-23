@@ -3,6 +3,8 @@ import { DEFAULT_THEME } from "./api";
 const PREFIX = "chore-tracker.theme";
 const LAST_CHILD_KEY = `${PREFIX}.last-child`;
 const LAST_THEME_KEY = `${PREFIX}.last-theme`;
+const LAST_ADMIN_KEY = `${PREFIX}.last-admin`;
+const ADMIN_HINT_KEY = `${PREFIX}.admin-hint`;
 
 type Scope = "child" | "admin";
 
@@ -70,6 +72,30 @@ export function clearCachedTheme(scope: Scope, id: number): void {
   remove(cacheKey(scope, id));
 }
 
+export function readCachedAdminBootstrapTheme(): string | null {
+  if (read(ADMIN_HINT_KEY) !== "1") return null;
+  const raw = read(LAST_ADMIN_KEY);
+  if (!raw) return null;
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return readCachedTheme("admin", id);
+}
+
+export function rememberAdministratorSession(
+  administratorId: number,
+  themeId: string,
+): void {
+  write(LAST_ADMIN_KEY, String(administratorId));
+  write(ADMIN_HINT_KEY, "1");
+  writeCachedTheme("admin", administratorId, themeId);
+  writeLastTheme(themeId);
+}
+
+export function clearAdministratorSession(): void {
+  remove(ADMIN_HINT_KEY);
+  clearLastTheme();
+}
+
 export function readLastTheme(): string | null {
   return read(LAST_THEME_KEY);
 }
@@ -97,8 +123,10 @@ export function applyInitialDocumentTheme(): string {
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
   if (isAdmin) {
-    applyDocumentTheme(DEFAULT_THEME.id);
-    return DEFAULT_THEME.id;
+    const cached = readCachedAdminBootstrapTheme();
+    const themeId = cached === DEFAULT_THEME.id ? cached : DEFAULT_THEME.id;
+    applyDocumentTheme(themeId);
+    return themeId;
   }
   const childId = readRememberedChildId();
   const cached = childId === null ? null : readCachedTheme("child", childId);

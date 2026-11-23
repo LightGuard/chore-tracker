@@ -271,6 +271,28 @@ describe("family chore page", () => {
     expect(screen.getByRole("button", { name: "Theme" })).toBeEnabled();
   });
 
+
+  it("reconciles an unknown cached theme with the saved server value", async () => {
+    window.localStorage.setItem("chore-tracker.theme.child.1", "quest");
+    installFetch(async (input) => {
+      if (String(input).endsWith("/family-members/active")) {
+        return jsonResponse(MEMBERS);
+      }
+      if (String(input).endsWith("/family-members/1/current-assignment")) {
+        return jsonResponse(assignment());
+      }
+      return jsonResponse({ detail: "Not found" }, 404);
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /Alex/ }));
+    await screen.findByRole("heading", { name: "Kitchen" });
+
+    expect(
+      window.localStorage.getItem("chore-tracker.theme.child.1"),
+    ).toBe("homestead");
+  });
+
   it("opens Switch child, keeps the current child while open, and cancels cleanly", async () => {
     installFetch(async (input) => {
       if (String(input).endsWith("/family-members/active")) return jsonResponse(MEMBERS);

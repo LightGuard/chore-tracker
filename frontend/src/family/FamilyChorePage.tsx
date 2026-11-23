@@ -601,10 +601,19 @@ export function FamilyChorePage() {
                           className="completion-status"
                         >
                           {assignment.is_complete ? (
-                            <div className="all-done-stamp" role="status">
-                              <span>All done for today</span>
-                              <strong>Every item on this chore is complete.</strong>
-                            </div>
+                            <>
+                              <div className="all-done-stamp" role="status">
+                                <span>All done for today</span>
+                                <strong>Every item on this chore is complete.</strong>
+                              </div>
+                              <Text
+                                weight="medium"
+                                color="neutral-faded"
+                                className="completion-count"
+                              >
+                                {completedCount} of {itemCount} complete today
+                              </Text>
+                            </>
                           ) : (
                             <Text weight="medium" color="neutral-faded">
                               {completedCount} of {itemCount} complete today

@@ -522,6 +522,50 @@ test.describe.serial("administrator passkey and management flow", () => {
     await reusedContext.close();
   });
 
+
+  test("saves the administrator theme and reverts to Homestead on sign-out", async ({
+    browser,
+  }) => {
+    const { context, page } = await authenticatedContext(
+      browser,
+      requireFirstCredential(),
+      FIRST_ADMIN,
+    );
+    const themeButton = page.getByRole("button", { name: "Theme" });
+    await expect(themeButton).toBeEnabled();
+
+    const saved = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/auth/me/theme") &&
+        response.request().method() === "PUT",
+    );
+    await themeButton.click();
+    await page.getByRole("option", { name: /Homestead/ }).click();
+    expect((await saved).status()).toBe(200);
+    await expect(page.locator(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+    expect(
+      await page.evaluate(() =>
+        Object.keys(window.localStorage).some((key) =>
+          key.startsWith("chore-tracker.theme.admin."),
+        ),
+      ),
+    ).toBe(true);
+
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(
+      page.getByRole("region", { name: "Administrator sign in" }),
+    ).toBeVisible();
+    await expect(themeButton).toBeDisabled();
+    await expect(page.locator(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+    await context.close();
+  });
+
   test("signs out, revokes access, and keeps protected screens closed after reload", async ({
     browser,
   }) => {

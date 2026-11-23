@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { resetFixture } from "./test-control";
+import { resetFixture, selectChild, switchChild } from "./test-control";
 
 test.beforeAll(async ({ playwright }) => {
   await resetFixture(playwright);
@@ -12,13 +12,13 @@ test.describe("family chore flow", () => {
     await page.goto("/");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Chore Tracker" }),
+      page.getByRole("heading", { level: 1, name: "Who’s doing chores?" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/selecting a name does not sign you in/i),
+      page.getByText(/choosing a name does not sign you in/i),
     ).toBeVisible();
 
-    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await selectChild(page, "Alex");
 
     await expect(
       page.getByRole("heading", { level: 2, name: "Kitchen" }),
@@ -44,7 +44,7 @@ test.describe("family chore flow", () => {
     await expect(page.getByText("All done for today")).toBeVisible();
 
     await page.reload();
-    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await selectChild(page, "Alex");
 
     await expect(
       page.getByRole("checkbox", { name: "Wipe counters" }),
@@ -68,7 +68,7 @@ test.describe("family chore flow", () => {
 
   test("shows a clear no-assignment state", async ({ page }) => {
     await page.goto("/");
-    await page.getByLabel("Child").selectOption({ label: "Riley" });
+    await selectChild(page, "Riley");
 
     await expect(page.getByText("No chore assigned this week")).toBeVisible();
     await expect(page.getByText(/Riley does not have a chore assigned/)).toBeVisible();
@@ -80,7 +80,7 @@ test.describe("family chore flow", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByLabel("Child").selectOption({ label: "Alex" });
+    await selectChild(page, "Alex");
     await page.getByRole("button", { name: "View history" }).click();
 
     const history = page.getByRole("region", {
@@ -131,7 +131,7 @@ test.describe("family chore flow", () => {
       ).toBeVisible();
     }
 
-    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    await switchChild(page, "Sam");
     const samHistory = page.getByRole("region", {
       name: "Completion history for Sam",
     });
@@ -154,7 +154,7 @@ test.describe("family chore flow", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByLabel("Child").selectOption({ label: "Riley" });
+    await selectChild(page, "Riley");
     await page.getByRole("button", { name: "View history" }).click();
 
     const emptyHistory = page.getByRole("region", {
@@ -165,7 +165,7 @@ test.describe("family chore flow", () => {
       emptyHistory.getByText("No completion history yet"),
     ).toBeVisible();
 
-    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    await switchChild(page, "Sam");
     await expect(
       page.getByRole("region", { name: "Completion history for Sam" }),
     ).toBeVisible();
@@ -186,7 +186,7 @@ test.describe("phone-sized layout", () => {
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByLabel("Child")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Who’s doing chores?" })).toBeVisible();
 
     const horizontalOverflow = await page.evaluate(
       () =>
@@ -195,7 +195,7 @@ test.describe("phone-sized layout", () => {
     );
     expect(horizontalOverflow).toBeLessThanOrEqual(1);
 
-    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    await selectChild(page, "Sam");
     await expect(
       page.getByRole("heading", { level: 2, name: "Bathroom" }),
     ).toBeVisible();
@@ -210,7 +210,7 @@ test.describe("phone-sized layout", () => {
     await expect(page.getByText("1 of 2 complete today")).toBeVisible();
 
     await page.reload();
-    await page.getByLabel("Child").selectOption({ label: "Sam" });
+    await selectChild(page, "Sam");
 
     await expect(
       page.getByRole("checkbox", { name: "Clean sink" }),
