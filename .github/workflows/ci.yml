@@ -57,6 +57,23 @@ jobs:
       - name: Build
         run: npm run build
 
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.15"
+      - name: Install project and development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Check documentation links
+        run: python scripts/check-docs-links.py
+      - name: Verify SQLite backup and restore
+        run: ./scripts/verify-backup-restore.sh
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
