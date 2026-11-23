@@ -141,6 +141,10 @@ Most of the visual change is CSS: Reshaped CSS variables, typography, borders, r
 
 No new runtime dependencies are required for any direction. Fonts used in the mockups are macOS system fonts (Iowan Old Style, Bodoni 72, Avenir Next, Avenir Next Condensed, Arial Rounded MT Bold, Copperplate); if the app ships cross-platform, either bundle equivalents or lean on the declared fallbacks. No game assets or logos are used in Wayfinder or Homescreen.
 
+## Admin theme mockups
+
+Per-screen signed-in administrator layouts for Homestead, Quest, and Sticker Club v2 live in [admin/](admin/README.md), with all 18 screen/theme shots and an approval contact sheet. They are design work for #75 and are pending product-owner approval before implementation.
+
 ## Source mockups
 
 The `concepts/` folder contains standalone HTML/CSS (including `wayfinder/`, `homescreen/`, `sticker-club/v2/`, and `quest/light/`) used only to render the images — it does not import the app and is not wired into `frontend/src`. The archive is `index.html` at the root of this folder. The render helpers are `render.mjs` (screens), `render-boards.mjs` (boards), and the static server is plain Python `http.server`.

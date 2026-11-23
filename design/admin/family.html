@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en" data-theme="homestead">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family members mockup</title>
+  <link rel="stylesheet" href="../../frontend/public/fonts/fonts.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" href="data:,">
+</head>
+<body data-screen="Family members" data-active="family">
+<main class="admin-main" aria-label="Family member management">
+  <header class="page-head">
+    <div>
+      <div class="kicker">Household profiles</div>
+      <h1>Family members</h1>
+      <p>Manage the profiles available in the child selector. Inactive profiles keep their historical assignments and completion records.</p>
+    </div>
+  </header>
+  <div class="screen-grid family-screen">
+    <section class="panel form-panel">
+      <div class="panel-heading"><span class="tag">Add profile</span><h2>Add a family member</h2></div>
+      <div class="form-stack">
+        <label class="field" for="new-family-member-name"><span>New family member name</span><input id="new-family-member-name" type="text" value=""></label>
+        <span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span>
+        <button type="button" class="btn primary">Add family member</button>
+      </div>
+    </section>
+    <section class="panel list-panel">
+      <div class="panel-heading row-heading">
+        <div><span class="tag">4 profiles</span><h2>Household roster</h2></div>
+        <span class="muted-note">Inactive profiles are retained</span>
+      </div>
+      <div class="member-grid">
+        <article class="member-card">
+          <div class="member-head"><span class="index">01</span><h3>Alex</h3><span class="badge positive">Active</span></div>
+          <div class="member-fields"><label class="field" for="member-0-name"><span>Display name</span><input id="member-0-name" value="Alex"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span></div>
+          <div class="row-actions"><button type="button" class="btn small">Save family member</button></div>
+        </article>
+        <article class="member-card">
+          <div class="member-head"><span class="index">02</span><h3>Sam</h3><span class="badge positive">Active</span></div>
+          <div class="member-fields"><label class="field" for="member-1-name"><span>Display name</span><input id="member-1-name" value="Sam"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span></div>
+          <div class="row-actions"><button type="button" class="btn small">Save family member</button></div>
+        </article>
+        <article class="member-card">
+          <div class="member-head"><span class="index">03</span><h3>Riley</h3><span class="badge positive">Active</span></div>
+          <div class="member-fields"><label class="field" for="member-2-name"><span>Display name</span><input id="member-2-name" value="Riley"></label><span class="switch-row"><span class="switch on" aria-hidden="true"><i></i></span><span>Active</span></span></div>
+          <div class="row-actions"><button type="button" class="btn small">Save family member</button></div>
+        </article>
+        <article class="member-card inactive">
+          <div class="member-head"><span class="index">04</span><h3>Avery</h3><span class="badge neutral">Inactive</span></div>
+          <div class="member-fields"><label class="field" for="member-3-name"><span>Display name</span><input id="member-3-name" value="Avery"></label><span class="switch-row"><span class="switch" aria-hidden="true"><i></i></span><span>Active</span></span></div>
+          <div class="row-actions"><button type="button" class="btn small">Save family member</button></div>
+        </article>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="admin.js"></script>
+</body>
+</html>

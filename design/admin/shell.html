@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" data-theme="homestead">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin shell mockup</title>
+  <link rel="stylesheet" href="../../frontend/public/fonts/fonts.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" href="data:,">
+</head>
+<body data-screen="Admin shell" data-active="">
+<main class="admin-main" aria-label="Signed-in administrator shell">
+  <header class="page-head">
+    <div>
+      <div class="kicker">Signed-in administration</div>
+      <h1>One house, one control room.</h1>
+      <p>Manage the household roster, the chore catalog, weekly reports, and administrator access without changing the underlying workflow.</p>
+    </div>
+  </header>
+  <div class="shell-grid">
+    <a class="module-card" href="family.html"><span class="tag">Family</span><h2>Family &amp; chores</h2><p>Profiles, chore catalog, checklist order.</p><span class="module-arrow" aria-hidden="true">→</span></a>
+    <a class="module-card" href="reports.html"><span class="tag">Archive</span><h2>Weekly reports</h2><p>Immutable Monday–Sunday snapshots.</p><span class="module-arrow" aria-hidden="true">→</span></a>
+    <a class="module-card" href="invite.html"><span class="tag">Access</span><h2>Administrator access</h2><p>Invite the second administrator.</p><span class="module-arrow" aria-hidden="true">→</span></a>
+  </div>
+  <section class="panel session-panel">
+    <div class="panel-heading"><span class="tag">Current session</span><h2>Signed in as jordan@example.com</h2></div>
+    <p>Administrator session active. The shared header follows this administrator&rsquo;s saved theme; the selected child&rsquo;s theme never applies here.</p>
+    <div class="row-actions"><button type="button" class="btn">Sign out</button></div>
+  </section>
+</main>
+<script src="admin.js"></script>
+</body>
+</html>

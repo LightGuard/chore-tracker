@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" data-theme="homestead">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report history mockup</title>
+  <link rel="stylesheet" href="../../frontend/public/fonts/fonts.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" href="data:,">
+</head>
+<body data-screen="Report history" data-active="reports">
+<main class="admin-main" aria-label="Weekly report history">
+  <header class="page-head">
+    <div>
+      <div class="kicker">Weekly archive</div>
+      <h1>Report history</h1>
+      <p>Finalized Monday–Sunday snapshots, newest first. Each report is read from what was persisted for that week.</p>
+    </div>
+  </header>
+  <div class="screen-grid reports-screen">
+    <section class="panel reports-panel">
+      <div class="panel-heading row-heading"><div><span class="tag">4 reports</span><h2>Finalized weeks</h2></div><span class="muted-note">Newest first</span></div>
+      <div class="report-list">
+        <article class="report-card"><div class="report-card-main"><span class="tag">4 children</span><h3>Nov 16 – Nov 22, 2026</h3><p>Generated Nov 23, 2026, 3:00 AM</p></div><div class="report-card-meta"><span class="badge warning">21 / 28 days</span><span>7 incomplete days</span><a class="btn small" href="report-detail.html">View report</a></div></article>
+        <article class="report-card"><div class="report-card-main"><span class="tag">4 children</span><h3>Nov 9 – Nov 15, 2026</h3><p>Generated Nov 16, 2026, 3:00 AM</p></div><div class="report-card-meta"><span class="badge positive">24 / 28 days</span><span>4 incomplete days</span><a class="btn small" href="report-detail.html">View report</a></div></article>
+        <article class="report-card"><div class="report-card-main"><span class="tag">4 children</span><h3>Nov 2 – Nov 8, 2026</h3><p>Generated Nov 9, 2026, 3:00 AM</p></div><div class="report-card-meta"><span class="badge neutral">0 / 28 days</span><span>28 incomplete days</span><a class="btn small" href="report-detail.html">View report</a></div></article>
+        <article class="report-card"><div class="report-card-main"><span class="tag">3 children</span><h3>Oct 26 – Nov 1, 2026</h3><p>Generated Nov 2, 2026, 3:00 AM</p></div><div class="report-card-meta"><span class="badge positive">21 / 21 days</span><span>0 incomplete days</span><a class="btn small" href="report-detail.html">View report</a></div></article>
+      </div>
+    </section>
+    <aside class="panel context-panel">
+      <div class="panel-heading"><span class="tag">How reports work</span><h2>Immutable by design</h2></div>
+      <p>Reports are generated after the week ends and the Monday rollover runs. Chore or checklist edits do not rewrite a finalized report.</p>
+      <div class="mini-rule"><span>Generated</span><strong>Weekly</strong></div>
+      <div class="mini-rule"><span>Window</span><strong>Mon–Sun</strong></div>
+      <div class="mini-rule"><span>Source</span><strong>Persisted completion</strong></div>
+    </aside>
+  </div>
+</main>
+<script src="admin.js"></script>
+</body>
+</html>
