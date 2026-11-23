@@ -23,8 +23,13 @@ USER root
 # The unprivileged image runs as UID 101. Copy the configuration and static
 # assets with that ownership so a local source mode such as 0600 cannot make
 # nginx unreadable when the container starts.
-COPY --chown=101:101 nginx.conf /etc/nginx/conf.d/default.conf
-RUN chmod 0644 /etc/nginx/conf.d/default.conf
+#
+# The image entrypoint expands API_UPSTREAM into the generated nginx config.
+# Docker Compose uses the default; Kubernetes sets it to the backend Service.
+ENV API_UPSTREAM=http://backend:8000
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY --chown=101:101 nginx.conf.template /etc/nginx/templates/default.conf.template
+RUN chmod 0644 /etc/nginx/templates/default.conf.template
 COPY --from=build --chown=101:101 /app/dist /usr/share/nginx/html
 
 USER 101
