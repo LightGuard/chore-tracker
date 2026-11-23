@@ -17,7 +17,7 @@ describe("application shell", () => {
     const { getByRole } = render(<App />);
 
     expect(
-      getByRole("heading", { level: 1, name: "Chore Tracker" }),
+      getByRole("heading", { level: 1, name: "Who’s doing chores?" }),
     ).toBeInTheDocument();
   });
 });
