@@ -91,6 +91,15 @@ persistence:
   size: 1Gi
 ```
 
+The publish workflow builds both images for `linux/amd64` and `linux/arm64` and
+pushes them to GitHub Container Registry as
+`ghcr.io/lightguard/chore-tracker-backend` and
+`ghcr.io/lightguard/chore-tracker-frontend`. Use those repositories with a
+release tag (for example `"1.2.3"`) instead of a private registry path. The
+chart defaults (`chore-tracker-backend:local` and
+`chore-tracker-frontend:local`) refer to images built locally, so they only work
+on a cluster that can pull from the machine that built them.
+
 `config.appOrigin`, `config.passkeyOrigin`, and `config.passkeyRpId` are derived
 from `ingress.host` and `ingress.tls.enabled`. Set them explicitly only when
 ingress is disabled or an external proxy terminates TLS:
@@ -345,8 +354,8 @@ its existing Traefik IngressClass and wildcard TLS Secret.
 
 | Value | Default | Purpose |
 | --- | --- | --- |
-| `backend.image.repository` / `tag` | `chore-tracker-backend:local` | Backend image |
-| `frontend.image.repository` / `tag` | `chore-tracker-frontend:local` | Frontend image |
+| `backend.image.repository` / `tag` | `chore-tracker-backend:local` | Backend image, or `ghcr.io/lightguard/chore-tracker-backend` |
+| `frontend.image.repository` / `tag` | `chore-tracker-frontend:local` | Frontend image, or `ghcr.io/lightguard/chore-tracker-frontend` |
 | `imagePullSecrets` | `[]` | Private registry pull secrets |
 | `persistence.existingClaim` | `""` | Use an existing ReadWriteOnce PVC |
 | `persistence.storageClassName` | `""` | StorageClass for the managed PVC |
