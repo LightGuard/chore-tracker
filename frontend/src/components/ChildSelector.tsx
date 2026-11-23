@@ -6,6 +6,7 @@ type ChildSelectorProps = {
   onSelect: (member: FamilyMember) => void;
   onCancel?: () => void;
   busyId?: number;
+  variant?: "default" | "quest";
 };
 
 export function ChildSelector({
@@ -14,15 +15,23 @@ export function ChildSelector({
   onSelect,
   onCancel,
   busyId,
+  variant = "default",
 }: ChildSelectorProps) {
+  const isQuest = variant === "quest";
   return (
     <section className="child-selector-panel" aria-labelledby="child-selector-heading">
       <div className="section-heading-row">
         <div>
-          <div className="section-kicker">Who&rsquo;s doing chores?</div>
-          <h2 id="child-selector-heading">Choose a child</h2>
+          <div className="section-kicker">
+            {isQuest ? "Squad select" : "Who’s doing chores?"}
+          </div>
+          <h2 id="child-selector-heading">
+            {isQuest ? "Who’s playing?" : "Choose a child"}
+          </h2>
           <p className="section-lede">
-            Pick your name to see this week&rsquo;s chore. You are not signing in.
+            {isQuest
+              ? "Pick your name to jump into today’s quest. You are not signing in."
+              : "Pick your name to see this week’s chore. You are not signing in."}
           </p>
         </div>
         {onCancel && (

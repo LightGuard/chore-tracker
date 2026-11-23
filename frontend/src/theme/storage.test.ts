@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   applyInitialDocumentTheme,
+  clearAdministratorSession,
   clearCachedTheme,
   clearLastTheme,
   forgetRememberedChild,
   readCachedTheme,
   readLastTheme,
   readRememberedChildId,
+  rememberAdministratorSession,
   rememberChildId,
   writeCachedTheme,
   writeLastTheme,
@@ -47,9 +49,30 @@ describe("theme storage", () => {
     expect(document.body.dataset.theme).toBe("homestead");
   });
 
-  it("ignores unknown cached ids and starts admin pages in Homestead", () => {
+  it("applies a cached Quest child theme before the catalog request resolves", () => {
     rememberChildId(3);
     writeCachedTheme("child", 3, "quest");
+
+    expect(applyInitialDocumentTheme()).toBe("quest");
+    expect(document.documentElement.dataset.theme).toBe("quest");
+    expect(document.body.dataset.theme).toBe("quest");
+  });
+
+  it("applies a cached Quest admin theme only while an admin hint exists", () => {
+    window.history.pushState({}, "", "/admin");
+    rememberAdministratorSession(1, "quest");
+
+    expect(applyInitialDocumentTheme()).toBe("quest");
+    expect(document.documentElement.dataset.theme).toBe("quest");
+
+    clearAdministratorSession();
+    expect(applyInitialDocumentTheme()).toBe("homestead");
+    expect(document.documentElement.dataset.theme).toBe("homestead");
+  });
+
+  it("ignores unknown cached ids and starts admin pages in Homestead", () => {
+    rememberChildId(3);
+    writeCachedTheme("child", 3, "future-theme");
 
     expect(applyInitialDocumentTheme()).toBe("homestead");
     expect(document.documentElement.dataset.theme).toBe("homestead");

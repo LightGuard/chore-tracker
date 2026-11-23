@@ -15,6 +15,11 @@ THEME_CATALOG: tuple[dict[str, str], ...] = (
         "name": "Homestead",
         "preview_image": "/theme-previews/homestead.png",
     },
+    {
+        "id": "quest",
+        "name": "Quest",
+        "preview_image": "/theme-previews/quest.png",
+    },
 )
 
 

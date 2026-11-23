@@ -222,7 +222,23 @@ def test_streak_ends_yesterday_when_today_is_incomplete(tmp_path, monkeypatch):
     assert payload["current_week"]["complete_days"] == 3
 
 
-def test_streak_is_zero_when_today_and_yesterday_are_not_complete(
+def test_streak_uses_yesterday_when_today_has_no_recorded_rows(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        _, items = create_assignment(connection, member_id, "2026-11-09")
+        complete_day(connection, items, "2026-11-09")
+        complete_day(connection, items, "2026-11-10")
+        complete_day(connection, items, "2026-11-11")
+
+    payload = client.get(f"/family-members/{member_id}/derived-stats").json()
+
+    assert payload["current_week"]["days"][3]["state"] == "not_recorded"
+    assert payload["lifetime"]["current_streak"] == 3
+    assert payload["lifetime"]["complete_days"] == 3
+
+
+def test_broken_streak_returns_zero_when_today_and_yesterday_are_not_complete(
     tmp_path, monkeypatch
 ):
     client, database_path = prepare_client(tmp_path, monkeypatch)
@@ -230,13 +246,42 @@ def test_streak_is_zero_when_today_and_yesterday_are_not_complete(
         member_id = create_member(connection, "Alex")
         _, items = create_assignment(connection, member_id, "2026-11-09")
         complete_day(connection, items, "2026-11-09")
-        record_day(connection, items, "2026-11-10", set())
-        complete_day(connection, items, "2026-11-12")
+        record_day(connection, items, "2026-11-12", {0})
 
     payload = client.get(f"/family-members/{member_id}/derived-stats").json()
 
-    assert payload["lifetime"]["current_streak"] == 1
-    assert payload["lifetime"]["complete_days"] == 2
+    assert payload["lifetime"]["current_streak"] == 0
+    assert payload["lifetime"]["complete_days"] == 1
+
+
+def test_stats_ignore_later_catalog_edits(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        _, current_items = create_assignment(connection, member_id, "2026-11-09")
+        complete_day(connection, current_items, "2026-11-09")
+        record_day(connection, current_items, "2026-11-12", {0})
+        chore_id = connection.execute(
+            "SELECT chore_id FROM weekly_assignments WHERE family_member_id = ?",
+            (member_id,),
+        ).fetchone()["chore_id"]
+
+    before = client.get(f"/family-members/{member_id}/derived-stats").json()
+
+    with connect(database_path) as connection:
+        connection.execute(
+            "UPDATE chores SET name = 'Renamed', description = 'Changed', "
+            "is_active = 0 WHERE id = ?",
+            (chore_id,),
+        )
+        connection.execute(
+            "DELETE FROM chore_checklist_items WHERE chore_id = ?",
+            (chore_id,),
+        )
+
+    after = client.get(f"/family-members/{member_id}/derived-stats").json()
+
+    assert after == before
 
 
 def test_current_week_rolls_over_at_monday_without_losing_lifetime_facts(
@@ -407,6 +452,16 @@ def test_derived_stats_are_read_only_and_add_no_schema(tmp_path, monkeypatch):
                 "SELECT name FROM sqlite_master WHERE type = 'table'"
             )
         }
+        before_columns = {
+            table: [
+                row["name"] for row in connection.execute(f"PRAGMA table_info({table})")
+            ]
+            for table in (
+                "family_members",
+                "weekly_assignments",
+                "daily_checklist_completions",
+            )
+        }
         before_completions = connection.execute(
             "SELECT COUNT(*) FROM daily_checklist_completions"
         ).fetchone()[0]
@@ -424,6 +479,12 @@ def test_derived_stats_are_read_only_and_add_no_schema(tmp_path, monkeypatch):
             )
         }
         assert after_tables == before_tables
+        assert {
+            table: [
+                row["name"] for row in connection.execute(f"PRAGMA table_info({table})")
+            ]
+            for table in before_columns
+        } == before_columns
         assert (
             connection.execute(
                 "SELECT COUNT(*) FROM daily_checklist_completions"

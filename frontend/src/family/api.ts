@@ -51,6 +51,46 @@ export type CompletionHistoryPage = {
   offset: number;
 };
 
+export type DerivedStatsDayState = "complete" | "incomplete" | "not_recorded";
+
+export type DerivedStatsDay = {
+  date: string;
+  completed_checklist_items: number;
+  total_checklist_items: number;
+  state: DerivedStatsDayState;
+};
+
+export type DerivedStatsStanding = {
+  family_member_id: number;
+  display_name: string;
+  completed_checklist_items: number;
+  complete_days: number;
+  current_streak: number;
+};
+
+export type DerivedStats = {
+  family_member_id: number;
+  display_name: string;
+  as_of: string;
+  timezone: string;
+  lifetime: {
+    completed_checklist_items: number;
+    complete_days: number;
+    current_streak: number;
+  };
+  current_week: {
+    week_start: string;
+    week_end: string;
+    completed_checklist_items: number;
+    complete_days: number;
+    days: DerivedStatsDay[];
+  };
+  household: {
+    active_players: number;
+    weekly_standings: DerivedStatsStanding[];
+  };
+};
+
 export function getActiveFamilyMembers(
   signal?: AbortSignal,
 ): Promise<FamilyMember[]> {
@@ -102,5 +142,15 @@ export function setChecklistItemCompletion(args: {
         is_completed: args.isCompleted,
       }),
     },
+  );
+}
+
+export function getDerivedStats(
+  familyMemberId: number,
+  signal?: AbortSignal,
+): Promise<DerivedStats> {
+  return apiRequest<DerivedStats>(
+    `/family-members/${familyMemberId}/derived-stats`,
+    { signal },
   );
 }

@@ -3,10 +3,9 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const baseUrl = process.env.PREVIEW_BASE_URL ?? "http://localhost:5174";
-const output = resolve(
-  process.cwd(),
-  "public/theme-previews/homestead.png",
-);
+const themeId = process.env.PREVIEW_THEME ?? "homestead";
+const scenario = themeId === "quest" ? "quest-preview" : "preview";
+const output = resolve(process.cwd(), `public/theme-previews/${themeId}.png`);
 
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
@@ -18,7 +17,7 @@ const page = await browser.newPage({
 
 try {
   const reset = await page.request.post(
-    `${baseUrl}/api/__test__/scenario/preview`,
+    `${baseUrl}/api/__test__/scenario/${scenario}`,
   );
   if (!reset.ok()) {
     throw new Error(
@@ -29,6 +28,9 @@ try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Alex", exact: true }).click();
   await page.getByRole("heading", { name: "Kitchen" }).waitFor();
+  if (themeId === "quest") {
+    await page.locator(".quest-xp").filter({ hasText: "XP" }).waitFor();
+  }
   await page.addStyleTag({
     content: ".theme-trigger-thumb{visibility:hidden}",
   });

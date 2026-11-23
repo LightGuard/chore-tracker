@@ -90,7 +90,7 @@ def enroll_admin(client, monkeypatch):
     assert finished.status_code == 200
 
 
-def test_theme_catalog_is_public_and_only_exposes_homestead(tmp_path, monkeypatch):
+def test_theme_catalog_is_public_and_lists_available_themes(tmp_path, monkeypatch):
     client, _ = prepare_client(tmp_path, monkeypatch)
 
     response = client.get("/themes")
@@ -101,7 +101,12 @@ def test_theme_catalog_is_public_and_only_exposes_homestead(tmp_path, monkeypatc
             "id": "homestead",
             "name": "Homestead",
             "preview_image": "/theme-previews/homestead.png",
-        }
+        },
+        {
+            "id": "quest",
+            "name": "Quest",
+            "preview_image": "/theme-previews/quest.png",
+        },
     ]
 
 
@@ -133,7 +138,9 @@ def test_child_theme_rejects_unknown_inactive_and_missing_members(
     client, database_path = prepare_client(tmp_path, monkeypatch)
     inactive_id = create_member(database_path, "Inactive", active=False)
 
-    unknown_theme = client.put("/family-members/1/theme", json={"theme_id": "quest"})
+    unknown_theme = client.put(
+        "/family-members/1/theme", json={"theme_id": "not-a-theme"}
+    )
     missing = client.put("/family-members/999/theme", json={"theme_id": "homestead"})
     inactive = client.put(
         f"/family-members/{inactive_id}/theme", json={"theme_id": "homestead"}
@@ -172,7 +179,9 @@ def test_administrator_theme_requires_auth_same_origin_and_is_per_admin(
     assert client.get("/auth/me").json()["theme_id"] == "homestead"
     assert (
         client.put(
-            "/auth/me/theme", json={"theme_id": "quest"}, headers=headers()
+            "/auth/me/theme",
+            json={"theme_id": "not-a-theme"},
+            headers=headers(),
         ).status_code
         == 422
     )
