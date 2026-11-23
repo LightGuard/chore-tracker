@@ -230,6 +230,12 @@ PVC snapshots are also suitable when the StorageClass supports them. A cold
 copy after scaling the backend to zero is acceptable for a small homelab, but
 the online backup above avoids downtime.
 
+For verified backup and restore procedures, including the temporary restore pod
+and the tested host-level verification script, see
+[Backup and restore](../../../docs/backup-restore.md#kubernetes). For
+administrator setup, rollover recovery, and upgrade guidance, see
+[Operations](../../../docs/operations.md).
+
 Helm does not own the database schema. A `helm rollback` rolls back Kubernetes
 objects, not the SQLite schema. Migrations are forward-only; after a schema
 change, an older image may fail its migration init container or readiness check
