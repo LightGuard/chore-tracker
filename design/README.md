@@ -143,7 +143,7 @@ No new runtime dependencies are required for any direction. Fonts used in the mo
 
 ## Admin theme mockups
 
-Per-screen signed-in administrator layouts for Homestead, Quest, and Sticker Club v2 live in [admin/](admin/README.md), with all 18 screen/theme shots and an approval contact sheet. They are design work for #75 and are pending product-owner approval before implementation.
+Per-screen signed-in administrator layouts for Homestead, Quest, and Sticker Club v2 live in [admin/](admin/README.md), with all 18 screen/theme shots and an approval contact sheet. They are design work for #75 and were approved by the product owner before implementation.
 
 ## Source mockups
 

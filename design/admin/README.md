@@ -6,10 +6,10 @@ authorization, or workflow changes are proposed.
 
 ## Approval status
 
-**Pending product-owner approval on [#75](https://github.com/LightGuard/chore-tracker/issues/75).**
+**Approved by the product owner for implementation on [#75](https://github.com/LightGuard/chore-tracker/issues/75#issuecomment-7092208855).**
 
-Per the ticket, concept-specific admin implementation must not begin until the product
-owner has explicitly approved this matrix and the approval is recorded on the issue.
+The approval covers all six signed-in administrator screens across Homestead, Quest,
+and Sticker Club v2. Concept-specific implementation may proceed from this matrix.
 
 ## Review
 
@@ -68,9 +68,13 @@ node design/admin/render.mjs
 and checks every screen at 1440, 900, and 390 pixels for horizontal overflow. Fonts are
 loaded from the bundled frontend assets; no third-party font requests are made.
 
+## Implementation verification
+
+The signed-in implementation is verified by the real-passkey Playwright flow in `frontend/e2e/admin-flow.spec.ts`. It switches each administrator theme through all six screens and attaches 18 screenshots named `<theme>-<screen>.png` to the Playwright run. The same flow checks phone (390 px) and tablet (768 px) widths for page-level horizontal overflow.
+
 ## Approval checklist
 
-- [ ] Product owner reviewed the 18 screenshots.
-- [ ] Layout direction approved for all three themes.
-- [ ] Approval recorded on issue #75.
-- [ ] Implementation may begin.
+- [x] Product owner reviewed the 18 screenshots.
+- [x] Layout direction approved for all three themes.
+- [x] Approval recorded on issue #75.
+- [x] Implementation may begin.

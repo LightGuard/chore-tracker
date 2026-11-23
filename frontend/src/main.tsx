@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "reshaped/themes/slate/theme.css";
 import "./styles.css";
+import "./admin/admin-themes.css";
 import { App } from "./App";
 import { applyInitialDocumentTheme } from "./theme/storage";
 

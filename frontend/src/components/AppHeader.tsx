@@ -31,6 +31,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const isQuest = themeId === "quest";
   const isSticker = themeId === "sticker-club-v2";
+  const isAdmin = context === "admin";
 
   return (
     <header className="app-header">
@@ -39,15 +40,28 @@ export function AppHeader({
           className="app-brand"
           href="/"
           aria-label={
-            isQuest
-              ? "Quest home"
-              : isSticker
-                ? "Sticker Club home"
-                : "Chore Tracker home"
+            isAdmin
+              ? isQuest
+                ? "Quest administration"
+                : isSticker
+                  ? "Sticker Club administration"
+                  : "Chore Tracker administration"
+              : isQuest
+                ? "Quest home"
+                : isSticker
+                  ? "Sticker Club home"
+                  : "Chore Tracker home"
           }
         >
           <span className="app-brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M3.2 9.2 10 3.3l6.8 5.9v7.1a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V9.2Z" />
               <path d="M7.6 17.1v-5h4.8v5" />
             </svg>
@@ -67,11 +81,17 @@ export function AppHeader({
               )}
             </strong>
             <span>
-              {isQuest
-                ? "family command"
-                : isSticker
-                  ? "no pictograms · just the plan"
-                  : "our house, one page"}
+              {isAdmin
+                ? isQuest
+                  ? "admin command"
+                  : isSticker
+                    ? "admin sheet"
+                    : "house ledger"
+                : isQuest
+                  ? "family command"
+                  : isSticker
+                    ? "no pictograms · just the plan"
+                    : "our house, one page"}
             </span>
           </span>
         </a>
@@ -84,14 +104,18 @@ export function AppHeader({
               </span>
               <strong>{currentChild}</strong>
               {onSwitchChild && (
-                <button type="button" className="text-button" onClick={onSwitchChild}>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={onSwitchChild}
+                >
                   Switch child
                 </button>
               )}
             </>
           ) : currentAdministrator ? (
             <>
-              <span className="identity-label">Administrator</span>
+              <span className="identity-label">Signed in as</span>
               <strong>{currentAdministrator}</strong>
             </>
           ) : (

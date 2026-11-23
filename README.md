@@ -446,6 +446,33 @@ clears the previous child's count before the new stats resolve. No sticker count
 inventory, reward, or collectible data is persisted; only the existing theme
 preference is saved.
 
+### Administrator themes
+
+Signed-in administrator screens follow the administrator's saved theme. The shared
+header, theme switcher, and preference API are the same ones used by the family flow;
+changing the theme re-renders the signed-in layout immediately and keeps the choice
+after reload. A selected child's theme is never consulted for admin screens.
+
+Each theme has a distinct signed-in working layout:
+
+- **Homestead:** paper ledger with a left index rail, serif headings, and ledger-style
+  cards.
+- **Quest:** dark command console with a lit navigation rail, clipped HUD surfaces,
+  condensed headings, and lime/cyan status language.
+- **Sticker Club v2:** type-only paper with a horizontal sticker-tag navigation strip,
+  thick ink borders, hard shadows, and five-color content blocks.
+
+The screens cover the signed-in shell and navigation, family member management, chore
+and checklist management, report history, report detail/pagination, and administrator
+invitation management. These are presentation changes only: no administrator API,
+authorization, persistence, or workflow is changed. The approved matrix and 18
+reference screenshots are in [design/admin/](design/admin/README.md).
+
+Pre-authentication initial setup, sign-in, and invitation acceptance remain on the
+Homestead token styling from #72, regardless of an administrator's saved preference.
+The signed-in layouts are desktop-first and reflow at tablet and phone widths without
+page-level horizontal scrolling.
+
 All themes use bundled WOFF2 assets, not a font CDN:
 
 | Theme / use | Font | Files |
@@ -542,7 +569,10 @@ Playwright's virtual WebAuthn authenticator to exercise real passkey registratio
 sign-in, second-administrator enrollment, invalid and reused invitation handling,
 protected-screen denial, representative family/chore CRUD, report history/detail,
 administrator theme saving, sign-out reverting to Homestead, and disabled controls
-after sign-out against the running application.
+after sign-out against the running application. It also switches each administrator
+theme through all six signed-in screens, attaches the 18 visual snapshots to the
+Playwright run, verifies theme persistence across reload, and checks desktop, tablet,
+and phone widths for horizontal overflow.
 
 These browser tests are separate from `npm test`, which runs the component and
 integration-style Vitest suite.

@@ -1,8 +1,15 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { Reshaped } from "reshaped";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AdminPage } from "./AdminPage";
+import { rememberAdministratorSession } from "../theme/storage";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -20,18 +27,17 @@ const THEMES = [
 ];
 
 function installFetch(
-  handler: (
-    url: string,
-    init?: RequestInit,
-  ) => Response | Promise<Response>,
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
   themes = THEMES,
 ) {
-  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    if (String(input).endsWith("/themes")) {
-      return jsonResponse(themes);
-    }
-    return handler(String(input), init);
-  });
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/themes")) {
+        return jsonResponse(themes);
+      }
+      return handler(String(input), init);
+    },
+  );
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -49,6 +55,7 @@ function renderAdmin(initialEntry = "/admin") {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  window.localStorage.clear();
   window.location.hash = "";
 });
 
@@ -77,6 +84,32 @@ describe("administrator protected screens", () => {
     expect(
       screen.queryByRole("heading", { name: "Chore catalog" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps pre-authentication setup on Homestead even with a cached administrator theme", async () => {
+    rememberAdministratorSession(1, "quest");
+    installFetch((url) => {
+      if (url.endsWith("/auth/setup")) {
+        return jsonResponse({
+          setup_required: true,
+          enrollment_pending: false,
+        });
+      }
+      return jsonResponse({ detail: "Authentication required" }, 401);
+    });
+
+    const { container } = renderAdmin();
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Initial administrator setup",
+      }),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+    expect(container.querySelector(".admin-workspace")).not.toBeInTheDocument();
   });
 
   it("shows sign-in and no management screens for an unauthenticated visitor", async () => {
@@ -134,7 +167,9 @@ describe("administrator protected screens", () => {
     expect(
       screen.getByRole("heading", { name: "Chore catalog" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sign out" }),
+    ).toBeInTheDocument();
   });
 
   it("shows weekly report history to an authenticated administrator", async () => {
@@ -156,17 +191,21 @@ describe("administrator protected screens", () => {
 
     renderAdmin("/admin/reports");
 
+    await screen.findByRole("heading", {
+      name: "Signed in as first@example.test",
+    });
     expect(
-      await screen.findByRole("heading", { name: "Weekly reports" }),
+      screen.getByRole("heading", { name: "Weekly reports" }),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("heading", {
         name: "Report history",
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Reports" }),
-    ).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(
       screen.queryByRole("heading", { name: "Family members" }),
     ).not.toBeInTheDocument();
@@ -226,7 +265,6 @@ describe("administrator protected screens", () => {
       screen.queryByRole("heading", { name: "Family members" }),
     ).not.toBeInTheDocument();
   });
-
 
   it("saves an administrator theme, reverts on failure, and resets on sign-out", async () => {
     const quest = {
@@ -294,9 +332,13 @@ describe("administrator protected screens", () => {
         "quest",
       );
     });
-    expect(
-      window.localStorage.getItem("chore-tracker.theme.admin.1"),
-    ).toBe("quest");
+    expect(window.localStorage.getItem("chore-tracker.theme.admin.1")).toBe(
+      "quest",
+    );
+    expect(container.querySelector(".admin-workspace")).toHaveAttribute(
+      "data-admin-theme",
+      "quest",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(
@@ -331,16 +373,12 @@ describe("administrator protected screens", () => {
 
     renderAdmin();
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Sign out" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
 
     expect(
       await screen.findByRole("heading", { name: "Administrator sign in" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("You have signed out."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("You have signed out.")).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Family members" }),
     ).not.toBeInTheDocument();

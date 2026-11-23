@@ -1,14 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Alert,
-  Button,
-  Card,
-  Loader,
-  ProgressBar,
-  Text,
-  View,
-} from "reshaped";
+import { Alert, Button, Card, Loader, ProgressBar, Text, View } from "reshaped";
 import { ApiError } from "../api/client";
 import {
   getReport,
@@ -112,7 +104,11 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
   const shownEnd = report ? offset + report.entries.length : 0;
 
   return (
-    <section className="report-detail" aria-label="Report detail">
+    <section
+      className="report-detail admin-panel admin-report-detail"
+      aria-label="Report detail"
+      id="report-detail"
+    >
       <View gap={4}>
         <View>
           <Link className="report-back-link" to="/admin/reports">
@@ -159,11 +155,7 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
         {status === "ready" && report && (
           <>
             <View gap={1}>
-              <Text
-                as="h2"
-                variant="headline-1"
-                attributes={{ id: headingId }}
-              >
+              <Text as="h2" variant="headline-1" attributes={{ id: headingId }}>
                 {weekLabel}
               </Text>
               <Text color="neutral-faded">
@@ -240,7 +232,11 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
                 No child had an assignment recorded for this week.
               </Alert>
             ) : (
-              <Card padding={0} borderRadius="large">
+              <Card
+                padding={0}
+                borderRadius="large"
+                className="admin-report-table-card"
+              >
                 <div className="report-table-wrap">
                   <table
                     className="report-table"

@@ -158,7 +158,11 @@ export function ChoreManager({ onSessionExpired }: Props) {
       as="section"
       padding={5}
       borderRadius="large"
-      attributes={{ "aria-labelledby": "chore-catalog-heading" }}
+      className="admin-panel admin-chore-panel"
+      attributes={{
+        "aria-labelledby": "chore-catalog-heading",
+        id: "chore-catalog",
+      }}
     >
       <View gap={4}>
         <View gap={1}>
@@ -182,69 +186,89 @@ export function ChoreManager({ onSessionExpired }: Props) {
           </Alert>
         )}
 
-        <Card as="section" padding={4} borderRadius="medium">
-          <form onSubmit={(event) => void handleCreate(event)}>
-            <View gap={3}>
-              <Text as="h3" variant="headline-3">
-                Add a chore
-              </Text>
-              <FormControl id="new-chore-name">
-                <FormControl.Label>New chore name</FormControl.Label>
-                <TextField
-                  name="name"
-                  value={name}
-                  onChange={({ value }) => setName(value)}
-                  inputAttributes={{ required: true }}
-                />
-              </FormControl>
-              <FormControl id="new-chore-description">
-                <FormControl.Label>New chore description</FormControl.Label>
-                <TextArea
-                  name="description"
-                  value={description}
-                  onChange={({ value }) => setDescription(value)}
-                  resize="auto"
-                />
-              </FormControl>
-              <View direction="row">
-                <Button type="submit" disabled={busy}>
-                  Create chore
-                </Button>
+        <div className="admin-split admin-chore-grid">
+          <Card
+            as="section"
+            padding={4}
+            borderRadius="medium"
+            className="admin-subpanel admin-form-panel"
+          >
+            <form onSubmit={(event) => void handleCreate(event)}>
+              <View gap={3}>
+                <Text as="h3" variant="headline-3">
+                  Add a chore
+                </Text>
+                <FormControl id="new-chore-name">
+                  <FormControl.Label>New chore name</FormControl.Label>
+                  <TextField
+                    name="name"
+                    value={name}
+                    onChange={({ value }) => setName(value)}
+                    inputAttributes={{ required: true }}
+                  />
+                </FormControl>
+                <FormControl id="new-chore-description">
+                  <FormControl.Label>New chore description</FormControl.Label>
+                  <TextArea
+                    name="description"
+                    value={description}
+                    onChange={({ value }) => setDescription(value)}
+                    resize="auto"
+                  />
+                </FormControl>
+                <View direction="row">
+                  <Button type="submit" disabled={busy}>
+                    Create chore
+                  </Button>
+                </View>
               </View>
-            </View>
-          </form>
-        </Card>
+            </form>
+          </Card>
 
-        {loading ? (
-          <View align="center" gap={2} padding={4} attributes={{ role: "status" }}>
-            <Loader ariaLabel="Loading chores" />
-            <Text color="neutral-faded">Loading chores…</Text>
-          </View>
-        ) : chores.length === 0 ? (
-          <Alert color="neutral" title="No chores yet">
-            Add the first chore using the form above.
-          </Alert>
-        ) : (
-          <View gap={3}>
-            {chores.map((chore) => (
-              <ChoreCard
-                key={chore.id}
-                chore={chore}
-                busy={busy}
-                onSave={(changes) => void saveChore(chore, changes)}
-                onToggle={() => void toggleChore(chore)}
-                onAddItem={(label) => void addItem(chore, label)}
-                onUpdateItem={(item, changes) =>
-                  void updateItem(chore, item, changes)
-                }
-                onRemoveItem={(item) => void removeItem(chore, item)}
-                onMoveItem={(index, offset) =>
-                  void moveItem(chore, index, offset)
-                }
-              />
-            ))}
-          </View>
-        )}
+          <div className="admin-list-panel">
+            <div className="admin-list-heading">
+              <Text as="h3" variant="headline-3">
+                Weekly catalog
+              </Text>
+            </div>
+
+            {loading ? (
+              <View
+                align="center"
+                gap={2}
+                padding={4}
+                attributes={{ role: "status" }}
+              >
+                <Loader ariaLabel="Loading chores" />
+                <Text color="neutral-faded">Loading chores…</Text>
+              </View>
+            ) : chores.length === 0 ? (
+              <Alert color="neutral" title="No chores yet">
+                Add the first chore using the form above.
+              </Alert>
+            ) : (
+              <div className="admin-chore-list">
+                {chores.map((chore) => (
+                  <ChoreCard
+                    key={chore.id}
+                    chore={chore}
+                    busy={busy}
+                    onSave={(changes) => void saveChore(chore, changes)}
+                    onToggle={() => void toggleChore(chore)}
+                    onAddItem={(label) => void addItem(chore, label)}
+                    onUpdateItem={(item, changes) =>
+                      void updateItem(chore, item, changes)
+                    }
+                    onRemoveItem={(item) => void removeItem(chore, item)}
+                    onMoveItem={(index, offset) =>
+                      void moveItem(chore, index, offset)
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </View>
     </Card>
   );
@@ -288,6 +312,7 @@ function ChoreCard({
       as="article"
       padding={4}
       borderRadius="medium"
+      className="admin-subpanel admin-chore-card"
       attributes={{ "aria-label": `Chore ${chore.name}` }}
     >
       <View gap={3}>
@@ -301,7 +326,10 @@ function ChoreCard({
           <Text as="h3" variant="headline-3">
             {chore.name}
           </Text>
-          <Badge color={chore.is_active ? "positive" : "neutral"} variant="faded">
+          <Badge
+            color={chore.is_active ? "positive" : "neutral"}
+            variant="faded"
+          >
             {chore.is_active ? "Active" : "Inactive"}
           </Badge>
         </View>
@@ -333,9 +361,7 @@ function ChoreCard({
             </Button>
             <Button
               variant="outline"
-              disabled={
-                busy || (!chore.is_active && activeItems.length === 0)
-              }
+              disabled={busy || (!chore.is_active && activeItems.length === 0)}
               onClick={onToggle}
             >
               {chore.is_active ? "Deactivate chore" : "Activate chore"}
@@ -373,6 +399,7 @@ function ChoreCard({
           <View
             as="ol"
             gap={2}
+            className="admin-checklist-list"
             attributes={{ "aria-label": `Checklist for ${chore.name}` }}
           >
             {chore.checklist_items.map((item, index) => (
@@ -430,7 +457,7 @@ function ChecklistItemRow({
 
   return (
     <View.Item as="li" attributes={{ "aria-label": item.label }}>
-      <Card padding={3} borderRadius="medium">
+      <Card padding={3} borderRadius="medium" className="admin-checklist-row">
         <View gap={2}>
           <TextField
             name={`checklist-label-${item.id}`}
@@ -463,9 +490,7 @@ function ChecklistItemRow({
             <Button
               variant="outline"
               size="small"
-              disabled={
-                busy || index === chore.checklist_items.length - 1
-              }
+              disabled={busy || index === chore.checklist_items.length - 1}
               onClick={() => onMove(1)}
             >
               Move down
