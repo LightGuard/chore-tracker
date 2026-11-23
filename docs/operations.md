@@ -130,7 +130,9 @@ delete operation.
 
 ### Add chores and checklist items
 
-The rotation requires at least one active chore for every active child.
+The rotation requires at least as many active chores as there are active
+children. If there are fewer active chores, planning raises an error and the
+week is not generated.
 
 1. In **Chores**, create a chore with a name and optional description.
    New chores start inactive.
