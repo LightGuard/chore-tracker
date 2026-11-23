@@ -63,6 +63,36 @@ describe("Quest presentation", () => {
     expect(levelForXp(1499)).toBe(3);
   });
 
+  it("resets level progress at the 500 XP boundary", () => {
+    const boundary = questLevelProgress(
+      stats({
+        lifetime: {
+          completed_checklist_items: 50,
+          complete_days: 10,
+          current_streak: 1,
+        },
+      }),
+    );
+    const below = questLevelProgress(
+      stats({
+        lifetime: {
+          completed_checklist_items: 49,
+          complete_days: 9,
+          current_streak: 1,
+        },
+      }),
+    );
+
+    expect(boundary).toMatchObject({
+      xp: 500,
+      level: 2,
+      xpIntoLevel: 0,
+      xpForNextLevel: 500,
+      progress: 0,
+    });
+    expect(below).toMatchObject({ xp: 490, level: 1, xpIntoLevel: 490 });
+  });
+
   it("shows progress within the current level and current-week XP", () => {
     const progress = questLevelProgress(
       stats({
