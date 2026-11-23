@@ -149,12 +149,14 @@ tilt up
 ```
 
 Tilt exposes the API at `http://127.0.0.1:8000` and the frontend at
-`http://localhost:5173`. Uvicorn reloads when backend files change, and Vite
+`http://localhost:5173`. Uvicorn reloads files under `src/` (not the frontend
+tree or virtual environment when run from the repository root), and Vite
 provides frontend hot-module replacement. Stop with `Ctrl+C` or `tilt down`.
 
-If you change `pyproject.toml`, Tilt reinstalls the backend and reruns the
-dependent migration and serve resources. If you change `alembic.ini` or
-`migrations/`, Tilt reapplies migrations and restarts the backend.
+If you change `pyproject.toml`, Tilt reinstalls the backend and restarts the
+backend resource. If you change `alembic.ini` or `migrations/`, Tilt reapplies
+migrations. Backend source changes are handled by Uvicorn's reloader, and
+frontend source changes by Vite.
 
 The migration resource does not run automatically when a developer deletes the
 SQLite file outside Tilt. Trigger the `migrate` resource in the Tilt UI, or run
