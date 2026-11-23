@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import "reshaped/themes/slate/theme.css";
 import "./styles.css";
 import { App } from "./App";
+import { applyInitialDocumentTheme } from "./theme/storage";
+
+applyInitialDocumentTheme();
 
 const rootElement = document.getElementById("root");
 

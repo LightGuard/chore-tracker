@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Reshaped } from "reshaped";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,15 +11,27 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+const THEMES = [
+  {
+    id: "homestead",
+    name: "Homestead",
+    preview_image: "/theme-previews/homestead.png",
+  },
+];
+
 function installFetch(
   handler: (
     url: string,
     init?: RequestInit,
   ) => Response | Promise<Response>,
+  themes = THEMES,
 ) {
-  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
-    handler(String(input), init),
-  );
+  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (String(input).endsWith("/themes")) {
+      return jsonResponse(themes);
+    }
+    return handler(String(input), init);
+  });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -83,6 +95,7 @@ describe("administrator protected screens", () => {
     expect(
       await screen.findByRole("heading", { name: "Administrator sign in" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Theme" })).toBeDisabled();
     expect(
       screen.queryByRole("heading", { name: "Family members" }),
     ).not.toBeInTheDocument();
@@ -212,6 +225,88 @@ describe("administrator protected screens", () => {
     expect(
       screen.queryByRole("heading", { name: "Family members" }),
     ).not.toBeInTheDocument();
+  });
+
+
+  it("saves an administrator theme, reverts on failure, and resets on sign-out", async () => {
+    const quest = {
+      id: "quest",
+      name: "Quest",
+      preview_image: "/theme-previews/quest.png",
+    };
+    let failTheme = true;
+    installFetch(
+      async (url, init) => {
+        if (url.endsWith("/auth/setup")) {
+          return jsonResponse({
+            setup_required: false,
+            enrollment_pending: false,
+          });
+        }
+        if (url.endsWith("/auth/me")) {
+          return jsonResponse({
+            id: 1,
+            email: "first@example.test",
+            theme_id: "homestead",
+          });
+        }
+        if (url.endsWith("/auth/me/theme") && init?.method === "PUT") {
+          return failTheme
+            ? jsonResponse({ detail: "Theme service unavailable" }, 500)
+            : jsonResponse({ theme_id: "quest" });
+        }
+        if (url.endsWith("/auth/logout")) return jsonResponse({ status: "ok" });
+        if (url.endsWith("/family-members") || url.endsWith("/chores")) {
+          return jsonResponse([]);
+        }
+        return jsonResponse({ detail: "Not found" }, 404);
+      },
+      [...THEMES, quest],
+    );
+
+    const { container } = renderAdmin();
+    expect(
+      await screen.findByRole("heading", {
+        name: "Signed in as first@example.test",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Theme" })).toBeEnabled();
+    expect(container.querySelector(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Theme" }));
+    fireEvent.click(screen.getByRole("option", { name: /Quest/ }));
+    expect(
+      await screen.findByText("Theme service unavailable"),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+
+    failTheme = false;
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(container.querySelector(".theme-scope")).toHaveAttribute(
+        "data-theme",
+        "quest",
+      );
+    });
+    expect(
+      window.localStorage.getItem("chore-tracker.theme.admin.1"),
+    ).toBe("quest");
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(
+      await screen.findByRole("heading", { name: "Administrator sign in" }),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".theme-scope")).toHaveAttribute(
+      "data-theme",
+      "homestead",
+    );
+    expect(screen.getByRole("button", { name: "Theme" })).toBeDisabled();
   });
 
   it("signs out and removes access to management screens", async () => {

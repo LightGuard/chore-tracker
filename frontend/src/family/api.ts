@@ -3,6 +3,7 @@ import { apiRequest } from "../api/client";
 export type FamilyMember = {
   id: number;
   display_name: string;
+  theme_id: string | null;
 };
 
 export type ChecklistItem = {
