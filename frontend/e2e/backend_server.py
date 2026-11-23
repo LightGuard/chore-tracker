@@ -535,9 +535,7 @@ def report_payload(report) -> dict[str, object]:
     }
 
 
-def seed_theme_fixture(
-    member_names: tuple[str, ...], labels: tuple[str, ...]
-) -> None:
+def seed_theme_fixture(member_names: tuple[str, ...], labels: tuple[str, ...]) -> None:
     """Reset to a deterministic assignment for theme preview and stress tests."""
     reset_database()
     week_start = E2E_TODAY - timedelta(days=E2E_TODAY.weekday())
