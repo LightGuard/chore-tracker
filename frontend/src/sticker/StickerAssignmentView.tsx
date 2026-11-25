@@ -70,6 +70,9 @@ export function StickerAssignmentView({
     (item) => item.is_completed,
   ).length;
   const itemCount = assignment.checklist_items.length;
+  const hasOptionalItems = assignment.checklist_items.some(
+    (item) => !item.is_required,
+  );
   const nextIncompleteId = assignment.checklist_items.find(
     (item) => !item.is_completed,
   )?.id;
@@ -235,6 +238,9 @@ export function StickerAssignmentView({
                         className="sticker-job-checkbox"
                       >
                         {item.label}
+                        {!item.is_required && (
+                          <span className="optional-item-tag">Optional</span>
+                        )}
                       </Checkbox>
                       <span className="sticker-job-status" aria-hidden="true">
                         {item.is_completed ? "DONE" : isNext ? "NEXT" : "OPEN"}
@@ -274,7 +280,15 @@ export function StickerAssignmentView({
           )}
 
           <p className="sticker-hint">
-            All <b>{itemCount} jobs</b> fill today&rsquo;s sticker.
+            {hasOptionalItems ? (
+              <>
+                Required jobs fill today&rsquo;s sticker.
+              </>
+            ) : (
+              <>
+                All <b>{itemCount} jobs</b> fill today&rsquo;s sticker.
+              </>
+            )}
           </p>
         </div>
 

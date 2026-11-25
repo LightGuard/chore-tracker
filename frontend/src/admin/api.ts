@@ -11,6 +11,7 @@ export type ManagedChecklistItem = {
   label: string;
   position: number;
   is_active: boolean;
+  is_required: boolean;
 };
 
 export type ManagedChore = {
@@ -79,17 +80,18 @@ export function updateChore(
 export function addChecklistItem(
   choreId: number,
   label: string,
+  isRequired: boolean,
 ): Promise<ManagedChecklistItem> {
   return apiRequest<ManagedChecklistItem>(`/chores/${choreId}/checklist-items`, {
     method: "POST",
-    body: JSON.stringify({ label }),
+    body: JSON.stringify({ label, is_required: isRequired }),
   });
 }
 
 export function updateChecklistItem(
   choreId: number,
   itemId: number,
-  changes: { label?: string; is_active?: boolean },
+  changes: { label?: string; is_active?: boolean; is_required?: boolean },
 ): Promise<ManagedChecklistItem> {
   return apiRequest<ManagedChecklistItem>(
     `/chores/${choreId}/checklist-items/${itemId}`,

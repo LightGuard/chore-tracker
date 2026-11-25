@@ -59,9 +59,9 @@ function assignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignme
     chore_description: "Wipe and sweep after dinner.",
     today: "2026-11-25",
     checklist_items: [
-      { id: 11, label: "Wipe counters", position: 0, is_completed: false },
-      { id: 12, label: "Sweep floor", position: 1, is_completed: false },
-      { id: 13, label: "Take out trash", position: 2, is_completed: false },
+      { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: false },
+      { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: false },
+      { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: false },
     ],
     is_complete: false,
     ...overrides,
@@ -111,9 +111,9 @@ describe("Sticker Club v2 presentation", () => {
       base,
       assignment({
         checklist_items: [
-          { id: 11, label: "Wipe counters", position: 0, is_completed: true },
-          { id: 12, label: "Sweep floor", position: 1, is_completed: true },
-          { id: 13, label: "Take out trash", position: 2, is_completed: true },
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
+          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: true },
         ],
         is_complete: true,
       }),
@@ -129,9 +129,9 @@ describe("Sticker Club v2 presentation", () => {
       base,
       assignment({
         checklist_items: [
-          { id: 11, label: "Wipe counters", position: 0, is_completed: true },
-          { id: 12, label: "Sweep floor", position: 1, is_completed: false },
-          { id: 13, label: "Take out trash", position: 2, is_completed: false },
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: false },
+          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: false },
         ],
         is_complete: false,
       }),
@@ -169,9 +169,9 @@ describe("Sticker Club v2 presentation", () => {
       stats(Array.from({ length: 7 }, (_, index) => day(index, "not_recorded"))),
       assignment({
         checklist_items: [
-          { id: 11, label: "Wipe counters", position: 0, is_completed: true },
-          { id: 12, label: "Sweep floor", position: 1, is_completed: true },
-          { id: 13, label: "Take out trash", position: 2, is_completed: true },
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
+          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: true },
         ],
         is_complete: true,
       }),

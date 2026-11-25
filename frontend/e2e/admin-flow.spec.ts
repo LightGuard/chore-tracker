@@ -207,11 +207,19 @@ test.describe.serial("administrator passkey and management flow", () => {
     const garage = page.getByRole("article", { name: "Chore Garage" });
     await expect(garage).toBeVisible();
 
+    await garage
+      .locator("label")
+      .filter({ hasText: "Required" })
+      .click();
     await garage.getByLabel("Add checklist item").fill("Sweep garage");
     await garage.getByRole("button", { name: "Add item" }).click();
+    const sweepChecklistItem = garage.getByRole("listitem", {
+      name: "Sweep garage",
+    });
+    await expect(sweepChecklistItem).toBeVisible();
     await expect(
-      garage.getByRole("listitem", { name: "Sweep garage" }),
-    ).toBeVisible();
+      sweepChecklistItem.getByRole("switch", { name: "Required" }),
+    ).not.toBeChecked();
 
     await garage.getByLabel("Add checklist item").fill("Organize shelves");
     await garage.getByRole("button", { name: "Add item" }).click();
@@ -249,6 +257,28 @@ test.describe.serial("administrator passkey and management flow", () => {
     expect(
       savedGarage.checklist_items.map((item: { label: string }) => item.label),
     ).toEqual(["Organize shelves", "Sweep and wash garage floor"]);
+    expect(
+      savedGarage.checklist_items.find(
+        (item: { label: string }) =>
+          item.label === "Sweep and wash garage floor",
+      ).is_required,
+    ).toBe(false);
+    expect(
+      savedGarage.checklist_items.find(
+        (item: { label: string }) => item.label === "Organize shelves",
+      ).is_required,
+    ).toBe(true);
+
+    if (env.CAPTURE_SCREENSHOTS === "1") {
+      await page.addStyleTag({
+        content: ".app-header { display: none !important; }",
+      });
+      const directory = resolve(cwd(), ".playwright-data/screenshots");
+      mkdirSync(directory, { recursive: true });
+      await garage.screenshot({
+        path: resolve(directory, "admin-optional-checklist-item.png"),
+      });
+    }
 
     await context.close();
   });

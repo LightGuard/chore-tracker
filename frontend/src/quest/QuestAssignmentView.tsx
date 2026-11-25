@@ -48,6 +48,9 @@ export function QuestAssignmentView({
     (item) => item.is_completed,
   ).length;
   const itemCount = assignment.checklist_items.length;
+  const hasOptionalItems = assignment.checklist_items.some(
+    (item) => !item.is_required,
+  );
   const nextIncompleteId = assignment.checklist_items.find(
     (item) => !item.is_completed,
   )?.id;
@@ -185,9 +188,8 @@ export function QuestAssignmentView({
         <div className="quest-clear" role="status">
           <span>QUEST CLEAR</span>
           <strong>
-            {stats
-              ? `Every objective is done today. ${streak}-day streak.`
-              : "Every objective is done today."}
+            {hasOptionalItems ? "Every required objective is done today." : "Every objective is done today."}
+            {stats ? ` ${streak}-day streak.` : ""}
           </strong>
         </div>
       )}
@@ -221,6 +223,9 @@ export function QuestAssignmentView({
                   className="quest-objective-checkbox"
                 >
                   {item.label}
+                  {!item.is_required && (
+                    <span className="optional-item-tag">Optional</span>
+                  )}
                 </Checkbox>
                 <span className="quest-objective-state" aria-hidden="true">
                   {state === "cleared"

@@ -488,6 +488,33 @@ def reset_rollover_scenario() -> dict[str, dict[str, int]]:
     return catalog
 
 
+def seed_optional_checklist_fixture() -> dict[str, object]:
+    """Seed a rotation week with one optional checklist item for child-flow tests."""
+    reset_database()
+    catalog = seed_lifecycle_catalog()
+    connection = sqlite3.connect(DATABASE_PATH)
+    try:
+        connection.execute(
+            """
+            UPDATE chore_checklist_items
+            SET is_required = 0
+            WHERE label = 'Sweep floor'
+            """
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    assignments = assignment_service().generate(E2E_TODAY, generated_on=E2E_TODAY)
+    set_test_today(E2E_TODAY)
+    return {
+        "status": "ok",
+        "today": E2E_TODAY.isoformat(),
+        "catalog": catalog,
+        "assignments": assignment_payload(assignments.assignments),
+    }
+
+
 def assignment_payload(assignments) -> list[dict[str, object]]:
     return [
         {
@@ -498,7 +525,12 @@ def assignment_payload(assignments) -> list[dict[str, object]]:
             "week_end": assignment.week_end.isoformat(),
             "chore_name": assignment.chore_name,
             "checklist_items": [
-                {"id": item.id, "label": item.label, "position": item.position}
+                {
+                    "id": item.id,
+                    "label": item.label,
+                    "position": item.position,
+                    "is_required": item.is_required,
+                }
                 for item in assignment.checklist_items
             ],
         }
@@ -1020,6 +1052,10 @@ def install_test_hooks():
     @router.post("/scenario/rotation", include_in_schema=False)
     def reset_rotation_scenario() -> dict[str, dict[str, int]]:
         return reset_lifecycle_catalog()
+
+    @router.post("/scenario/optional-checklist", include_in_schema=False)
+    def reset_optional_checklist_scenario() -> dict[str, object]:
+        return seed_optional_checklist_fixture()
 
     @router.post("/scenario/rollover", include_in_schema=False)
     def reset_rollover_fixture() -> dict[str, dict[str, int]]:

@@ -323,9 +323,23 @@ export function FamilyChorePage() {
     [assignment, savingItemId],
   );
 
-  const completedCount =
-    assignment?.checklist_items.filter((item) => item.is_completed).length ?? 0;
-  const itemCount = assignment?.checklist_items.length ?? 0;
+  const checklistItems = assignment?.checklist_items ?? [];
+  const completedCount = checklistItems.filter(
+    (item) => item.is_completed,
+  ).length;
+  const itemCount = checklistItems.length;
+  const requiredItems = checklistItems.filter((item) => item.is_required);
+  const optionalItems = checklistItems.filter((item) => !item.is_required);
+  const requiredCompletedCount = requiredItems.filter(
+    (item) => item.is_completed,
+  ).length;
+  const optionalCompletedCount = optionalItems.filter(
+    (item) => item.is_completed,
+  ).length;
+  const progressCopy =
+    optionalItems.length === 0
+      ? `${completedCount} of ${itemCount} complete today`
+      : `${requiredCompletedCount} of ${requiredItems.length} required complete today · ${optionalCompletedCount} of ${optionalItems.length} optional checked`;
   const firstTimePicker = Boolean(selectedMember && needsThemePicker);
   const showCurrentChild = Boolean(selectedMember);
 
@@ -666,6 +680,11 @@ export function FamilyChorePage() {
                                     }
                                   >
                                     {item.label}
+                                    {!item.is_required && (
+                                      <span className="optional-item-tag">
+                                        Optional
+                                      </span>
+                                    )}
                                   </Checkbox>
                                 </View.Item>
                               ))}
@@ -690,19 +709,21 @@ export function FamilyChorePage() {
                               <>
                                 <div className="all-done-stamp" role="status">
                                   <span>All done for today</span>
-                                  <strong>Every item on this chore is complete.</strong>
+                                  <strong>
+                                    Every required item on this chore is complete.
+                                  </strong>
                                 </div>
                                 <Text
                                   weight="medium"
                                   color="neutral-faded"
                                   className="completion-count"
                                 >
-                                  {completedCount} of {itemCount} complete today
+                                  {progressCopy}
                                 </Text>
                               </>
                             ) : (
                               <Text weight="medium" color="neutral-faded">
-                                {completedCount} of {itemCount} complete today
+                                {progressCopy}
                               </Text>
                             )}
                           </View>
