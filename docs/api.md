@@ -28,8 +28,9 @@ running instance at `/docs`, and the machine-readable schema is at
 
 ## Child-facing endpoints
 
-These endpoints do not create assignments. The weekly rollover must have
-generated the relevant week first.
+These endpoints do not create assignments. The weekly rollover or an
+administrator's manual generation request must have created the relevant week
+first.
 
 ### List active family members
 
@@ -76,14 +77,17 @@ week, including immutable chore snapshots and today's checklist state:
   "chore_description": "Reset the kitchen after dinner",
   "today": "2026-11-25",
   "checklist_items": [
-    { "id": 101, "label": "Wipe counters", "position": 0, "is_completed": true },
-    { "id": 102, "label": "Take out trash", "position": 1, "is_completed": false }
+    { "id": 101, "label": "Wipe counters", "position": 0, "is_required": true, "is_completed": true },
+    { "id": 102, "label": "Take out trash", "position": 1, "is_required": false, "is_completed": false }
   ],
   "is_complete": false
 }
 ```
 
-`is_complete` is true only when every checklist item is complete for `today`.
+`is_complete` is true when every required checklist item is complete for
+`today`. Optional items are returned and tracked independently, but they do not
+block completion. A chore whose items are all optional is complete from the
+start of the day.
 The endpoint returns HTTP 404 when the profile does not exist or has no current
 assignment, and HTTP 409 when the profile exists but is inactive.
 
@@ -152,16 +156,21 @@ inactive profiles return HTTP 409, matching current-assignment behavior.
 Field semantics:
 
 - `lifetime.completed_checklist_items` counts persisted completion rows with
-  `is_completed = true` across all assignments. It does not consult the current
-  catalog.
-- `lifetime.complete_days` counts assignment days where every immutable
-  checklist snapshot item was complete.
+  `is_completed = true` across all assignments, including optional items. It
+  does not consult the current catalog.
+- `lifetime.complete_days` counts assignment days where every required
+  immutable checklist snapshot item was complete. Optional items do not block a
+  day. A chore with no required items is complete for days through the current
+  local date.
 - `lifetime.current_streak` counts consecutive complete days ending today, or
   ending yesterday when today is not complete. It is zero when neither day is
   complete.
 - `current_week.days` always has seven entries. `state` is `complete`,
-  `incomplete`, or `not_recorded`. A day with no persisted rows is
-  `not_recorded` and is never complete.
+  `incomplete`, or `not_recorded`. Completion is based on required snapshot
+  items only; optional items are reflected in `completed_checklist_items` but do
+  not affect `state`. A day with outstanding required items and no persisted
+  rows is `not_recorded`. With no required items, days through today are
+  `complete` and later days remain `not_recorded`.
 - `household.weekly_standings` includes every active child, ordered by
   current-week completed items descending, current streak descending, then
   case-insensitive display name ascending. It has no rank field.
@@ -192,14 +201,15 @@ date:
   "assignment_id": 42,
   "completion_date": "2026-11-25",
   "checklist_items": [
-    { "id": 101, "label": "Wipe counters", "position": 0, "is_completed": true },
-    { "id": 102, "label": "Take out trash", "position": 1, "is_completed": false }
+    { "id": 101, "label": "Wipe counters", "position": 0, "is_required": true, "is_completed": true },
+    { "id": 102, "label": "Take out trash", "position": 1, "is_required": false, "is_completed": false }
   ],
   "is_complete": false
 }
 ```
 
-Reads do not create completion rows. A date with no saved state returns every
+`is_complete` follows the required-item rule documented for the current
+assignment. Reads do not create completion rows. A date with no saved state returns every
 item unchecked. The date must fall within the assignment's Monday-Sunday week,
 otherwise the endpoint returns HTTP 422. Unknown family members, assignments, or
 checklist items return HTTP 404; an inactive family member returns HTTP 409.
@@ -224,6 +234,7 @@ state:
     "id": 101,
     "label": "Wipe counters",
     "position": 0,
+    "is_required": true,
     "is_completed": true
   },
   "is_complete": false
@@ -267,9 +278,11 @@ week, including days with no saved completion rows.
 - Records are ordered newest date first, with assignment ID as a deterministic
   tie-breaker.
 - `limit` is 1-100 (default 50); `offset` is non-negative (default 0).
-- `completion_status` is `complete` only when every snapshot item has a saved
-  completed row; `incomplete` when at least one row exists but the full
-  checklist is not complete; `not_yet_recorded` when no row exists.
+- `completion_status` is `complete` when every required snapshot item has a
+  saved completed row, or when the assignment has no required items and the day
+  is not in the future. It is `incomplete` when required items remain and at
+  least one checklist row exists for the day; otherwise it is
+  `not_yet_recorded`. Optional rows are tracked but never block completion.
 - Historical records remain available after a profile or chore is deactivated.
   Catalog edits do not change assignment snapshots.
 - An unknown profile returns HTTP 404. A known profile with no assignments
@@ -458,9 +471,16 @@ Checklist item bodies:
 { "label": "Wipe counters" }
 ```
 
+`is_required` defaults to `true`. Set it to `false` to mark guidance that does
+not block daily completion:
+
 ```json
-{ "label": "Wipe counters", "is_active": true }
+{ "label": "Wipe counters", "is_active": true, "is_required": false }
 ```
+
+The required/optional flag is copied into the immutable weekly assignment
+snapshot when assignments are generated. Later catalog edits do not rewrite an
+existing snapshot.
 
 Reorder body must contain every checklist item for the chore exactly once:
 
@@ -614,6 +634,8 @@ never recalculated from current household data. An unknown week returns HTTP
 404. Invalid pagination returns HTTP 422.
 
 The administrator UI uses five entries per page, but the API allows up to 100.
+Each day's `complete` status is calculated from required checklist snapshot
+items only; optional items never make a day incomplete.
 
 ## Health endpoints
 
