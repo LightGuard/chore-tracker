@@ -60,7 +60,9 @@ def create_member(connection, name, active=True):
     ).lastrowid
 
 
-def create_assignment(connection, family_member_id):
+def create_assignment(
+    connection, family_member_id, *, required: tuple[bool, bool] = (True, True)
+):
     chore_id = connection.execute(
         """INSERT INTO chores (name, description, is_active)
            VALUES ('Kitchen', 'Clean the kitchen', 1)"""
@@ -75,15 +77,15 @@ def create_assignment(connection, family_member_id):
     ).lastrowid
     first_item = connection.execute(
         """INSERT INTO assignment_checklist_items
-           (weekly_assignment_id, label_snapshot, position)
-           VALUES (?, 'Sweep floor', 0)""",
-        (assignment_id,),
+           (weekly_assignment_id, label_snapshot, position, is_required)
+           VALUES (?, 'Sweep floor', 0, ?)""",
+        (assignment_id, int(required[0])),
     ).lastrowid
     second_item = connection.execute(
         """INSERT INTO assignment_checklist_items
-           (weekly_assignment_id, label_snapshot, position)
-           VALUES (?, 'Wipe counters', 1)""",
-        (assignment_id,),
+           (weekly_assignment_id, label_snapshot, position, is_required)
+           VALUES (?, 'Wipe counters', 1, ?)""",
+        (assignment_id, int(required[1])),
     ).lastrowid
     return assignment_id, first_item, second_item
 
@@ -139,12 +141,14 @@ def test_current_assignment_returns_snapshots_in_order_and_today_completion(
                 "id": first_item,
                 "label": "Sweep floor",
                 "position": 0,
+                "is_required": True,
                 "is_completed": False,
             },
             {
                 "id": second_item,
                 "label": "Wipe counters",
                 "position": 1,
+                "is_required": True,
                 "is_completed": True,
             },
         ],
@@ -278,3 +282,83 @@ def test_current_assignment_moves_to_new_week_on_monday_boundary(tmp_path, monke
     assert response.json()["week_start"] == "2026-11-16"
     assert response.json()["week_end"] == "2026-11-22"
     assert response.json()["chore_name"] == "Next week"
+
+
+def test_optional_items_are_visible_and_do_not_block_daily_completion(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        _, required_item, optional_item = create_assignment(
+            connection, member_id, required=(True, False)
+        )
+        connection.execute(
+            """INSERT INTO daily_checklist_completions
+               (assignment_checklist_item_id, completion_date, is_completed,
+                completed_at)
+               VALUES (?, '2026-11-12', 1, '2026-11-12T18:00:00Z')""",
+            (required_item,),
+        )
+
+    response = client.get(f"/family-members/{member_id}/current-assignment")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["is_complete"] is True
+    assert payload["checklist_items"] == [
+        {
+            "id": required_item,
+            "label": "Sweep floor",
+            "position": 0,
+            "is_required": True,
+            "is_completed": True,
+        },
+        {
+            "id": optional_item,
+            "label": "Wipe counters",
+            "position": 1,
+            "is_required": False,
+            "is_completed": False,
+        },
+    ]
+
+
+def test_unchecked_required_item_prevents_completion_when_optional_item_is_checked(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        _, _, optional_item = create_assignment(
+            connection, member_id, required=(True, False)
+        )
+        connection.execute(
+            """INSERT INTO daily_checklist_completions
+               (assignment_checklist_item_id, completion_date, is_completed,
+                completed_at)
+               VALUES (?, '2026-11-12', 1, '2026-11-12T18:00:00Z')""",
+            (optional_item,),
+        )
+
+    response = client.get(f"/family-members/{member_id}/current-assignment")
+
+    assert response.status_code == 200
+    assert response.json()["is_complete"] is False
+
+
+def test_all_optional_assignment_is_complete_without_completion_rows(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        create_assignment(connection, member_id, required=(False, False))
+
+    response = client.get(f"/family-members/{member_id}/current-assignment")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["is_complete"] is True
+    assert all(item["is_required"] is False for item in payload["checklist_items"])
+    assert all(item["is_completed"] is False for item in payload["checklist_items"])

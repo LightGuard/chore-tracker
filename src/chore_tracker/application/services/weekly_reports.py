@@ -104,7 +104,8 @@ class AssignmentReportSource:
     chore_name: str
     chore_description: str
     checklist_item_count: int
-    completed_item_counts: tuple[int, ...]
+    required_checklist_item_count: int
+    required_completed_item_counts: tuple[int, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,11 +223,17 @@ def build_weekly_report_draft(
         assignment_ids.add(assignment.weekly_assignment_id)
         if assignment.checklist_item_count < 0:
             raise ValueError("checklist item count must not be negative")
-        if len(assignment.completed_item_counts) != 7:
+        if (
+            assignment.required_checklist_item_count < 0
+            or assignment.required_checklist_item_count
+            > assignment.checklist_item_count
+        ):
+            raise ValueError("required checklist item count is invalid")
+        if len(assignment.required_completed_item_counts) != 7:
             raise ValueError("completed item counts must cover seven days")
         if any(
-            count < 0 or count > assignment.checklist_item_count
-            for count in assignment.completed_item_counts
+            count < 0 or count > assignment.required_checklist_item_count
+            for count in assignment.required_completed_item_counts
         ):
             raise ValueError("completed item counts must be within the checklist")
         if not assignment.family_member_name.strip():
@@ -240,12 +247,12 @@ def build_weekly_report_draft(
                 status=(
                     DailyStatus.COMPLETE
                     if assignment.checklist_item_count > 0
-                    and completed_count == assignment.checklist_item_count
+                    and completed_count == assignment.required_checklist_item_count
                     else DailyStatus.INCOMPLETE
                 ),
             )
             for day_index, completed_count in enumerate(
-                assignment.completed_item_counts
+                assignment.required_completed_item_counts
             )
         )
         completed_days = sum(day.status is DailyStatus.COMPLETE for day in days)

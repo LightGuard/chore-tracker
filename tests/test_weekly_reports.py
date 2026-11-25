@@ -586,3 +586,73 @@ def test_lists_finalized_report_headers_newest_first(tmp_path) -> None:
     assert header.week_end == WEEK_END
     assert header.summary.completed_days == 0
     assert service.get_report_header(WEEK_START - timedelta(days=14)) is None
+
+
+def test_reports_complete_days_from_required_items_only(tmp_path) -> None:
+    database_path = _database(tmp_path)
+    member_ids = _seed_catalog(database_path)
+    with connect(database_path) as connection:
+        bathroom_item = connection.execute(
+            """
+            SELECT item.id FROM chore_checklist_items AS item
+            JOIN chores AS chore ON chore.id = item.chore_id
+            WHERE chore.name = 'Bathroom'
+            """
+        ).fetchone()["id"]
+        kitchen_optional = connection.execute(
+            """
+            SELECT item.id FROM chore_checklist_items AS item
+            JOIN chores AS chore ON chore.id = item.chore_id
+            WHERE chore.name = 'Kitchen'
+            ORDER BY item.position
+            LIMIT 1
+            """
+        ).fetchone()["id"]
+        connection.execute(
+            "UPDATE chore_checklist_items SET is_required = 0 WHERE id IN (?, ?)",
+            (bathroom_item, kitchen_optional),
+        )
+
+    assignments = _generate_assignments(database_path, WEEK_START)
+    by_member = {assignment.family_member_id: assignment for assignment in assignments}
+    alex_assignment = by_member[member_ids["Alex"]]
+    sam_assignment = by_member[member_ids["Sam"]]
+    assert all(not item.is_required for item in alex_assignment.checklist_items)
+    sam_required = [item for item in sam_assignment.checklist_items if item.is_required]
+    sam_optional = [
+        item for item in sam_assignment.checklist_items if not item.is_required
+    ]
+    assert len(sam_required) == 1
+    assert len(sam_optional) == 1
+
+    # Alex has only optional items, so every day is complete without records.
+    # Sam needs the required item; checking only the optional item is incomplete.
+    for day_index in range(7):
+        day = WEEK_START + timedelta(days=day_index)
+        if day_index != 1:
+            for item in sam_required:
+                _set_completion(database_path, item.id, day)
+        if day_index == 1:
+            for item in sam_optional:
+                _set_completion(database_path, item.id, day)
+
+    report = _service(database_path).generate(WEEK_START, generated_at=GENERATED_AT)
+
+    alex_entry = _entry(report, "Alex")
+    sam_entry = _entry(report, "Sam")
+    assert alex_entry.completed_days == 7
+    assert alex_entry.incomplete_days == 0
+    assert sam_entry.completed_days == 6
+    assert sam_entry.incomplete_days == 1
+    assert sam_entry.days[1].status is DailyStatus.INCOMPLETE
+    assert all(
+        day.status is DailyStatus.COMPLETE
+        for index, day in enumerate(sam_entry.days)
+        if index != 1
+    )
+    assert report.summary == WeeklyReportSummary(
+        family_member_count=2,
+        total_days=14,
+        completed_days=13,
+        incomplete_days=1,
+    )

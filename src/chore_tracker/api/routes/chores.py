@@ -35,12 +35,14 @@ class ChoreUpdate(BaseModel):
 class ChecklistItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     label: str = Field(min_length=1, max_length=500)
+    is_required: bool = True
 
 
 class ChecklistItemUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     label: str | None = Field(default=None, min_length=1, max_length=500)
     is_active: bool | None = None
+    is_required: bool | None = None
 
 
 class ChecklistOrder(BaseModel):
@@ -122,7 +124,12 @@ def add_checklist_item(
     administrator: Admin,
     origin: SameOrigin,
 ) -> dict[str, Any]:
-    return _call(_service(request).add_checklist_item, chore_id, body.label)
+    return _call(
+        _service(request).add_checklist_item,
+        chore_id,
+        body.label,
+        body.is_required,
+    )
 
 
 @router.patch("/{chore_id}/checklist-items/{item_id}")

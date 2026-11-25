@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
+from zoneinfo import ZoneInfo
 
 from alembic import command
 from alembic.config import Config
@@ -17,6 +18,13 @@ from chore_tracker.main import app
 
 ROOT = Path(__file__).resolve().parents[1]
 ORIGIN = "http://localhost:5173"
+TODAY = datetime(2026, 11, 12, 12, tzinfo=ZoneInfo("America/Denver"))
+
+
+class FrozenDateTime(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls.fromtimestamp(TODAY.timestamp(), tz=tz)
 
 
 def prepare_client(tmp_path, monkeypatch):
@@ -41,10 +49,17 @@ def prepare_client(tmp_path, monkeypatch):
             report_timezone="America/Denver",
         ),
     )
+    monkeypatch.setattr(child_views, "datetime", FrozenDateTime)
     return TestClient(app), database_path
 
 
-def create_assignment(connection, week_start="2026-11-09", member_name="Alex"):
+def create_assignment(
+    connection,
+    week_start="2026-11-09",
+    member_name="Alex",
+    *,
+    required: tuple[bool, bool] = (True, True),
+):
     start = date.fromisoformat(week_start)
     week_end = start + timedelta(days=6)
     member_id = connection.execute(
@@ -66,9 +81,9 @@ def create_assignment(connection, week_start="2026-11-09", member_name="Alex"):
         item_ids.append(
             connection.execute(
                 """INSERT INTO assignment_checklist_items
-                   (weekly_assignment_id, label_snapshot, position)
-                   VALUES (?, ?, ?)""",
-                (assignment_id, label, position),
+                   (weekly_assignment_id, label_snapshot, position, is_required)
+                   VALUES (?, ?, ?, ?)""",
+                (assignment_id, label, position, int(required[position])),
             ).lastrowid
         )
     return member_id, assignment_id, chore_id, item_ids
@@ -243,3 +258,51 @@ def test_history_rejects_invalid_pagination_values(tmp_path, monkeypatch):
         ).status_code
         == 422
     )
+
+
+def test_history_uses_required_items_for_status_and_keeps_optional_activity(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, assignment_id, _, item_ids = create_assignment(
+            connection, required=(True, False)
+        )
+
+    assert (
+        set_item(
+            client, member_id, assignment_id, item_ids[0], "2026-11-12", True
+        ).status_code
+        == 200
+    )
+    assert (
+        set_item(
+            client, member_id, assignment_id, item_ids[1], "2026-11-11", True
+        ).status_code
+        == 200
+    )
+
+    response = client.get(f"/family-members/{member_id}/completion-history")
+
+    assert response.status_code == 200
+    by_date = {item["completion_date"]: item for item in response.json()["items"]}
+    assert by_date["2026-11-12"]["completion_status"] == "complete"
+    assert by_date["2026-11-11"]["completion_status"] == "incomplete"
+    assert by_date["2026-11-10"]["completion_status"] == "not_yet_recorded"
+
+
+def test_history_all_optional_days_are_complete_only_through_today(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, _, _, _ = create_assignment(connection, required=(False, False))
+
+    response = client.get(f"/family-members/{member_id}/completion-history")
+
+    assert response.status_code == 200
+    by_date = {item["completion_date"]: item for item in response.json()["items"]}
+    for day in ("2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"):
+        assert by_date[day]["completion_status"] == "complete"
+    for day in ("2026-11-13", "2026-11-14", "2026-11-15"):
+        assert by_date[day]["completion_status"] == "not_yet_recorded"

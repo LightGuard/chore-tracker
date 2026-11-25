@@ -77,6 +77,7 @@ class AssignmentChecklistItem(BaseModel):
     id: int
     label: str
     position: int
+    is_required: bool
     is_completed: bool
 
 
@@ -231,6 +232,7 @@ class DailyCompletionChecklistItem(BaseModel):
     id: int
     label: str
     position: int
+    is_required: bool
     is_completed: bool
 
 
@@ -348,6 +350,6 @@ def get_family_member_completion_history(
 ) -> dict[str, Any]:
     return _invoke(
         lambda: _service(request).get_completion_history(
-            family_member_id, limit, offset
+            family_member_id, limit, offset, _today(request)
         )
     )

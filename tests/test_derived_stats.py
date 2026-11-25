@@ -64,7 +64,12 @@ def create_member(connection, name, active=True):
 
 
 def create_assignment(
-    connection, member_id, week_start, labels=("Sweep floor", "Wipe counters")
+    connection,
+    member_id,
+    week_start,
+    labels=("Sweep floor", "Wipe counters"),
+    *,
+    required: tuple[bool, ...] | None = None,
 ):
     start = date.fromisoformat(week_start)
     week_end = start + timedelta(days=6)
@@ -83,9 +88,14 @@ def create_assignment(
         item_ids.append(
             connection.execute(
                 """INSERT INTO assignment_checklist_items
-                   (weekly_assignment_id, label_snapshot, position)
-                   VALUES (?, ?, ?)""",
-                (assignment_id, label, position),
+                   (weekly_assignment_id, label_snapshot, position, is_required)
+                   VALUES (?, ?, ?, ?)""",
+                (
+                    assignment_id,
+                    label,
+                    position,
+                    int(required[position] if required is not None else True),
+                ),
             ).lastrowid
         )
     return assignment_id, item_ids
@@ -531,3 +541,59 @@ def test_aggregate_reads_stay_constant_for_seven_active_children(tmp_path, monke
         if statement.lstrip().upper().startswith(("SELECT", "WITH"))
     ]
     assert len(aggregate_statements) == 2
+
+
+def test_derived_stats_completion_uses_required_items_only(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        _, items = create_assignment(
+            connection, member_id, "2026-11-09", required=(True, False)
+        )
+        record_day(connection, items, "2026-11-09", {0})
+        record_day(connection, items, "2026-11-10", {1})
+        record_day(connection, items, "2026-11-12", {0, 1})
+
+    payload = client.get(f"/family-members/{member_id}/derived-stats").json()
+
+    days = {day["date"]: day for day in payload["current_week"]["days"]}
+    assert days["2026-11-09"] == {
+        "date": "2026-11-09",
+        "completed_checklist_items": 1,
+        "total_checklist_items": 2,
+        "state": "complete",
+    }
+    assert days["2026-11-10"] == {
+        "date": "2026-11-10",
+        "completed_checklist_items": 1,
+        "total_checklist_items": 2,
+        "state": "incomplete",
+    }
+    assert days["2026-11-11"]["state"] == "not_recorded"
+    assert days["2026-11-12"]["state"] == "complete"
+    assert payload["current_week"]["complete_days"] == 2
+    assert payload["lifetime"]["complete_days"] == 2
+    assert payload["current_week"]["completed_checklist_items"] == 4
+    assert payload["lifetime"]["completed_checklist_items"] == 4
+
+
+def test_derived_stats_all_optional_days_complete_through_today(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        create_assignment(connection, member_id, "2026-11-09", required=(False, False))
+
+    payload = client.get(f"/family-members/{member_id}/derived-stats").json()
+
+    days = {day["date"]: day["state"] for day in payload["current_week"]["days"]}
+    assert payload["current_week"]["complete_days"] == 4
+    assert payload["lifetime"]["complete_days"] == 4
+    assert payload["lifetime"]["current_streak"] == 4
+    for day in ("2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"):
+        assert days[day] == "complete"
+    for day in ("2026-11-13", "2026-11-14", "2026-11-15"):
+        assert days[day] == "not_recorded"
+    assert payload["current_week"]["completed_checklist_items"] == 0
+    assert all(
+        day["completed_checklist_items"] == 0 for day in payload["current_week"]["days"]
+    )

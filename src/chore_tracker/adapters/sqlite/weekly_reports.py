@@ -183,10 +183,15 @@ class SQLiteWeeklyReportPersistence:
         assignment_ids = [row["id"] for row in assignment_rows]
         placeholders = ", ".join("?" for _ in assignment_ids)
         item_counts = {
-            row["weekly_assignment_id"]: row["item_count"]
+            row["weekly_assignment_id"]: (
+                row["item_count"],
+                row["required_item_count"],
+            )
             for row in connection.execute(
                 f"""
-                SELECT weekly_assignment_id, COUNT(*) AS item_count
+                SELECT weekly_assignment_id, COUNT(*) AS item_count,
+                       SUM(CASE WHEN is_required = 1 THEN 1 ELSE 0 END)
+                         AS required_item_count
                 FROM assignment_checklist_items
                 WHERE weekly_assignment_id IN ({placeholders})
                 GROUP BY weekly_assignment_id
@@ -206,6 +211,7 @@ class SQLiteWeeklyReportPersistence:
                 JOIN daily_checklist_completions AS completion
                   ON completion.assignment_checklist_item_id = item.id
                 WHERE item.weekly_assignment_id IN ({placeholders})
+                  AND item.is_required = 1
                   AND completion.completion_date BETWEEN ? AND ?
                 GROUP BY item.weekly_assignment_id,
                          completion.completion_date
@@ -227,6 +233,7 @@ class SQLiteWeeklyReportPersistence:
                 )
                 for day_index in range(7)
             )
+            item_count, required_item_count = item_counts.get(assignment_id, (0, 0))
             sources.append(
                 AssignmentReportSource(
                     weekly_assignment_id=assignment_id,
@@ -234,8 +241,9 @@ class SQLiteWeeklyReportPersistence:
                     family_member_name=row["display_name"],
                     chore_name=row["chore_name_snapshot"],
                     chore_description=row["chore_description_snapshot"],
-                    checklist_item_count=item_counts.get(assignment_id, 0),
-                    completed_item_counts=completed_item_counts,
+                    checklist_item_count=item_count,
+                    required_checklist_item_count=required_item_count,
+                    required_completed_item_counts=completed_item_counts,
                 )
             )
         return tuple(sources)

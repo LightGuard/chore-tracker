@@ -48,6 +48,7 @@ class SQLiteChildViewsPersistence:
                 return {"assignment_missing": True}
             rows = connection.execute(
                 """SELECT snapshot.id, snapshot.label_snapshot, snapshot.position,
+                          snapshot.is_required,
                           COALESCE(completion.is_completed, 0) AS is_completed
                    FROM assignment_checklist_items AS snapshot
                    LEFT JOIN daily_checklist_completions AS completion
@@ -62,6 +63,7 @@ class SQLiteChildViewsPersistence:
                     "id": row["id"],
                     "label": row["label_snapshot"],
                     "position": row["position"],
+                    "is_required": bool(row["is_required"]),
                     "is_completed": bool(row["is_completed"]),
                 }
                 for row in rows
@@ -76,7 +78,7 @@ class SQLiteChildViewsPersistence:
                 "today": today,
                 "checklist_items": items,
                 "is_complete": bool(items)
-                and all(item["is_completed"] for item in items),
+                and all(item["is_completed"] for item in items if item["is_required"]),
             }
 
     def _assignment_for_date(self, connection, family_member_id, assignment_id, day):
@@ -102,6 +104,7 @@ class SQLiteChildViewsPersistence:
     def _daily_completion(self, connection, assignment_id: int, day: date):
         rows = connection.execute(
             """SELECT snapshot.id, snapshot.label_snapshot, snapshot.position,
+                      snapshot.is_required,
                       COALESCE(completion.is_completed, 0) AS is_completed
                FROM assignment_checklist_items AS snapshot
                LEFT JOIN daily_checklist_completions AS completion
@@ -116,6 +119,7 @@ class SQLiteChildViewsPersistence:
                 "id": row["id"],
                 "label": row["label_snapshot"],
                 "position": row["position"],
+                "is_required": bool(row["is_required"]),
                 "is_completed": bool(row["is_completed"]),
             }
             for row in rows
@@ -124,7 +128,8 @@ class SQLiteChildViewsPersistence:
             "assignment_id": assignment_id,
             "completion_date": day,
             "checklist_items": items,
-            "is_complete": bool(items) and all(item["is_completed"] for item in items),
+            "is_complete": bool(items)
+            and all(item["is_completed"] for item in items if item["is_required"]),
         }
 
     @staticmethod
@@ -230,10 +235,25 @@ class SQLiteChildViewsPersistence:
                   )
                   GROUP BY item.weekly_assignment_id
                 ),
+                required_item_counts AS (
+                  SELECT item.weekly_assignment_id,
+                         COUNT(*) AS required_items
+                  FROM assignment_checklist_items AS item
+                  WHERE item.is_required = 1
+                    AND item.weekly_assignment_id IN (
+                      SELECT assignment_id FROM assignment_days
+                    )
+                  GROUP BY item.weekly_assignment_id
+                ),
                 completion_counts AS (
                   SELECT item.weekly_assignment_id,
                          completion.completion_date,
                          SUM(completion.is_completed) AS completed_items,
+                         SUM(
+                           CASE WHEN item.is_required = 1
+                                     AND completion.is_completed = 1
+                                THEN 1 ELSE 0 END
+                         ) AS required_completed_items,
                          COUNT(*) AS recorded_items
                   FROM assignment_checklist_items AS item
                   JOIN daily_checklist_completions AS completion
@@ -248,18 +268,28 @@ class SQLiteChildViewsPersistence:
                   SELECT assignment_days.family_member_id,
                          assignment_days.day,
                          COALESCE(items.total_items, 0) AS total_items,
+                         COALESCE(required.required_items, 0) AS required_items,
                          COALESCE(completion.completed_items, 0)
                            AS completed_items,
+                         COALESCE(completion.required_completed_items, 0)
+                           AS required_completed_items,
                          CASE
                            WHEN COALESCE(items.total_items, 0) > 0
-                            AND COALESCE(completion.completed_items, 0)
-                                = items.total_items
+                            AND COALESCE(completion.required_completed_items, 0)
+                                = COALESCE(required.required_items, 0)
+                            AND (
+                              COALESCE(required.required_items, 0) > 0
+                              OR assignment_days.day <= :today
+                            )
                            THEN 1
                            ELSE 0
                          END AS is_complete
                   FROM assignment_days
                   LEFT JOIN item_counts AS items
                     ON items.weekly_assignment_id
+                       = assignment_days.assignment_id
+                  LEFT JOIN required_item_counts AS required
+                    ON required.weekly_assignment_id
                        = assignment_days.assignment_id
                   LEFT JOIN completion_counts AS completion
                     ON completion.weekly_assignment_id
@@ -369,7 +399,9 @@ class SQLiteChildViewsPersistence:
                     AND week_start = :week_start
                 ),
                 item_counts AS (
-                  SELECT COUNT(*) AS total_items
+                  SELECT COUNT(*) AS total_items,
+                         SUM(CASE WHEN is_required = 1 THEN 1 ELSE 0 END)
+                           AS required_items
                   FROM assignment_checklist_items
                   WHERE weekly_assignment_id = (
                     SELECT id FROM current_assignment
@@ -378,6 +410,11 @@ class SQLiteChildViewsPersistence:
                 completion_counts AS (
                   SELECT completion.completion_date,
                          SUM(completion.is_completed) AS completed_items,
+                         SUM(
+                           CASE WHEN item.is_required = 1
+                                     AND completion.is_completed = 1
+                                THEN 1 ELSE 0 END
+                         ) AS required_completed_items,
                          COUNT(*) AS recorded_items
                   FROM assignment_checklist_items AS item
                   JOIN daily_checklist_completions AS completion
@@ -394,11 +431,17 @@ class SQLiteChildViewsPersistence:
                        COALESCE(completion.recorded_items, 0)
                          AS recorded_items,
                        CASE
+                         WHEN COALESCE(items.total_items, 0) > 0
+                          AND COALESCE(
+                            completion.required_completed_items, 0
+                          ) = COALESCE(items.required_items, 0)
+                          AND (
+                            COALESCE(items.required_items, 0) > 0
+                            OR week_days.day <= date(:today)
+                          )
+                         THEN 'complete'
                          WHEN COALESCE(completion.recorded_items, 0) = 0
                          THEN 'not_recorded'
-                         WHEN COALESCE(items.total_items, 0) > 0
-                          AND completion.completed_items = items.total_items
-                         THEN 'complete'
                          ELSE 'incomplete'
                        END AS state
                 FROM week_days
@@ -409,6 +452,7 @@ class SQLiteChildViewsPersistence:
                 """,
                 {
                     "family_member_id": family_member_id,
+                    "today": today.isoformat(),
                     "week_start": week_start.isoformat(),
                     "week_end": week_end.isoformat(),
                 },
@@ -419,7 +463,7 @@ class SQLiteChildViewsPersistence:
                 "current_week_days": [dict(row) for row in week_rows],
             }
 
-    def get_completion_history(self, family_member_id, limit, offset):
+    def get_completion_history(self, family_member_id, limit, offset, today):
         with transaction(self._database_path) as connection:
             member = connection.execute(
                 "SELECT id FROM family_members WHERE id = ?", (family_member_id,)
@@ -444,13 +488,20 @@ class SQLiteChildViewsPersistence:
                   FROM assignment_days WHERE completion_date < week_end
                 ),
                 checklist_counts AS (
-                  SELECT weekly_assignment_id, COUNT(*) AS item_count
+                  SELECT weekly_assignment_id,
+                         COUNT(*) AS item_count,
+                         SUM(CASE WHEN is_required = 1 THEN 1 ELSE 0 END)
+                           AS required_item_count
                   FROM assignment_checklist_items GROUP BY weekly_assignment_id
                 ),
                 daily_completion_counts AS (
                   SELECT item.weekly_assignment_id, completion.completion_date,
                          COUNT(*) AS recorded_count,
-                         SUM(completion.is_completed) AS completed_count
+                         SUM(
+                           CASE WHEN item.is_required = 1
+                                     AND completion.is_completed = 1
+                                THEN 1 ELSE 0 END
+                         ) AS required_completed_count
                   FROM assignment_checklist_items AS item
                   JOIN daily_checklist_completions AS completion
                     ON completion.assignment_checklist_item_id = item.id
@@ -461,10 +512,16 @@ class SQLiteChildViewsPersistence:
                        day.completion_date,
                        CASE
                          WHEN COALESCE(checklist.item_count, 0) = 0
-                           OR COALESCE(daily.recorded_count, 0) = 0
                            THEN 'not_yet_recorded'
-                         WHEN daily.completed_count = checklist.item_count
+                         WHEN COALESCE(checklist.required_item_count, 0) = 0
+                          AND day.completion_date <= ?
                            THEN 'complete'
+                         WHEN COALESCE(checklist.required_item_count, 0) > 0
+                          AND COALESCE(daily.required_completed_count, 0)
+                              = checklist.required_item_count
+                           THEN 'complete'
+                         WHEN COALESCE(daily.recorded_count, 0) = 0
+                           THEN 'not_yet_recorded'
                          ELSE 'incomplete'
                        END AS completion_status
                 FROM assignment_days AS day
@@ -476,7 +533,7 @@ class SQLiteChildViewsPersistence:
                 ORDER BY day.completion_date DESC, day.assignment_id DESC
                 LIMIT ? OFFSET ?
                 """,
-                (family_member_id, limit, offset),
+                (family_member_id, today.isoformat(), limit, offset),
             ).fetchall()
             return {
                 "items": [

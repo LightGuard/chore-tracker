@@ -59,7 +59,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0008_theme_preferences"
+        assert revision == "0009_optional_checklist_items"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -705,3 +705,156 @@ def test_theme_preferences_are_nullable_and_downgrade_removes_them(tmp_path) -> 
             ).fetchone()["display_name"]
             == "Taylor"
         )
+
+
+def test_optional_checklist_flags_default_to_required_for_existing_rows(
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "optional-backfill.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "0008_theme_preferences")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO family_members (display_name) VALUES ('Taylor')"
+        )
+        connection.execute(
+            "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Clean')"
+        )
+        connection.execute(
+            """
+            INSERT INTO chore_checklist_items (chore_id, label, position)
+            VALUES (1, 'Wipe counters', 0)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot
+            )
+            VALUES (1, 1, '2026-11-09', '2026-11-15', 'Kitchen', 'Clean')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO assignment_checklist_items (
+                weekly_assignment_id, source_checklist_item_id,
+                label_snapshot, position
+            )
+            VALUES (1, 1, 'Wipe counters', 0)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO daily_checklist_completions (
+                assignment_checklist_item_id, completion_date,
+                is_completed, completed_at
+            )
+            VALUES (1, '2026-11-09', 1, '2026-11-09T18:00:00Z')
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        chore_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(chore_checklist_items)")
+        }
+        snapshot_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(assignment_checklist_items)"
+            )
+        }
+        chore_item = connection.execute(
+            "SELECT is_required FROM chore_checklist_items WHERE id = 1"
+        ).fetchone()
+        snapshot_item = connection.execute(
+            "SELECT is_required FROM assignment_checklist_items WHERE id = 1"
+        ).fetchone()
+        completion = connection.execute(
+            """
+            SELECT is_completed, completion_date
+            FROM daily_checklist_completions
+            WHERE assignment_checklist_item_id = 1
+            """
+        ).fetchone()
+
+    assert "is_required" in chore_columns
+    assert "is_required" in snapshot_columns
+    assert chore_item["is_required"] == 1
+    assert snapshot_item["is_required"] == 1
+    assert dict(completion) == {
+        "is_completed": 1,
+        "completion_date": "2026-11-09",
+    }
+
+
+def test_optional_snapshot_flag_survives_definition_edits_and_is_immutable(
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "optional-snapshot.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO family_members (display_name) VALUES ('Taylor')"
+        )
+        connection.execute(
+            "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Clean')"
+        )
+        connection.execute(
+            """
+            INSERT INTO chore_checklist_items (
+                chore_id, label, position, is_required
+            )
+            VALUES (1, 'Wipe counters', 0, 0)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot
+            )
+            VALUES (1, 1, '2026-11-09', '2026-11-15', 'Kitchen', 'Clean')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO assignment_checklist_items (
+                weekly_assignment_id, source_checklist_item_id,
+                label_snapshot, position, is_required
+            )
+            VALUES (1, 1, 'Wipe counters', 0, 0)
+            """
+        )
+        connection.execute(
+            """
+            UPDATE chore_checklist_items
+            SET label = 'Wipe all counters', is_required = 1
+            WHERE id = 1
+            """
+        )
+        snapshot = connection.execute(
+            """
+            SELECT label_snapshot, is_required
+            FROM assignment_checklist_items WHERE id = 1
+            """
+        ).fetchone()
+        assert dict(snapshot) == {
+            "label_snapshot": "Wipe counters",
+            "is_required": 0,
+        }
+
+        try:
+            connection.execute(
+                "UPDATE assignment_checklist_items SET is_required = 1 WHERE id = 1"
+            )
+        except sqlite3.IntegrityError as error:
+            assert "immutable" in str(error)
+        else:
+            raise AssertionError("Optional snapshot flag was mutable")

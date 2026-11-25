@@ -174,10 +174,10 @@ class ChildViewsService:
         }
 
     def get_completion_history(
-        self, family_member_id: int, limit: int, offset: int
+        self, family_member_id: int, limit: int, offset: int, today: date
     ) -> dict[str, Any]:
         result = self._persistence.get_completion_history(
-            family_member_id, limit, offset
+            family_member_id, limit, offset, today
         )
         if result is None:
             raise FamilyMemberNotFound
