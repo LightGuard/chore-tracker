@@ -168,6 +168,9 @@ describe("administrator protected screens", () => {
       screen.getByRole("heading", { name: "Chore catalog" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", { name: "Weekly assignments" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Sign out" }),
     ).toBeInTheDocument();
   });

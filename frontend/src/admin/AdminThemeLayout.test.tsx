@@ -154,8 +154,14 @@ describe.each(THEMES)("administrator $name layout", (theme) => {
     expect(container.querySelector("#family-members")).toBeInTheDocument();
     expect(container.querySelector("#chore-catalog")).toBeInTheDocument();
     expect(
+      container.querySelector("#weekly-assignments"),
+    ).toBeInTheDocument();
+    expect(
       container.querySelector("#administrator-access"),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Weekly assignments/ }),
+    ).toHaveAttribute("href", "/admin#weekly-assignments");
   });
 
   it("wraps report history in the selected theme", async () => {

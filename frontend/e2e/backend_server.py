@@ -455,7 +455,9 @@ def reset_rollover_scenario() -> dict[str, dict[str, int]]:
     reset_database()
     catalog = seed_lifecycle_catalog()
     prior_start = E2E_TODAY - timedelta(days=7)
-    assignments = assignment_service().generate(prior_start, generated_on=prior_start)
+    assignments = (
+        assignment_service().generate(prior_start, generated_on=prior_start).assignments
+    )
     by_member = {assignment.family_member_id: assignment for assignment in assignments}
 
     connection = sqlite3.connect(DATABASE_PATH)
@@ -1030,8 +1032,10 @@ def install_test_hooks():
 
     @router.post("/rotate", include_in_schema=False)
     def rotate_fixture(body: WeekBody) -> dict[str, object]:
-        assignments = assignment_service().generate(
-            body.week_start, generated_on=body.week_start
+        assignments = (
+            assignment_service()
+            .generate(body.week_start, generated_on=body.week_start)
+            .assignments
         )
         return {"assignments": assignment_payload(assignments)}
 

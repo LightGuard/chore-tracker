@@ -21,6 +21,7 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   const location = useLocation();
   const accessActive = location.hash === "#administrator-access";
+  const assignmentsActive = location.hash === "#weekly-assignments";
 
   return (
     <main className="admin-workspace-shell">
@@ -36,7 +37,11 @@ export function AdminLayout({
               end
               to="/admin"
               className={({ isActive }) =>
-                `admin-nav-link${isActive && !accessActive ? " active" : ""}`
+                `admin-nav-link${
+                  isActive && !accessActive && !assignmentsActive
+                    ? " active"
+                    : ""
+                }`
               }
             >
               <span>Family &amp; chores</span>
@@ -53,6 +58,14 @@ export function AdminLayout({
               <span>Reports</span>
               <small aria-hidden="true">Immutable weekly snapshots</small>
             </NavLink>
+            <Link
+              to="/admin#weekly-assignments"
+              className={`admin-nav-link${assignmentsActive ? " active" : ""}`}
+              aria-current={assignmentsActive ? "location" : undefined}
+            >
+              <span>Weekly assignments</span>
+              <small aria-hidden="true">Generate a week manually</small>
+            </Link>
             <Link
               to="/admin#administrator-access"
               className={`admin-nav-link${accessActive ? " active" : ""}`}
