@@ -478,6 +478,66 @@ Status codes: unknown chore or item 404; invalid/blank/too-long values, duplicat
 or incomplete order 422; activation without an active item 422; removing the
 last active item from an active chore 409.
 
+## Administrator assignment-generation endpoints
+
+These require an administrator session and the same-origin check. Manual
+generation uses the same deterministic rotation, active catalog ordering,
+validation, and atomic persistence as the scheduled Monday rollover.
+
+### Generate assignments for a week
+
+```http
+POST /assignments
+Content-Type: application/json
+
+{ "week": "2026-11-23" }
+```
+
+`week` is any local calendar date. It is normalized to the Monday-Sunday week in
+`CHORE_TRACKER_REPORT_TIMEZONE`, so `2026-11-25` and `2026-11-23` select the same
+week. The operation is safe to retry: a week that already has assignments is
+returned unchanged.
+
+A newly generated week returns HTTP 201:
+
+```json
+{
+  "week_start": "2026-11-23",
+  "week_end": "2026-11-29",
+  "status": "generated",
+  "assignment_count": 2,
+  "assignments": [
+    {
+      "id": 12,
+      "family_member_id": 1,
+      "family_member_name": "Alex",
+      "chore_id": 3,
+      "chore_name": "Kitchen",
+      "week_start": "2026-11-23",
+      "week_end": "2026-11-29"
+    }
+  ]
+}
+```
+
+An existing week returns HTTP 200 with the same shape and
+`"status": "already_exists"`. No assignment rows or snapshots are changed.
+
+Manual generation never creates a weekly report and never advances
+`weekly_rollover_state`. When the rollover later reaches that week, it reuses the
+existing assignments and still generates the report for the preceding week.
+
+The first generated week becomes the immutable rotation anchor. Before an
+anchor exists, a manual request can establish it with the current week or an
+earlier week; a future week is rejected until an anchor exists. After the
+anchor exists, past and future weeks at or after the anchor are accepted.
+Weeks before the anchor are rejected.
+
+Status codes: unauthenticated 401; untrusted origin 403; a future week before
+the anchor exists, a week before the anchor, or insufficient active chores 409;
+invalid date, extra fields, or a date whose week would exceed the supported
+calendar range 422.
+
 ## Weekly report endpoints
 
 These require an administrator session and are read-only. Reports are created

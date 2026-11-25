@@ -225,10 +225,10 @@ interpreter that has them. Each spec resets its own baseline; lifecycle tests
 use test-only controls to set a deterministic date, generate assignments, and
 run the Monday rollover without the live scheduler.
 
-The suite covers the family flow, themes, administrator passkey flows, report
-history/detail, and repeated rollover idempotence. Failures retain traces and
-screenshots, and CI uploads `frontend/playwright-report/` and
-`frontend/test-results/`.
+The suite covers the family flow, themes, administrator passkey flows, manual
+assignment generation, report history/detail, and repeated rollover idempotence.
+Failures retain traces and screenshots, and CI uploads
+`frontend/playwright-report/` and `frontend/test-results/`.
 
 ### Compose smoke test
 

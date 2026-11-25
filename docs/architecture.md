@@ -183,7 +183,8 @@ These contracts are enforced in code, tests, and database triggers.
 6. **The rollover checkpoint advances only after both steps commit.** A failure
    leaves earlier committed work readable and safely retryable.
 7. **A week is generated at most once.** Unique constraints and idempotent
-   service behavior prevent duplicate assignments and reports.
+   service behavior prevent duplicate assignments and reports, whether the week
+   was generated manually or by the rollover.
 8. **Unknown or retired theme ids never block use.** The frontend falls back to
    Homestead; the API returns the raw stored value.
 
@@ -217,6 +218,12 @@ repeats the failed step. Report and assignment generation return existing
 records for an already-processed week rather than duplicating or replacing
 them.
 
+Administrator manual generation (`POST /assignments`) calls the same assignment
+planning and atomic persistence path for a selected week. It is idempotent and
+never creates a report or advances the checkpoint; the scheduled rollover later
+reuses those assignments and generates the report for the preceding week. It is
+a separate HTTP request path, not a second scheduler owner.
+
 On first run with no checkpoint, only the most recent due Monday is processed.
 After later downtime, every unprocessed Monday up to the latest due delivery
 time is replayed in order. Failed attempts retry after five minutes while the
@@ -226,7 +233,8 @@ does not skip a due Monday.
 
 Only one API process may run this scheduler against a database. If you disable
 `CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED`, another process must own the schedule,
-or assignments and reports will not be generated.
+or assignments and reports will not be generated automatically. Manual
+generation covers assignments only.
 
 ## Health and readiness
 
