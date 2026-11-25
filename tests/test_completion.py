@@ -54,7 +54,9 @@ def prepare_client(tmp_path, monkeypatch):
     return TestClient(app), database_path
 
 
-def create_assignment(connection, member_name="Alex"):
+def create_assignment(
+    connection, member_name="Alex", *, required: tuple[bool, bool] = (True, True)
+):
     member_id = connection.execute(
         "INSERT INTO family_members (display_name) VALUES (?)", (member_name,)
     ).lastrowid
@@ -74,9 +76,9 @@ def create_assignment(connection, member_name="Alex"):
         item_ids.append(
             connection.execute(
                 """INSERT INTO assignment_checklist_items
-                   (weekly_assignment_id, label_snapshot, position)
-                   VALUES (?, ?, ?)""",
-                (assignment_id, label, position),
+                   (weekly_assignment_id, label_snapshot, position, is_required)
+                   VALUES (?, ?, ?, ?)""",
+                (assignment_id, label, position, int(required[position])),
             ).lastrowid
         )
     return member_id, assignment_id, item_ids
@@ -333,3 +335,105 @@ def test_concurrent_item_updates_preserve_a_consistent_daily_state(
     assert daily.status_code == 200
     assert daily.json()["is_complete"] is True
     assert all(item["is_completed"] for item in daily.json()["checklist_items"])
+
+
+def test_optional_items_do_not_prevent_daily_completion(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, assignment_id, item_ids = create_assignment(
+            connection, required=(True, False)
+        )
+
+    required_url = (
+        f"/family-members/{member_id}/assignments/{assignment_id}/"
+        f"checklist-items/{item_ids[0]}/completion"
+    )
+    optional_url = (
+        f"/family-members/{member_id}/assignments/{assignment_id}/"
+        f"checklist-items/{item_ids[1]}/completion"
+    )
+
+    required = client.put(
+        required_url,
+        json={"completion_date": "2026-11-12", "is_completed": True},
+    )
+    assert required.status_code == 200
+    assert required.json()["is_complete"] is True
+    assert required.json()["checklist_item"]["is_required"] is True
+
+    optional_checked = client.put(
+        optional_url,
+        json={"completion_date": "2026-11-12", "is_completed": True},
+    )
+    optional_unchecked = client.put(
+        optional_url,
+        json={"completion_date": "2026-11-12", "is_completed": False},
+    )
+    assert optional_checked.json()["is_complete"] is True
+    assert optional_unchecked.json()["is_complete"] is True
+    assert optional_unchecked.json()["checklist_item"]["is_required"] is False
+
+    daily = client.get(
+        f"/family-members/{member_id}/assignments/{assignment_id}/completion",
+        params={"completion_date": "2026-11-12"},
+    )
+    assert daily.json()["is_complete"] is True
+    assert [item["is_required"] for item in daily.json()["checklist_items"]] == [
+        True,
+        False,
+    ]
+
+
+def test_checking_only_an_optional_item_does_not_complete_the_day(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, assignment_id, item_ids = create_assignment(
+            connection, required=(True, False)
+        )
+
+    optional_url = (
+        f"/family-members/{member_id}/assignments/{assignment_id}/"
+        f"checklist-items/{item_ids[1]}/completion"
+    )
+    response = client.put(
+        optional_url,
+        json={"completion_date": "2026-11-12", "is_completed": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["is_complete"] is False
+    required_url = (
+        f"/family-members/{member_id}/assignments/{assignment_id}/"
+        f"checklist-items/{item_ids[0]}/completion"
+    )
+    after_required = client.put(
+        required_url,
+        json={"completion_date": "2026-11-12", "is_completed": True},
+    )
+    assert after_required.json()["is_complete"] is True
+
+
+def test_all_optional_daily_completion_is_complete_from_start(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, assignment_id, item_ids = create_assignment(
+            connection, required=(False, False)
+        )
+
+    daily = client.get(
+        f"/family-members/{member_id}/assignments/{assignment_id}/completion",
+        params={"completion_date": "2026-11-12"},
+    )
+
+    assert daily.status_code == 200
+    assert daily.json()["is_complete"] is True
+    assert all(item["is_required"] is False for item in daily.json()["checklist_items"])
+
+    optional = client.put(
+        f"/family-members/{member_id}/assignments/{assignment_id}/"
+        f"checklist-items/{item_ids[0]}/completion",
+        json={"completion_date": "2026-11-12", "is_completed": True},
+    )
+    assert optional.json()["is_complete"] is True

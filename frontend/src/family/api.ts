@@ -10,6 +10,7 @@ export type ChecklistItem = {
   id: number;
   label: string;
   position: number;
+  is_required: boolean;
   is_completed: boolean;
 };
 

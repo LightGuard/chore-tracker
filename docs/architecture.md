@@ -119,7 +119,7 @@ All timestamps are stored as UTC text. Local dates are ISO calendar dates in
 | `administrator_enrollment_tokens` | One-use second-administrator invitation tokens |
 | `family_members` | Deactivatable child profiles and saved theme |
 | `chores` | Deactivatable chore catalog entries |
-| `chore_checklist_items` | Ordered, deactivatable checklist definitions |
+| `chore_checklist_items` | Ordered, deactivatable checklist definitions with a required/optional flag |
 
 No private key material is stored. A passkey's private key stays with the
 authenticator.
@@ -131,7 +131,7 @@ authenticator.
 | `assignment_rotation_state` | The immutable rotation anchor: the first generated Monday |
 | `weekly_assignment_generations` | Which weeks have been generated and their anchor |
 | `weekly_assignments` | One immutable assignment per child and week, including chore name/description snapshots |
-| `assignment_checklist_items` | Ordered checklist label snapshots for an assignment, optionally linked to a source catalog item |
+| `assignment_checklist_items` | Ordered checklist label and required/optional snapshots for an assignment, optionally linked to a source catalog item |
 | `daily_checklist_completions` | One row per assignment checklist item and local calendar date |
 
 The assignment tables are protected against updates and deletes. The
@@ -177,7 +177,8 @@ These contracts are enforced in code, tests, and database triggers.
 3. **Report snapshots are immutable.** Repeated generation for a week returns
    the existing report; it never replaces data.
 4. **Completion dates stay inside the assignment week.** The database rejects
-   out-of-week rows.
+   out-of-week rows. A day is complete when its required snapshot items are
+   complete; optional items are tracked but never block completion.
 5. **The rotation anchor never changes.** Later weeks use the original anchor
    and the then-current active catalog.
 6. **The rollover checkpoint advances only after both steps commit.** A failure

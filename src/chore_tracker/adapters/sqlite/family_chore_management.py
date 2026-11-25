@@ -39,7 +39,8 @@ class SQLiteFamilyChoreManagementPersistence:
     @staticmethod
     def _item(connection, chore_id: int, item_id: int):
         return connection.execute(
-            """SELECT id, chore_id, label, position, is_active, created_at, updated_at
+            """SELECT id, chore_id, label, position, is_active, is_required,
+                      created_at, updated_at
                FROM chore_checklist_items WHERE id = ? AND chore_id = ?""",
             (item_id, chore_id),
         ).fetchone()
@@ -58,7 +59,8 @@ class SQLiteFamilyChoreManagementPersistence:
         if chore is None:
             return None
         items = connection.execute(
-            """SELECT id, label, position, is_active, created_at, updated_at
+            """SELECT id, label, position, is_active, is_required,
+                      created_at, updated_at
                FROM chore_checklist_items WHERE chore_id = ?
                ORDER BY position, id""",
             (chore_id,),
@@ -67,7 +69,12 @@ class SQLiteFamilyChoreManagementPersistence:
             **dict(chore),
             "is_active": bool(chore["is_active"]),
             "checklist_items": [
-                {**dict(item), "is_active": bool(item["is_active"])} for item in items
+                {
+                    **dict(item),
+                    "is_active": bool(item["is_active"]),
+                    "is_required": bool(item["is_required"]),
+                }
+                for item in items
             ],
         }
 
@@ -149,7 +156,7 @@ class SQLiteFamilyChoreManagementPersistence:
             )
             return self._serialize_chore(connection, chore_id)
 
-    def add_checklist_item(self, chore_id: int, label: str):
+    def add_checklist_item(self, chore_id: int, label: str, is_required: bool):
         with transaction(self._database_path) as connection:
             if self._chore(connection, chore_id) is None:
                 return None
@@ -159,14 +166,19 @@ class SQLiteFamilyChoreManagementPersistence:
                 (chore_id,),
             ).fetchone()[0]
             item_id = connection.execute(
-                """INSERT INTO chore_checklist_items (chore_id, label, position)
-                   VALUES (?, ?, ?)""",
-                (chore_id, label, position),
+                """INSERT INTO chore_checklist_items
+                   (chore_id, label, position, is_required)
+                   VALUES (?, ?, ?, ?)""",
+                (chore_id, label, position, int(is_required)),
             ).lastrowid
             if item_id is None:
                 raise RuntimeError("The checklist item insert did not return an ID")
             item = self._item(connection, chore_id, item_id)
-            return {**dict(item), "is_active": bool(item["is_active"])}
+            return {
+                **dict(item),
+                "is_active": bool(item["is_active"]),
+                "is_required": bool(item["is_required"]),
+            }
 
     def update_checklist_item(
         self, chore_id: int, item_id: int, changes: dict[str, Any]
@@ -193,7 +205,11 @@ class SQLiteFamilyChoreManagementPersistence:
                 (*changes.values(), item_id),
             )
             item = self._item(connection, chore_id, item_id)
-            return {**dict(item), "is_active": bool(item["is_active"])}
+            return {
+                **dict(item),
+                "is_active": bool(item["is_active"]),
+                "is_required": bool(item["is_required"]),
+            }
 
     def delete_checklist_item(self, chore_id: int, item_id: int) -> str | None:
         with transaction(self._database_path) as connection:

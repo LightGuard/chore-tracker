@@ -3972,3 +3972,12 @@ body[data-theme="sticker-club-v2"] {
 .theme-sticker-club-v2 button[class*="--variant-solid"][class*="--color-neutral"] span {
   color: inherit;
 }
+
+.optional-item-tag {
+  margin-left: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}

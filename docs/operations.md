@@ -136,7 +136,9 @@ week is not generated.
 
 1. In **Chores**, create a chore with a name and optional description.
    New chores start inactive.
-2. Add at least one checklist item.
+2. Add at least one checklist item. Items are required by default; leave
+   **Required** on for steps that must be done, or switch it off for optional
+   guidance.
 3. Activate the chore. A chore cannot be activated without an active checklist
    item.
 4. Repeat for each chore that should participate in the rotation.
@@ -150,6 +152,12 @@ historical snapshot keeps its label and completion rows.
 Checklist order matters: the child sees the immutable snapshot order that was
 captured when the weekly assignment was generated. Reordering later affects the
 next generated week, not history.
+
+Required and optional flags are part of that snapshot. Optional items remain
+visible and independently checkable for the child, but they never block daily
+completion; a chore with only optional items is complete from the start of the
+day. Changing an item's Required setting later affects only future generated
+weeks, never an existing assignment or completion history.
 
 ### Initial setup order
 
@@ -198,8 +206,10 @@ For assignment week `W` it:
 
 Reports are built from the persisted assignment snapshots and daily completion
 rows. They are immutable snapshots, not live queries over current household
-data. Report email is not implemented in the MVP; email configuration is
-optional, and administrators view reports in the UI.
+data. A report day is complete when its required checklist snapshot items are
+complete; optional items do not affect the day status. Report email is not
+implemented in the MVP; email configuration is optional, and administrators view
+reports in the UI.
 
 ### Generate assignments manually
 

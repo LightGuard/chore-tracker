@@ -81,8 +81,8 @@ function assignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignme
     chore_description: "Wipe and sweep after dinner.",
     today: "2026-11-18",
     checklist_items: [
-      { id: 11, label: "Wipe counters", position: 0, is_completed: false },
-      { id: 12, label: "Sweep floor", position: 1, is_completed: false },
+      { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: false },
+      { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: false },
     ],
     is_complete: false,
     ...overrides,
@@ -181,8 +181,8 @@ describe("family chore page", () => {
             chore_name: "Bathroom",
             chore_description: "Clean the bathroom.",
             checklist_items: [
-              { id: 21, label: "Clean sink", position: 0, is_completed: false },
-              { id: 22, label: "Scrub tub", position: 1, is_completed: false },
+              { id: 21, label: "Clean sink", position: 0, is_required: true, is_completed: false },
+              { id: 22, label: "Scrub tub", position: 1, is_required: true, is_completed: false },
             ],
           }),
         );
@@ -375,7 +375,7 @@ describe("family chore page", () => {
           checklist_item: {
             id: 11,
             label: "Wipe counters",
-            is_completed: isCompleted,
+            is_required: true, is_completed: isCompleted,
           },
           is_complete: false,
         });
@@ -384,7 +384,7 @@ describe("family chore page", () => {
         return jsonResponse({
           assignment_id: 10,
           completion_date: "2026-11-18",
-          checklist_item: { id: 12, label: "Sweep floor", is_completed: true },
+          checklist_item: { id: 12, label: "Sweep floor", is_required: true, is_completed: true },
           is_complete: true,
         });
       }
@@ -402,6 +402,75 @@ describe("family chore page", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Wipe counters" }));
     expect(await screen.findByText("1 of 2 complete today")).toBeInTheDocument();
     expect(screen.queryByText("All done for today")).not.toBeInTheDocument();
+  });
+
+  it("keeps optional items visible and tracks them without blocking completion", async () => {
+    installFetch(async (input, init) => {
+      if (String(input).endsWith("/family-members/active")) {
+        return jsonResponse(MEMBERS);
+      }
+      if (String(input).endsWith("/family-members/1/current-assignment")) {
+        return jsonResponse(
+          assignment({
+            checklist_items: [
+              {
+                id: 11,
+                label: "Wipe counters",
+                position: 0,
+                is_required: true,
+                is_completed: true,
+              },
+              {
+                id: 12,
+                label: "Sweep floor",
+                position: 1,
+                is_required: false,
+                is_completed: false,
+              },
+            ],
+            is_complete: true,
+          }),
+        );
+      }
+      if (
+        String(input).endsWith("/checklist-items/12/completion") &&
+        init?.method === "PUT"
+      ) {
+        return jsonResponse({
+          assignment_id: 10,
+          completion_date: "2026-11-18",
+          checklist_item: {
+            id: 12,
+            label: "Sweep floor",
+            is_required: false,
+            is_completed: true,
+          },
+          is_complete: true,
+        });
+      }
+      return jsonResponse({ detail: "Not found" }, 404);
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /Alex/ }));
+
+    expect(await screen.findByText("All done for today")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "1 of 1 required complete today · 0 of 1 optional checked",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Optional")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Sweep floor/ }),
+    );
+
+    expect(
+      await screen.findByText(
+        "1 of 1 required complete today · 1 of 1 optional checked",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows a no-assignment state for a child without a chore", async () => {
@@ -578,8 +647,8 @@ describe("family chore page", () => {
           return jsonResponse(
             assignment({
               checklist_items: [
-                { id: 11, label: "Wipe counters", position: 0, is_completed: true },
-                { id: 12, label: "Sweep floor", position: 1, is_completed: true },
+                { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+                { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
               ],
               is_complete: true,
             }),

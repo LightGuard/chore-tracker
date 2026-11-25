@@ -54,7 +54,8 @@ class SQLiteWeeklyAssignmentPersistence:
         assignments = []
         for row in rows:
             checklist_rows = connection.execute(
-                """SELECT id, source_checklist_item_id, label_snapshot, position
+                """SELECT id, source_checklist_item_id, label_snapshot, position,
+                          is_required
                    FROM assignment_checklist_items
                    WHERE weekly_assignment_id = ? ORDER BY position, id""",
                 (row["id"],),
@@ -75,6 +76,7 @@ class SQLiteWeeklyAssignmentPersistence:
                             source_checklist_item_id=item["source_checklist_item_id"],
                             label=item["label_snapshot"],
                             position=item["position"],
+                            is_required=bool(item["is_required"]),
                         )
                         for item in checklist_rows
                     ),
@@ -167,7 +169,8 @@ class SQLiteWeeklyAssignmentPersistence:
                     ),
                 ).lastrowid
                 items = connection.execute(
-                    """SELECT id, label, position FROM chore_checklist_items
+                    """SELECT id, label, position, is_required
+                       FROM chore_checklist_items
                        WHERE chore_id = ? AND is_active = 1 ORDER BY position, id""",
                     (planned.chore_id,),
                 ).fetchall()
@@ -175,8 +178,15 @@ class SQLiteWeeklyAssignmentPersistence:
                     connection.execute(
                         """INSERT INTO assignment_checklist_items
                            (weekly_assignment_id, source_checklist_item_id,
-                            label_snapshot, position) VALUES (?, ?, ?, ?)""",
-                        (assignment_id, item["id"], item["label"], item["position"]),
+                            label_snapshot, position, is_required)
+                           VALUES (?, ?, ?, ?, ?)""",
+                        (
+                            assignment_id,
+                            item["id"],
+                            item["label"],
+                            item["position"],
+                            int(item["is_required"]),
+                        ),
                     )
             return WeeklyAssignmentGenerationResult(
                 week_start=week_start,

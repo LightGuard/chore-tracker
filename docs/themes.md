@@ -127,7 +127,8 @@ is selected and after each successful checklist change. The player HUD maps
 lifetime completed items to XP and level, current-week facts to weekly XP and
 the seven-day rail, the lifetime streak to the streak strip, and the weekly
 standings order to rank, player count, and XP gap to first. A completed day
-shows the all-done "QUEST CLEAR" state. Stats are never written by the theme.
+shows the all-done "QUEST CLEAR" state; optional checklist items contribute XP
+when checked but never block completion. Stats are never written by the theme.
 
 The stats request is independent of the checklist. If it fails, the checklist
 remains usable and the HUD shows an actionable retry; switching children clears
@@ -146,8 +147,9 @@ history.
 The top bar always shows the current-week count as `N OF 7 STICKERS` with the
 assistive label `N of 7 this week`. The only source is
 `current_week.complete_days` from the generic derived-stat endpoint. A day is
-worth one sticker only when every checklist item for that immutable assignment
-day is complete; incomplete and `not_recorded` days earn none. Checking the
+worth one sticker when every required checklist item for that immutable
+assignment day is complete; optional items never block the sticker. Incomplete
+and `not_recorded` days earn none. Checking the
 final item of today updates the seven-slot rail and count immediately from the
 successful assignment mutation, then reconciles with the derived endpoint. The
 count resets at the Monday boundary. `household.weekly_standings` is

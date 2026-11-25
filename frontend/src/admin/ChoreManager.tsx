@@ -112,19 +112,27 @@ export function ChoreManager({ onSessionExpired }: Props) {
     await run(() => updateChore(chore.id, { is_active: !chore.is_active }));
   }
 
-  async function addItem(chore: ManagedChore, label: string) {
+  async function addItem(
+    chore: ManagedChore,
+    label: string,
+    isRequired: boolean,
+  ) {
     const cleaned = label.trim();
     if (!cleaned) {
       setError("Checklist label must not be blank.");
       return;
     }
-    await run(() => addChecklistItem(chore.id, cleaned));
+    await run(() => addChecklistItem(chore.id, cleaned, isRequired));
   }
 
   async function updateItem(
     chore: ManagedChore,
     item: ManagedChecklistItem,
-    changes: { label?: string; is_active?: boolean },
+    changes: {
+      label?: string;
+      is_active?: boolean;
+      is_required?: boolean;
+    },
   ) {
     const cleaned = changes.label?.trim();
     if (cleaned !== undefined && !cleaned) {
@@ -136,6 +144,9 @@ export function ChoreManager({ onSessionExpired }: Props) {
         ...(cleaned !== undefined ? { label: cleaned } : {}),
         ...(changes.is_active !== undefined
           ? { is_active: changes.is_active }
+          : {}),
+        ...(changes.is_required !== undefined
+          ? { is_required: changes.is_required }
           : {}),
       }),
     );
@@ -175,8 +186,9 @@ export function ChoreManager({ onSessionExpired }: Props) {
           </Text>
           <Text color="neutral-faded">
             New chores start inactive. Add at least one active checklist item
-            before activating a chore. Catalog edits never rewrite historical
-            assignments.
+            before activating a chore. Mark an item optional when it is guidance
+            rather than required for daily completion. Catalog edits never
+            rewrite historical assignments.
           </Text>
         </View>
 
@@ -255,7 +267,9 @@ export function ChoreManager({ onSessionExpired }: Props) {
                     busy={busy}
                     onSave={(changes) => void saveChore(chore, changes)}
                     onToggle={() => void toggleChore(chore)}
-                    onAddItem={(label) => void addItem(chore, label)}
+                    onAddItem={(label, isRequired) =>
+                      void addItem(chore, label, isRequired)
+                    }
                     onUpdateItem={(item, changes) =>
                       void updateItem(chore, item, changes)
                     }
@@ -279,10 +293,10 @@ type ChoreCardProps = {
   busy: boolean;
   onSave: (changes: { name: string; description: string }) => void;
   onToggle: () => void;
-  onAddItem: (label: string) => void;
+  onAddItem: (label: string, isRequired: boolean) => void;
   onUpdateItem: (
     item: ManagedChecklistItem,
-    changes: { label?: string; is_active?: boolean },
+    changes: { label?: string; is_active?: boolean; is_required?: boolean },
   ) => void;
   onRemoveItem: (item: ManagedChecklistItem) => void;
   onMoveItem: (index: number, offset: number) => void;
@@ -301,6 +315,7 @@ function ChoreCard({
   const [name, setName] = useState(chore.name);
   const [description, setDescription] = useState(chore.description);
   const [newItemLabel, setNewItemLabel] = useState("");
+  const [newItemRequired, setNewItemRequired] = useState(true);
 
   useEffect(() => setName(chore.name), [chore.name]);
   useEffect(() => setDescription(chore.description), [chore.description]);
@@ -379,11 +394,20 @@ function ChoreCard({
                 onChange={({ value }) => setNewItemLabel(value)}
               />
             </View>
+            <Switch
+              name={`new-checklist-required-${chore.id}`}
+              checked={newItemRequired}
+              onChange={({ checked }) => setNewItemRequired(checked)}
+              size="small"
+            >
+              Required
+            </Switch>
             <Button
               disabled={busy}
               onClick={() => {
-                onAddItem(newItemLabel);
+                onAddItem(newItemLabel, newItemRequired);
                 setNewItemLabel("");
+                setNewItemRequired(true);
               }}
             >
               Add item
@@ -414,6 +438,9 @@ function ChoreCard({
                 onToggle={(isActive) =>
                   onUpdateItem(item, { is_active: isActive })
                 }
+                onToggleRequired={(isRequired) =>
+                  onUpdateItem(item, { is_required: isRequired })
+                }
                 onMove={(offset) => onMoveItem(index, offset)}
                 onRemove={() => onRemoveItem(item)}
               />
@@ -433,6 +460,7 @@ type ChecklistRowProps = {
   busy: boolean;
   onSave: (label: string) => void;
   onToggle: (isActive: boolean) => void;
+  onToggleRequired: (isRequired: boolean) => void;
   onMove: (offset: number) => void;
   onRemove: () => void;
 };
@@ -445,6 +473,7 @@ function ChecklistItemRow({
   busy,
   onSave,
   onToggle,
+  onToggleRequired,
   onMove,
   onRemove,
 }: ChecklistRowProps) {
@@ -478,6 +507,14 @@ function ChecklistItemRow({
               size="small"
             >
               Active
+            </Switch>
+            <Switch
+              name={`checklist-required-${item.id}`}
+              checked={item.is_required}
+              onChange={({ checked }) => onToggleRequired(checked)}
+              size="small"
+            >
+              Required
             </Switch>
             <Button
               variant="outline"

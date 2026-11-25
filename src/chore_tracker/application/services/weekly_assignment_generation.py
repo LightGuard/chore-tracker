@@ -17,6 +17,7 @@ class AssignmentChecklistSnapshot:
     source_checklist_item_id: int | None
     label: str
     position: int
+    is_required: bool
 
 
 @dataclass(frozen=True, slots=True)

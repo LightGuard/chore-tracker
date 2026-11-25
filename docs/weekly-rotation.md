@@ -74,8 +74,9 @@ the preceding week.
 
 Family-member and chore activation changes affect the next generated weekly
 plan. They do not cause an already-started week's assignments to be regenerated.
-Weekly assignment rows and their checklist snapshots are historical records;
-the database's immutable-history constraints protect existing assignments.
+Weekly assignment rows and their checklist snapshots are historical records,
+including each item's required/optional flag; the database's immutable-history
+constraints protect existing assignments.
 
 The next week's plan uses the then-current active members and chores, ordered by
 the rules above, and the same original rotation anchor. Existing assignments

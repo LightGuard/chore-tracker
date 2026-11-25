@@ -310,3 +310,64 @@ def test_catalog_changes_preserve_assignment_snapshots_and_completions(
     assert snapshot["source_checklist_item_id"] is None
     assert snapshot["label_snapshot"] == "Fold clothes"
     assert tuple(completion) == (1, "2026-11-09T12:00:00Z")
+
+
+def test_checklist_items_can_be_created_and_updated_as_optional_or_required(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    headers = admin_headers()
+    chore_id = client.post("/chores", json={"name": "Kitchen"}, headers=headers).json()[
+        "id"
+    ]
+
+    optional = client.post(
+        f"/chores/{chore_id}/checklist-items",
+        json={"label": "Wipe counters", "is_required": False},
+        headers=headers,
+    )
+    default_required = client.post(
+        f"/chores/{chore_id}/checklist-items",
+        json={"label": "Sweep floor"},
+        headers=headers,
+    )
+
+    assert optional.status_code == default_required.status_code == 201
+    assert optional.json()["is_required"] is False
+    assert default_required.json()["is_required"] is True
+    optional_id = optional.json()["id"]
+    required_id = default_required.json()["id"]
+
+    updated_optional = client.patch(
+        f"/chores/{chore_id}/checklist-items/{optional_id}",
+        json={"is_required": True},
+        headers=headers,
+    )
+    updated_required = client.patch(
+        f"/chores/{chore_id}/checklist-items/{required_id}",
+        json={"is_required": False},
+        headers=headers,
+    )
+
+    assert updated_optional.status_code == updated_required.status_code == 200
+    assert updated_optional.json()["is_required"] is True
+    assert updated_required.json()["is_required"] is False
+
+    chore = client.get(f"/chores/{chore_id}", headers=headers).json()
+    assert [(item["id"], item["is_required"]) for item in chore["checklist_items"]] == [
+        (optional_id, True),
+        (required_id, False),
+    ]
+
+    invalid = client.post(
+        f"/chores/{chore_id}/checklist-items",
+        json={"label": "Take out trash", "is_required": "sometimes"},
+        headers=headers,
+    )
+    assert invalid.status_code == 422
+
+    with connect(database_path) as connection:
+        stored = connection.execute(
+            "SELECT is_required FROM chore_checklist_items ORDER BY position, id"
+        ).fetchall()
+    assert [row["is_required"] for row in stored] == [1, 0]

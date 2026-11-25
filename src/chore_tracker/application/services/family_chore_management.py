@@ -29,7 +29,7 @@ class ManagementPersistence(Protocol):
         self, chore_id: int, changes: dict[str, Any]
     ) -> dict[str, Any] | None: ...
     def add_checklist_item(
-        self, chore_id: int, label: str
+        self, chore_id: int, label: str, is_required: bool
     ) -> dict[str, Any] | None: ...
     def update_checklist_item(
         self, chore_id: int, item_id: int, changes: dict[str, Any]
@@ -132,9 +132,11 @@ class FamilyChoreManagementService:
             )
         return chore
 
-    def add_checklist_item(self, chore_id: int, label: str) -> dict[str, Any]:
+    def add_checklist_item(
+        self, chore_id: int, label: str, is_required: bool
+    ) -> dict[str, Any]:
         cleaned = self._clean(label, "Checklist label", 500)
-        item = self._persistence.add_checklist_item(chore_id, cleaned)
+        item = self._persistence.add_checklist_item(chore_id, cleaned, is_required)
         if item is None:
             raise ManagementError("chore_missing", "Chore was not found")
         return item

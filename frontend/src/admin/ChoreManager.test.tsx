@@ -47,8 +47,8 @@ const INITIAL_CHORES: ManagedChore[] = [
     description: "Clean the kitchen.",
     is_active: true,
     checklist_items: [
-      { id: 11, label: "Sweep floor", position: 0, is_active: true },
-      { id: 12, label: "Wipe counters", position: 1, is_active: true },
+      { id: 11, label: "Sweep floor", position: 0, is_active: true, is_required: true },
+      { id: 12, label: "Wipe counters", position: 1, is_active: true, is_required: true },
     ],
   },
 ];
@@ -92,6 +92,7 @@ describe("chore manager", () => {
           label: body.label,
           position: chore.checklist_items.length,
           is_active: true,
+          is_required: body.is_required ?? true,
         };
         chore.checklist_items.push(item);
         return jsonResponse(item, 201);
@@ -162,12 +163,31 @@ describe("chore manager", () => {
     fireEvent.change(within(garage).getByLabelText("Add checklist item"), {
       target: { value: "Sweep garage" },
     });
+    fireEvent.click(within(garage).getByRole("switch", { name: "Required" }));
     fireEvent.click(within(garage).getByRole("button", { name: "Add item" }));
 
     const garageItem = await screen.findByRole("listitem", {
       name: "Sweep garage",
     });
     expect(garageItem).toBeInTheDocument();
+    const itemRequired = within(garageItem).getByRole("switch", {
+      name: "Required",
+    });
+    expect(itemRequired).not.toBeChecked();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url).endsWith("/checklist-items") &&
+          init?.method === "POST" &&
+          JSON.parse(String(init.body)).is_required === false,
+      ),
+    ).toBe(true);
+    fireEvent.click(itemRequired);
+    await waitFor(() =>
+      expect(
+        within(garageItem).getByRole("switch", { name: "Required" }),
+      ).toBeChecked(),
+    );
 
     fireEvent.click(
       within(garage).getByRole("button", { name: "Activate chore" }),

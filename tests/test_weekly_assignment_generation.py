@@ -560,3 +560,46 @@ def test_week_ends_within_the_supported_date_range(tmp_path):
 
     with pytest.raises(ValueError, match="9999-12-31"):
         service.generate_selected_week(date(9999, 12, 31))
+
+
+def test_assignment_snapshots_copy_optional_flags_and_ignore_catalog_edits(tmp_path):
+    database_path = _database(tmp_path)
+    with connect(database_path) as connection:
+        connection.execute(
+            """
+            UPDATE chore_checklist_items
+            SET is_required = 0
+            WHERE label = 'Clean sink'
+            """
+        )
+    service = _service(database_path)
+
+    generated = service.generate_selected_week(CURRENT_WEEK)
+
+    alex_assignment = next(
+        assignment
+        for assignment in generated.assignments
+        if assignment.family_member_name == "Alex"
+    )
+    assert [
+        (item.label, item.is_required) for item in alex_assignment.checklist_items
+    ] == [("Clean sink", False)]
+    for assignment in generated.assignments:
+        if assignment.family_member_name == "Zoe":
+            assert all(item.is_required for item in assignment.checklist_items)
+
+    with connect(database_path) as connection:
+        connection.execute(
+            """
+            UPDATE chore_checklist_items
+            SET label = 'Clean the whole sink', is_required = 1
+            WHERE label = 'Clean sink'
+            """
+        )
+
+    repeated = service.generate_selected_week(CURRENT_WEEK)
+
+    assert repeated.created is False
+    assert repeated.assignments == generated.assignments
+    assert repeated.assignments[0].checklist_items[0].label == "Clean sink"
+    assert repeated.assignments[0].checklist_items[0].is_required is False
