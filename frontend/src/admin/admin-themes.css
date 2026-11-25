@@ -129,6 +129,10 @@
   min-width: 0;
 }
 
+.admin-panel[id] {
+  scroll-margin-top: 96px;
+}
+
 .admin-split {
   display: grid;
   gap: 18px;

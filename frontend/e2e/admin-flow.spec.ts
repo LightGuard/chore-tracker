@@ -273,6 +273,14 @@ test.describe.serial("administrator passkey and management flow", () => {
 
     expect((await page.request.get("/api/chores")).status()).toBe(401);
     expect((await page.request.get("/api/family-members")).status()).toBe(401);
+    expect(
+      (
+        await page.request.post("/api/assignments", {
+          headers: { Origin: BASE_URL },
+          data: { week: "2026-11-09" },
+        })
+      ).status(),
+    ).toBe(401);
 
     await page.goto("/admin/reports");
     await expect(
@@ -674,6 +682,10 @@ test.describe.serial("administrator passkey and management flow", () => {
         page.locator("#chore-catalog"),
       );
       await attachScreenshot(
+        `${themeId}-assignments`,
+        page.locator("#weekly-assignments"),
+      );
+      await attachScreenshot(
         `${themeId}-invite`,
         page.locator("#administrator-access"),
       );
@@ -738,6 +750,7 @@ test.describe.serial("administrator passkey and management flow", () => {
         ).toBeVisible();
         await expect(page.locator("#family-members")).toBeVisible();
         await expect(page.locator("#chore-catalog")).toBeVisible();
+        await expect(page.locator("#weekly-assignments")).toBeVisible();
         await expect(page.locator("#administrator-access")).toBeVisible();
         const homeOverflow = await page.evaluate(
           () => document.documentElement.scrollWidth - window.innerWidth,

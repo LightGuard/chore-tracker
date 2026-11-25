@@ -27,6 +27,7 @@ from chore_tracker.adapters.sqlite.weekly_reports import (
 from chore_tracker.adapters.sqlite.weekly_rollover import (
     SQLiteWeeklyRolloverPersistence,
 )
+from chore_tracker.api.routes.assignments import router as assignments_router
 from chore_tracker.api.routes.auth import router as auth_router
 from chore_tracker.api.routes.child_views import router as child_views_router
 from chore_tracker.api.routes.chores import router as chores_router
@@ -192,9 +193,11 @@ app.state.child_views_service_factory = lambda configured_settings: ChildViewsSe
 app.state.child_views_today = lambda: datetime.now(
     ZoneInfo(settings.report_timezone)
 ).date()
-app.state.weekly_assignment_generation_service = WeeklyAssignmentGenerationService(
-    SQLiteWeeklyAssignmentPersistence(settings.database_path),
-    settings.report_timezone,
+app.state.assignment_generation_service_factory = lambda: (
+    WeeklyAssignmentGenerationService(
+        SQLiteWeeklyAssignmentPersistence(settings.database_path),
+        settings.report_timezone,
+    )
 )
 app.state.report_service_factory = lambda: WeeklyReportService(
     SQLiteWeeklyReportPersistence(settings.database_path),
@@ -213,6 +216,7 @@ app.include_router(themes_router)
 app.include_router(auth_router)
 app.include_router(chores_router)
 app.include_router(reports_router)
+app.include_router(assignments_router)
 # Register child views before the dynamic /family-members/{family_member_id} route.
 app.include_router(child_views_router)
 app.include_router(family_members_router)

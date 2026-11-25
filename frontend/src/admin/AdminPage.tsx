@@ -35,6 +35,7 @@ import {
 } from "../theme/storage";
 import { useThemeCatalog } from "../theme/useThemeCatalog";
 import { AdminLayout } from "./AdminLayout";
+import { AssignmentGenerator } from "./AssignmentGenerator";
 import { ChoreManager } from "./ChoreManager";
 import { FamilyMemberManager } from "./FamilyMemberManager";
 import { ReportDetail } from "./ReportDetail";
@@ -356,7 +357,7 @@ export function AdminPage() {
               <p>
                 {reportsView
                   ? "Browse immutable Monday–Sunday completion snapshots generated for the household."
-                  : "Manage the household roster, chore catalog, weekly reports, and administrator access without changing the underlying workflow."}
+                  : "Manage the household roster, chore catalog, weekly assignments, weekly reports, and administrator access without changing the underlying workflow."}
               </p>
             </header>
 
@@ -624,6 +625,7 @@ function SignedInContent({
           <AdminOverview />
           <FamilyMemberManager onSessionExpired={onSessionExpired} />
           <ChoreManager onSessionExpired={onSessionExpired} />
+          <AssignmentGenerator onSessionExpired={onSessionExpired} />
           <AdministratorAccessPanel
             administratorEmail={administrator.email}
             busy={busy}

@@ -41,10 +41,10 @@ to run, change, deploy, or recover the application.
 | [Architecture](architecture.md) | Contributors and reviewers | System context, backend layers, frontend routes, schema, invariants, rollover sequence, health |
 | [API](api.md) | Frontend and integration contributors | Endpoint contracts, authentication, errors, pagination, timezone rules |
 | [Themes](themes.md) | Frontend and design contributors | Theme catalog, preference storage, theme behavior, fonts, previews, adding a theme |
-| [Operations](operations.md) | Household operator | Admin setup, family/chore setup, reports, monitoring, rollover recovery, migrations, troubleshooting |
+| [Operations](operations.md) | Household operator | Admin setup, family/chore setup, manual assignment generation, reports, monitoring, rollover recovery, migrations, troubleshooting |
 | [Backup and restore](backup-restore.md) | Household operator | Backup, verification, restore, upgrades, and recovery scenarios for host, Docker, and Kubernetes |
 | [Deployment](deployment.md) | Operator | Docker Compose, release images, Kubernetes summary, health checks |
-| [Weekly rotation policy](weekly-rotation.md) | Contributors | Rotation anchor, stable ordering, assignment algorithm, catalog-change rules |
+| [Weekly rotation policy](weekly-rotation.md) | Contributors | Rotation anchor, stable ordering, assignment algorithm, manual generation, catalog-change rules |
 | [Helm chart README](../deploy/kubernetes/chore-tracker/README.md) | Operator | Chart installation, values reference, test cluster, chart backup/rollback |
 
 ## Conventions

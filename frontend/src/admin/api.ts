@@ -162,6 +162,33 @@ export function listReports(): Promise<WeeklyReportListItem[]> {
   return apiRequest<WeeklyReportListItem[]>("/reports");
 }
 
+export type WeeklyAssignmentSummary = {
+  id: number;
+  family_member_id: number;
+  family_member_name: string;
+  chore_id: number;
+  chore_name: string;
+  week_start: string;
+  week_end: string;
+};
+
+export type AssignmentGenerationResult = {
+  week_start: string;
+  week_end: string;
+  status: "generated" | "already_exists";
+  assignment_count: number;
+  assignments: WeeklyAssignmentSummary[];
+};
+
+export function generateAssignments(
+  week: string,
+): Promise<AssignmentGenerationResult> {
+  return apiRequest<AssignmentGenerationResult>("/assignments", {
+    method: "POST",
+    body: JSON.stringify({ week }),
+  });
+}
+
 export function getReport(
   weekStart: string,
   options: {

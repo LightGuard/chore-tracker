@@ -20,6 +20,19 @@ class InsufficientActiveChoresError(ValueError):
         )
 
 
+class WeekBeforeRotationAnchorError(ValueError):
+    """Raised when a requested week precedes the immutable rotation anchor."""
+
+    def __init__(self, week_start: date, rotation_anchor: date) -> None:
+        self.week_start = week_start
+        self.rotation_anchor = rotation_anchor
+        super().__init__(
+            "Cannot generate weekly assignments for "
+            f"{week_start.isoformat()}: the rotation anchor is "
+            f"{rotation_anchor.isoformat()}. Generate that week or a later week."
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class RotationFamilyMember:
     """Family member fields used to establish deterministic ordering."""
@@ -67,7 +80,7 @@ def plan_weekly_assignments(
     if first_week_start.weekday() != 0:
         raise ValueError("first_week_start must be a Monday")
     if week_start < first_week_start:
-        raise ValueError("week_start cannot precede first_week_start")
+        raise WeekBeforeRotationAnchorError(week_start, first_week_start)
 
     active_members = sorted(
         (member for member in family_members if member.is_active),

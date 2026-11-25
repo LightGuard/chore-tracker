@@ -115,8 +115,10 @@ def _rollover_service(database_path: Path) -> WeeklyRolloverService:
 def _generate_assignments(
     database_path: Path, week_start: date, *, generated_on: date | None = None
 ):
-    return _assignment_service(database_path).generate(
-        week_start, generated_on=generated_on or week_start
+    return (
+        _assignment_service(database_path)
+        .generate(week_start, generated_on=generated_on or week_start)
+        .assignments
     )
 
 
@@ -277,7 +279,7 @@ def test_first_run_persists_prior_report_before_current_assignments(
     assert headers[0].week_start == REPORT_WEEK_START
     assert headers[0].summary == report.summary
 
-    current = _assignment_service(database_path).generate(WEEK_START)
+    current = _assignment_service(database_path).generate(WEEK_START).assignments
     assert len(current) == 2
     assert {assignment.week_start for assignment in current} == {WEEK_START}
     assert {assignment.chore_name for assignment in current} == {"Kitchen", "Laundry"}
@@ -574,3 +576,50 @@ def test_next_run_is_monday_in_configured_timezone() -> None:
         next_run_at(datetime(2026, 11, 23, 10, 0, tzinfo=UTC), delivery_time, ZONE)
         == next_monday
     )
+
+
+def test_rollover_reuses_manually_generated_assignments(tmp_path) -> None:
+    database_path = _database(tmp_path)
+    _seed_catalog(database_path)
+    manual_service = WeeklyAssignmentGenerationService(
+        SQLiteWeeklyAssignmentPersistence(database_path),
+        TIMEZONE,
+        today=lambda: WEEK_START,
+    )
+
+    manual = manual_service.generate_selected_week(WEEK_START)
+    results = _rollover_service(database_path).run_due(RUN_AT)
+
+    assert manual.created is True
+    assert len(results) == 1
+    assert results[0].assignment_week_start == WEEK_START
+    assert results[0].assignment_count == 2
+    assert (
+        _count(
+            database_path,
+            "weekly_assignment_generations",
+            f"week_start = '{WEEK_START.isoformat()}'",
+        )
+        == 1
+    )
+    assert (
+        _count(
+            database_path,
+            "weekly_assignments",
+            f"week_start = '{WEEK_START.isoformat()}'",
+        )
+        == 2
+    )
+    assert (
+        _count(
+            database_path,
+            "weekly_reports",
+            f"week_start = '{REPORT_WEEK_START.isoformat()}'",
+        )
+        == 1
+    )
+    with connect(database_path) as connection:
+        checkpoint = connection.execute(
+            "SELECT last_completed_week_start FROM weekly_rollover_state WHERE id = 1"
+        ).fetchone()
+    assert checkpoint["last_completed_week_start"] == WEEK_START.isoformat()

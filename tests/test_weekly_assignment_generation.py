@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
 
@@ -15,12 +17,21 @@ from chore_tracker.adapters.sqlite.weekly_assignments import (
     SQLiteWeeklyAssignmentPersistence,
 )
 from chore_tracker.application.services.weekly_assignment_generation import (
+    RotationAnchorRequiredError,
+    WeeklyAssignmentGenerationService,
+)
+from chore_tracker.application.services.weekly_assignment_generation import (
     generate_weekly_assignments as _generate_weekly_assignments,
+)
+from chore_tracker.application.services.weekly_rotation import (
+    WeekBeforeRotationAnchorError,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 FIRST_WEEK = date(2026, 11, 16)
 GENERATED_ON = date(2026, 11, 11)
+NOW_DATE = date(2026, 11, 25)
+CURRENT_WEEK = date(2026, 11, 23)
 
 
 def generate_weekly_assignments(
@@ -31,6 +42,14 @@ def generate_weekly_assignments(
         persistence=SQLiteWeeklyAssignmentPersistence(database_path),
         timezone_name=timezone_name,
         generated_on=generated_on,
+    )
+
+
+def _service(database_path: Path) -> WeeklyAssignmentGenerationService:
+    return WeeklyAssignmentGenerationService(
+        SQLiteWeeklyAssignmentPersistence(database_path),
+        "America/Denver",
+        today=lambda: NOW_DATE,
     )
 
 
@@ -369,3 +388,175 @@ def test_week_normalization_uses_configured_timezone_for_aware_datetime(tmp_path
 
     assert assignments[0].week_start == FIRST_WEEK
     assert assignments[0].week_end == date(2026, 11, 22)
+
+
+def test_generation_result_reports_created_then_already_exists(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+
+    first = service.generate(FIRST_WEEK, generated_on=GENERATED_ON)
+    second = service.generate(FIRST_WEEK, generated_on=GENERATED_ON)
+
+    assert first.created is True
+    assert second.created is False
+    assert first.week_start == FIRST_WEEK
+    assert first.week_end == date(2026, 11, 22)
+    assert second.assignments == first.assignments
+    with connect(database_path) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
+            == 2
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 1
+        )
+
+
+def test_manual_generation_normalizes_a_past_week_and_initializes_the_anchor(
+    tmp_path,
+):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+
+    result = service.generate_selected_week(date(2026, 11, 18))
+
+    assert result.created is True
+    assert result.week_start == FIRST_WEEK
+    assert result.week_end == date(2026, 11, 22)
+    assert (
+        SQLiteWeeklyAssignmentPersistence(database_path).rotation_anchor() == FIRST_WEEK
+    )
+    assert [assignment.family_member_name for assignment in result.assignments] == [
+        "Alex",
+        "Zoe",
+    ]
+
+
+def test_manual_generation_rejects_a_future_week_without_an_anchor(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+
+    with pytest.raises(RotationAnchorRequiredError) as error:
+        service.generate_selected_week(date(2026, 11, 30))
+
+    assert error.value.week_start == date(2026, 11, 30)
+    assert error.value.current_week_start == CURRENT_WEEK
+    assert CURRENT_WEEK.isoformat() in str(error.value)
+    with connect(database_path) as connection:
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_rotation_state"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_manual_generation_allows_a_future_week_after_the_anchor_exists(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+
+    current = service.generate_selected_week(CURRENT_WEEK)
+    future = service.generate_selected_week(date(2026, 12, 7))
+
+    assert current.created is True
+    assert future.created is True
+    assert (
+        SQLiteWeeklyAssignmentPersistence(database_path).rotation_anchor()
+        == CURRENT_WEEK
+    )
+    assert future.assignments[0].week_start == date(2026, 12, 7)
+
+
+def test_manual_generation_rejects_a_week_before_the_existing_anchor(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+    service.generate_selected_week(CURRENT_WEEK)
+
+    with pytest.raises(WeekBeforeRotationAnchorError) as error:
+        service.generate_selected_week(date(2026, 11, 9))
+
+    assert error.value.rotation_anchor == CURRENT_WEEK
+    assert CURRENT_WEEK.isoformat() in str(error.value)
+
+
+def test_manual_generation_is_idempotent_after_catalog_changes(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+    first = service.generate_selected_week(CURRENT_WEEK)
+
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET name = 'Renamed chore' WHERE id = 1")
+        connection.execute(
+            "UPDATE family_members SET is_active = 0 WHERE display_name = 'Zoe'"
+        )
+
+    second = service.generate_selected_week(CURRENT_WEEK)
+
+    assert first.created is True
+    assert second.created is False
+    assert second.assignments == first.assignments
+    with connect(database_path) as connection:
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 1
+        )
+
+
+def test_concurrent_manual_and_scheduled_generation_creates_the_week_once(tmp_path):
+    database_path = _database(tmp_path)
+    barrier = threading.Barrier(2)
+
+    def manual_generation() -> bool:
+        service = _service(database_path)
+        barrier.wait(timeout=5)
+        return service.generate_selected_week(FIRST_WEEK).created
+
+    def scheduled_generation() -> bool:
+        service = _service(database_path)
+        barrier.wait(timeout=5)
+        return service.generate(FIRST_WEEK, generated_on=FIRST_WEEK).created
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(manual_generation),
+            executor.submit(scheduled_generation),
+        ]
+        created = [future.result(timeout=10) for future in futures]
+
+    assert sorted(created) == [False, True]
+    with connect(database_path) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
+            == 2
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM weekly_assignment_generations"
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM assignment_rotation_state"
+            ).fetchone()[0]
+            == 1
+        )
+
+
+def test_week_ends_within_the_supported_date_range(tmp_path):
+    database_path = _database(tmp_path)
+    service = _service(database_path)
+
+    with pytest.raises(ValueError, match="9999-12-31"):
+        service.generate_selected_week(date(9999, 12, 31))

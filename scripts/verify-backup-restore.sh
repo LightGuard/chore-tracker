@@ -80,7 +80,7 @@ with connect(database_path) as connection:
 
 assignments = WeeklyAssignmentGenerationService(
     SQLiteWeeklyAssignmentPersistence(database_path), timezone
-).generate(report_week, generated_on=report_week)
+).generate(report_week, generated_on=report_week).assignments
 by_member = {assignment.family_member_id: assignment for assignment in assignments}
 
 with connect(database_path) as connection:

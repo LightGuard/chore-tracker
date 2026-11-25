@@ -9,6 +9,7 @@ from chore_tracker.adapters.sqlite import transaction
 from chore_tracker.application.services.weekly_assignment_generation import (
     AssignmentChecklistSnapshot,
     WeeklyAssignment,
+    WeeklyAssignmentGenerationResult,
 )
 from chore_tracker.application.services.weekly_rotation import (
     RotationChore,
@@ -24,14 +25,30 @@ class SQLiteWeeklyAssignmentPersistence:
     def __init__(self, database_path: str | Path) -> None:
         self._database_path = database_path
 
+    def rotation_anchor(self) -> date | None:
+        """Return the immutable rotation anchor, if generation has started."""
+        with transaction(self._database_path) as connection:
+            row = connection.execute(
+                "SELECT first_week_start FROM assignment_rotation_state WHERE id = 1"
+            ).fetchone()
+        if row is None:
+            return None
+        return date.fromisoformat(row["first_week_start"])
+
     @staticmethod
     def _load_week_assignments(
         connection, week_start: date
     ) -> tuple[WeeklyAssignment, ...]:
         rows = connection.execute(
-            """SELECT id, family_member_id, chore_id, week_start, week_end,
-                      chore_name_snapshot, chore_description_snapshot
-               FROM weekly_assignments WHERE week_start = ? ORDER BY id""",
+            """SELECT assignment.id, assignment.family_member_id,
+                      member.display_name AS family_member_name,
+                      assignment.chore_id, assignment.week_start,
+                      assignment.week_end, assignment.chore_name_snapshot,
+                      assignment.chore_description_snapshot
+               FROM weekly_assignments AS assignment
+               JOIN family_members AS member
+                 ON member.id = assignment.family_member_id
+               WHERE assignment.week_start = ? ORDER BY assignment.id""",
             (week_start.isoformat(),),
         ).fetchall()
         assignments = []
@@ -46,6 +63,7 @@ class SQLiteWeeklyAssignmentPersistence:
                 WeeklyAssignment(
                     id=row["id"],
                     family_member_id=row["family_member_id"],
+                    family_member_name=row["family_member_name"],
                     chore_id=row["chore_id"],
                     week_start=date.fromisoformat(row["week_start"]),
                     week_end=date.fromisoformat(row["week_end"]),
@@ -66,7 +84,7 @@ class SQLiteWeeklyAssignmentPersistence:
 
     def generate(
         self, week_start: date, week_end: date, generated_on: date
-    ) -> tuple[WeeklyAssignment, ...]:
+    ) -> WeeklyAssignmentGenerationResult:
         with transaction(self._database_path) as connection:
             # Serialize competing generators before checking the unique week record.
             connection.execute("BEGIN IMMEDIATE")
@@ -76,7 +94,12 @@ class SQLiteWeeklyAssignmentPersistence:
                 (week_start.isoformat(),),
             ).fetchone()
             if existing is not None:
-                return self._load_week_assignments(connection, week_start)
+                return WeeklyAssignmentGenerationResult(
+                    week_start=week_start,
+                    week_end=week_end,
+                    created=False,
+                    assignments=self._load_week_assignments(connection, week_start),
+                )
 
             rotation_state = connection.execute(
                 "SELECT first_week_start FROM assignment_rotation_state WHERE id = 1"
@@ -155,4 +178,9 @@ class SQLiteWeeklyAssignmentPersistence:
                             label_snapshot, position) VALUES (?, ?, ?, ?)""",
                         (assignment_id, item["id"], item["label"], item["position"]),
                     )
-            return self._load_week_assignments(connection, week_start)
+            return WeeklyAssignmentGenerationResult(
+                week_start=week_start,
+                week_end=week_end,
+                created=True,
+                assignments=self._load_week_assignments(connection, week_start),
+            )
