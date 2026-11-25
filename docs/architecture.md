@@ -149,7 +149,7 @@ row is `not_yet_recorded` in history and `not_recorded` in derived statistics.
 | `weekly_reports` | One immutable report per week with family-wide totals and timestamps |
 | `weekly_report_entries` | Per-assignment snapshot: child name, chore name/description, weekly totals |
 | `weekly_report_days` | Seven `complete` or `incomplete` statuses per entry |
-| `report_deliveries` | Reserved durable per-administrator delivery state; email delivery is not implemented in the MVP |
+| `report_deliveries` | Reserved durable per-administrator delivery state; email delivery is optional and not implemented in the MVP |
 
 A report is generated from persisted assignment snapshots and completion rows,
 not from the current catalog. It is written in one transaction. Reports and all
@@ -237,6 +237,9 @@ or assignments and reports will not be generated.
   HTTP 503 with `{"status":"not_ready"}` otherwise.
 - A healthy response is HTTP 200 with `{"status":"ok"}`.
 - Readiness responses do not expose filesystem paths or database errors.
+- Email configuration is optional and is not part of readiness. The startup
+  log records whether email delivery is disabled, uses the console transport,
+  or uses SMTP.
 - Apply migrations before expecting readiness. The application never migrates
   during startup.
 

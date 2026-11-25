@@ -1,6 +1,7 @@
 """FastAPI application entry point."""
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime
@@ -47,7 +48,9 @@ from chore_tracker.application.services.weekly_rollover import WeeklyRolloverSer
 from chore_tracker.application.services.weekly_rollover_scheduler import (
     WeeklyRolloverScheduler,
 )
-from chore_tracker.config import Settings, get_settings
+from chore_tracker.config import EmailTransport, Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class _TestableState(State):
@@ -102,10 +105,49 @@ def create_weekly_rollover_scheduler(
     )
 
 
+def log_email_configuration(configured_settings: Settings) -> None:
+    """Log the resolved optional email integration state without secrets."""
+    transport = configured_settings.email_transport
+    if transport is None:
+        logger.info(
+            "Email delivery is disabled: no email transport is configured. "
+            "Core functionality is available."
+        )
+    elif transport is EmailTransport.CONSOLE:
+        logger.info(
+            "Email delivery uses the console transport; messages stay in the "
+            "application log and no external email is sent."
+        )
+    else:
+        logger.info(
+            "Email delivery is enabled with SMTP host %s port %s (STARTTLS=%s).",
+            configured_settings.smtp_host,
+            configured_settings.smtp_port,
+            "enabled" if configured_settings.smtp_starttls else "disabled",
+        )
+
+
+def configure_startup_logging() -> None:
+    """Make application startup diagnostics visible under plain Uvicorn.
+
+    Uvicorn configures only its own loggers and leaves the root logger at
+    WARNING, which would drop the INFO diagnostics above. Respect any logging
+    configuration the deployment already supplied.
+    """
+    if logging.getLogger().handlers:
+        return
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(name)s: %(message)s",
+    )
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     """Run scheduler catch-up on startup and stop it cleanly on shutdown."""
     configured_settings = application.state.settings
+    configure_startup_logging()
+    log_email_configuration(configured_settings)
     scheduler_task: asyncio.Task[None] | None = None
     if configured_settings.weekly_rollover_enabled:
         scheduler = application.state.weekly_rollover_scheduler_factory(

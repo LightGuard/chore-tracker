@@ -1,8 +1,8 @@
 # Default values for chore-tracker.
 #
 # The image values must point at images built from this repository's Dockerfiles.
-# The example ingress and SMTP values are placeholders; override them for the
-# cluster. See the chart README for deployment, backup, and rollback steps.
+# The example ingress values are placeholders; override them for the cluster.
+# Email delivery is optional and disabled by default. See the chart README.
 
 nameOverride: ""
 fullnameOverride: ""
@@ -64,8 +64,8 @@ persistence:
   databaseFile: chore-tracker.db
 
 config:
-  # production requires HTTPS origins, a non-localhost passkey RP ID, and a
-  # non-console email transport.
+  # production requires HTTPS origins and a non-localhost passkey RP ID.
+  # Email delivery is optional; leave the email values empty to run without it.
   environment: production
   # Leave these empty to derive the origin from ingress.host and TLS. Set them
   # explicitly when ingress is disabled or an external proxy terminates TLS.
@@ -75,9 +75,9 @@ config:
   reportTimezone: America/Denver
   reportDeliveryTime: "03:00"
   weeklyRolloverEnabled: true
-  emailTransport: smtp
-  emailFromAddress: chores@example.test
-  smtpHost: mail.example.test
+  emailTransport: ""
+  emailFromAddress: ""
+  smtpHost: ""
   smtpPort: 587
   smtpUsername: ""
   smtpStarttls: true
@@ -86,7 +86,8 @@ config:
 
 secrets:
   # Name of an existing Secret in the release namespace. The chart never creates
-  # or renders secret material.
+  # or renders secret material. Only needed when SMTP authentication uses a
+  # password.
   existingSecret: ""
   smtpPasswordKey: smtp-password
   mountPath: /run/secrets

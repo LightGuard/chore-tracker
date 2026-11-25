@@ -24,7 +24,7 @@ class Environment(StrEnum):
 
 
 class EmailTransport(StrEnum):
-    """Supported initial email transports."""
+    """Supported optional email transports."""
 
     CONSOLE = "console"
     SMTP = "smtp"
@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     passkey_rp_id: str = "localhost"
     passkey_origin: str = "http://localhost:5173"
 
-    email_transport: EmailTransport = EmailTransport.CONSOLE
+    # Email delivery is optional. Leave these unset to run without email; the
+    # transport is inferred from the supplied credentials and delivery
+    # settings, and validates to SMTP when those settings are complete.
+    email_transport: EmailTransport | None = None
     email_from_address: str | None = None
     smtp_host: str | None = None
     smtp_port: int = Field(default=587, ge=1, le=65535)
@@ -72,20 +75,50 @@ class Settings(BaseSettings):
         if not isinstance(values, dict):
             return values
         secret_file = values.get("smtp_password_file")
-        if secret_file and not values.get("smtp_password"):
+        configured_password = values.get("smtp_password")
+        if isinstance(configured_password, SecretStr):
+            configured_password = configured_password.get_secret_value()
+        if secret_file and not configured_password:
             try:
                 values["smtp_password"] = (
                     Path(secret_file).read_text(encoding="utf-8").rstrip("\r\n")
                 )
             except OSError:
                 raise ValueError(
-                    "The configured SMTP password file could not be read."
+                    "The SMTP password file configured by "
+                    "CHORE_TRACKER_SMTP_PASSWORD_FILE could not be read. Check "
+                    "the mounted file path, or unset it to run without email."
                 ) from None
         return values
+
+    def _configured_smtp_settings(self) -> list[str]:
+        """Return the configured SMTP delivery variables without their values."""
+        return [
+            name
+            for name, value in (
+                ("CHORE_TRACKER_EMAIL_FROM_ADDRESS", self.email_from_address),
+                ("CHORE_TRACKER_SMTP_HOST", self.smtp_host),
+                ("CHORE_TRACKER_SMTP_USERNAME", self.smtp_username),
+                ("CHORE_TRACKER_SMTP_PASSWORD", self.smtp_password),
+                ("CHORE_TRACKER_SMTP_PASSWORD_FILE", self.smtp_password_file),
+            )
+            if value
+        ]
+
+    @property
+    def email_delivery_configured(self) -> bool:
+        """Return whether an email transport is configured for delivery."""
+        return self.email_transport is not None
 
     @model_validator(mode="after")
     def validate_environment_configuration(self) -> Settings:
         """Validate settings that depend on the selected environment or transport."""
+        configured_smtp_settings = self._configured_smtp_settings()
+        if self.email_transport is None and configured_smtp_settings:
+            # Supplying SMTP delivery settings is enough to opt in. Operators
+            # who want the console transport must select it explicitly.
+            self.email_transport = EmailTransport.SMTP
+
         if self.email_transport is EmailTransport.SMTP:
             missing = [
                 name
@@ -96,11 +129,29 @@ class Settings(BaseSettings):
                 if not value
             ]
             if missing:
-                raise ValueError("SMTP transport requires: " + ", ".join(missing))
+                raise ValueError(
+                    "SMTP email delivery is incomplete; set "
+                    + ", ".join(missing)
+                    + ". Remove the SMTP settings or set "
+                    "CHORE_TRACKER_EMAIL_TRANSPORT=console to run without email."
+                )
             if bool(self.smtp_username) != bool(self.smtp_password):
                 raise ValueError(
-                    "SMTP username and password must be configured together."
+                    "SMTP authentication is incomplete; set both "
+                    "CHORE_TRACKER_SMTP_USERNAME and "
+                    "CHORE_TRACKER_SMTP_PASSWORD (or "
+                    "CHORE_TRACKER_SMTP_PASSWORD_FILE), or remove both to run "
+                    "without SMTP authentication."
                 )
+        elif self.email_transport is EmailTransport.CONSOLE and (
+            configured_smtp_settings
+        ):
+            raise ValueError(
+                "CHORE_TRACKER_EMAIL_TRANSPORT=console cannot be combined with "
+                "SMTP settings: "
+                + ", ".join(configured_smtp_settings)
+                + ". Remove them or set CHORE_TRACKER_EMAIL_TRANSPORT=smtp."
+            )
 
         if self.environment is Environment.PRODUCTION:
             missing = [
@@ -124,12 +175,44 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production passkey relying-party ID must not be localhost."
                 )
-            if self.email_transport is EmailTransport.CONSOLE:
-                raise ValueError(
-                    "Production requires an explicitly configured email transport."
-                )
 
         return self
+
+    @field_validator("email_transport", mode="before")
+    @classmethod
+    def _blank_email_transport_is_unset(cls, value: object) -> object:
+        """Treat a blank transport variable as unset so email stays optional."""
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("email_from_address", "smtp_host", "smtp_username", mode="before")
+    @classmethod
+    def _blank_email_strings_are_unset(cls, value: object) -> object:
+        """Treat blank email variables as absent rather than configured."""
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("smtp_password", mode="before")
+    @classmethod
+    def _blank_password_is_unset(cls, value: object) -> object:
+        """Treat a blank password as absent so validation stays actionable."""
+        if isinstance(value, SecretStr):
+            return value if value.get_secret_value() else None
+        if isinstance(value, str) and not value:
+            return None
+        return value
+
+    @field_validator("smtp_password_file", mode="before")
+    @classmethod
+    def _blank_password_file_is_unset(cls, value: object) -> object:
+        """Treat a blank mounted-secret path as absent."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("app_host")
     @classmethod

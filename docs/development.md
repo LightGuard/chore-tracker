@@ -87,32 +87,42 @@ the available settings.
 | `CHORE_TRACKER_DATABASE_PATH` | `./data/chore-tracker.db` | SQLite file path; use a persistent mount in deployments |
 | `CHORE_TRACKER_PASSKEY_RP_ID` | `localhost` | Passkey relying-party ID |
 | `CHORE_TRACKER_PASSKEY_ORIGIN` | `http://localhost:5173` | Origin used for passkey validation |
-| `CHORE_TRACKER_EMAIL_TRANSPORT` | `console` | Validated transport setting: `console` or `smtp` |
-| `CHORE_TRACKER_EMAIL_FROM_ADDRESS` | unset | Sender address required when transport is `smtp` |
-| `CHORE_TRACKER_SMTP_HOST` | unset | SMTP host required when transport is `smtp` |
+| `CHORE_TRACKER_EMAIL_TRANSPORT` | unset (disabled) | Optional transport: `console` or `smtp`; leaving it unset infers SMTP from complete SMTP settings |
+| `CHORE_TRACKER_EMAIL_FROM_ADDRESS` | unset | Sender address; supplying it with the SMTP host enables SMTP |
+| `CHORE_TRACKER_SMTP_HOST` | unset | SMTP host; supplying it with the sender enables SMTP |
 | `CHORE_TRACKER_SMTP_PORT` | `587` | SMTP port |
-| `CHORE_TRACKER_SMTP_USERNAME` | unset | Optional SMTP username; pair with a password |
+| `CHORE_TRACKER_SMTP_USERNAME` | unset | Optional SMTP username; pair it with a password |
 | `CHORE_TRACKER_SMTP_PASSWORD` | unset | SMTP password |
-| `CHORE_TRACKER_SMTP_PASSWORD_FILE` | unset | Mounted secret file containing the SMTP password |
+| `CHORE_TRACKER_SMTP_PASSWORD_FILE` | unset | Mounted secret file containing the SMTP password; prefer this in deployments |
 | `CHORE_TRACKER_SMTP_STARTTLS` | `true` | Enable STARTTLS for SMTP |
 | `CHORE_TRACKER_REPORT_TIMEZONE` | `America/Denver` | IANA timezone for reports, rollover, and local child dates |
 | `CHORE_TRACKER_REPORT_DELIVERY_TIME` | `03:00` | Monday rollover time in the reporting timezone (`HH:MM`) |
 | `CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED` | `true` | Run the durable Monday rollover from the API process |
 
-Email transport settings are validated, but the MVP does not send report
-email; reports are viewed in the administrator UI. Do not treat SMTP
-configuration as a working notification path yet. See
+Email delivery is optional. Leave the email transport and SMTP values unset to
+run without email; the application starts and reports readiness normally.
+Supplying both `CHORE_TRACKER_SMTP_HOST` and
+`CHORE_TRACKER_EMAIL_FROM_ADDRESS` enables SMTP without setting the transport
+explicitly. Set `CHORE_TRACKER_EMAIL_TRANSPORT=console` to keep messages in the
+application log instead.
+
+The backend logs the resolved email state once at startup: disabled, console,
+or SMTP host and port. Incomplete or conflicting email settings stop startup
+with an error naming the variables to fix; they are never silently ignored. The
+MVP does not send report email yet, so do not treat an enabled SMTP transport as
+a working notification path. Reports are viewed in the administrator UI. See
 [Known limitations](operations.md#known-limitations).
 
 Secrets can come from environment variables or mounted files. Prefer
-`CHORE_TRACKER_SMTP_PASSWORD_FILE` in deployments. Secret values are not
-included in settings representations or validation messages.
+`CHORE_TRACKER_SMTP_PASSWORD_FILE` in deployments that enable email. Secret
+values are not included in settings representations or validation messages.
 
 Production startup rejects development-only configuration:
 
 - application and passkey origins must use HTTPS;
-- the passkey relying-party ID must not be `localhost`;
-- a non-console email transport must be configured.
+- the passkey relying-party ID must not be `localhost`.
+
+Email settings are optional in production, but they are validated when supplied.
 
 Administrator identity is established through browser setup, never through
 environment variables.

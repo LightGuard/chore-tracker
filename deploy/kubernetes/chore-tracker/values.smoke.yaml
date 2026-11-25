@@ -2,7 +2,7 @@
 # to exercise startup, persistence, and probes; production requires HTTPS.
 config:
   environment: development
-  emailTransport: console
+  emailTransport: ""
   appOrigin: http://chore-tracker.127.0.0.1.nip.io
   passkeyOrigin: http://chore-tracker.127.0.0.1.nip.io
   passkeyRpId: chore-tracker.127.0.0.1.nip.io

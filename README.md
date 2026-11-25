@@ -37,9 +37,9 @@ homelab Kubernetes cluster.
   selection is a household convenience, not authentication.
 - Multi-family tenancy or more than two administrators.
 - Horizontal scaling of the backend or multiple SQLite writers.
-- Sending weekly report email. SMTP settings are validated for deployment
-  readiness, but report email delivery and retry handling are not implemented
-  in the MVP.
+- Sending weekly report email. Email/SMTP configuration is optional and
+  validated, but report email delivery and retry handling are not implemented
+  in the MVP; production does not require email settings.
 - Persistent game systems such as XP, currencies, rewards, or inventories.
   Themes derive their presentation from existing completion facts only.
 
