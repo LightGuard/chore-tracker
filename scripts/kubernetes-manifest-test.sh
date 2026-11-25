@@ -35,7 +35,12 @@ render() {
 echo "Rendering chart variants"
 render "${tmp}/default.yaml"
 render "${tmp}/smoke.yaml" --values "${chart}/values.smoke.yaml"
-render "${tmp}/secret.yaml" --set secrets.existingSecret=chore-tracker-smtp
+render "${tmp}/secret.yaml" \
+  --set secrets.existingSecret=chore-tracker-smtp \
+  --set config.emailTransport=smtp \
+  --set config.emailFromAddress=chores@example.test \
+  --set config.smtpHost=mail.example.test \
+  --set config.smtpUsername=mailer
 render "${tmp}/no-ingress.yaml" \
   --set ingress.enabled=false \
   --set config.appOrigin=http://chore-tracker.test \
@@ -59,6 +64,8 @@ helm template "${release}" "${chart}" --namespace "${namespace}" \
 grep -q 'CHORE_TRACKER_APP_ORIGIN: "https://chore-tracker.example.test"' "${tmp}/default.yaml"
 grep -q 'CHORE_TRACKER_APP_ORIGIN: "http://chore-tracker.test"' "${tmp}/no-ingress.yaml"
 grep -q 'CHORE_TRACKER_APP_ORIGIN: "http://chore-tracker.example.test"' "${tmp}/no-tls.yaml"
+! grep -q 'CHORE_TRACKER_SMTP_' "${tmp}/default.yaml"
+! grep -q 'CHORE_TRACKER_EMAIL_TRANSPORT' "${tmp}/smoke.yaml"
 grep -q 'CHORE_TRACKER_SMTP_PASSWORD_FILE: "/run/secrets/smtp_password"' "${tmp}/secret.yaml"
 grep -q 'claimName: existing-sqlite' "${tmp}/existing-pvc.yaml"
 ! grep -q '^kind: Secret' "${tmp}"/*.yaml

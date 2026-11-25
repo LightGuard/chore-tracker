@@ -15,13 +15,23 @@ data:
   CHORE_TRACKER_REPORT_TIMEZONE: {{ .Values.config.reportTimezone | quote }}
   CHORE_TRACKER_REPORT_DELIVERY_TIME: {{ .Values.config.reportDeliveryTime | quote }}
   CHORE_TRACKER_WEEKLY_ROLLOVER_ENABLED: {{ .Values.config.weeklyRolloverEnabled | quote }}
+  {{- if .Values.config.emailTransport }}
   CHORE_TRACKER_EMAIL_TRANSPORT: {{ .Values.config.emailTransport | quote }}
+  {{- end }}
+  {{- if .Values.config.emailFromAddress }}
   CHORE_TRACKER_EMAIL_FROM_ADDRESS: {{ .Values.config.emailFromAddress | quote }}
+  {{- end }}
+  {{- if .Values.config.smtpHost }}
   CHORE_TRACKER_SMTP_HOST: {{ .Values.config.smtpHost | quote }}
+  {{- end }}
+  {{- if or .Values.config.emailTransport .Values.config.smtpHost }}
   CHORE_TRACKER_SMTP_PORT: {{ .Values.config.smtpPort | quote }}
+  {{- if .Values.config.smtpUsername }}
   CHORE_TRACKER_SMTP_USERNAME: {{ .Values.config.smtpUsername | quote }}
+  {{- end }}
   CHORE_TRACKER_SMTP_STARTTLS: {{ .Values.config.smtpStarttls | quote }}
-  {{- if .Values.secrets.existingSecret }}
+  {{- end }}
+  {{- if and .Values.secrets.existingSecret .Values.config.smtpHost }}
   CHORE_TRACKER_SMTP_PASSWORD_FILE: {{ printf "%s/%s" .Values.secrets.mountPath .Values.secrets.fileName | quote }}
   {{- end }}
   {{- range $key, $value := .Values.config.extraEnv }}

@@ -81,8 +81,8 @@ Application settings are read from `.env.docker` at runtime through the Compose
 `env_file` mechanism. Container-specific values are fixed by `compose.yaml`:
 the API binds `0.0.0.0:8000`, SQLite uses `/data/chore-tracker.db`, and the
 application and passkey origins use `CHORE_TRACKER_PUBLIC_ORIGIN`. Other
-`CHORE_TRACKER_*` settings in the file, including SMTP configuration and the
-reporting timezone, are passed through.
+`CHORE_TRACKER_*` settings in the file, including optional SMTP configuration
+and the reporting timezone, are passed through.
 
 `CHORE_TRACKER_PUBLIC_ORIGIN`, `CHORE_TRACKER_BIND_ADDRESS`,
 `CHORE_TRACKER_HTTP_PORT`, and `CHORE_TRACKER_PASSKEY_RP_ID` are Compose
@@ -91,9 +91,10 @@ deployment values. `VITE_API_BASE_URL` is a public build argument fixed to
 browser assets.
 
 Secrets are injected at runtime and are not copied into either image. The root
-`.dockerignore` and `frontend/.dockerignore` exclude environment files. Prefer a
-mounted SMTP password file over a password environment variable. Compose
-automatically reads a local `compose.override.yaml`; for example:
+`.dockerignore` and `frontend/.dockerignore` exclude environment files. When
+email delivery is enabled, prefer a mounted SMTP password file over a password
+environment variable. Compose automatically reads a local
+`compose.override.yaml`; for example:
 
 ```yaml
 services:
@@ -108,13 +109,17 @@ Create the file with permissions readable by UID `10001`, then start normally
 with the same `--env-file` command. Do not commit the override file or its
 secret. `.env.docker.example` also documents the SMTP settings.
 
-Email transport configuration is validated, but the MVP does not send weekly
-report email. See [Known limitations](operations.md#known-limitations).
+Email delivery is optional. Leave the SMTP settings unset to run without email;
+supplying the SMTP host and sender enables SMTP automatically. Invalid or
+incomplete email settings stop startup with a clear error, and the backend logs
+the resolved state at startup. The MVP does not send weekly report email. See
+[Known limitations](operations.md#known-limitations).
 
 For a production-style deployment, terminate TLS before the frontend, set
 `CHORE_TRACKER_ENVIRONMENT=production`, use HTTPS application and passkey
-origins, set a real passkey relying-party domain, and configure SMTP delivery.
-The application rejects development-only production configuration at startup.
+origins, and set a real passkey relying-party domain. Email settings are
+optional in production but are validated when supplied. The application rejects
+development-only production configuration at startup.
 
 ### Health checks
 
@@ -280,8 +285,8 @@ behavior, see [Upgrades and migrations](operations.md#upgrades-and-migrations).
 - [ ] `CHORE_TRACKER_APP_ORIGIN` and `CHORE_TRACKER_PASSKEY_ORIGIN` are the exact
       HTTPS origin.
 - [ ] `CHORE_TRACKER_PASSKEY_RP_ID` is the real hostname, not `localhost`.
-- [ ] A non-console email transport is configured (even though report email is
-      not implemented in the MVP, production validation requires it).
+- [ ] Email delivery is intentionally disabled, or the SMTP settings are valid
+      (the backend logs the resolved state at startup).
 - [ ] The database is on a persistent volume, and the volume is backed up.
 - [ ] Exactly one backend process/replica runs against the database.
 - [ ] Readiness and liveness checks are wired to monitoring.

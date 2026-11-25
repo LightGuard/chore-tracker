@@ -10,8 +10,9 @@ The chart uses the images built from the repository Dockerfiles:
 - Frontend: nginx serving the built React application and proxying `/api` to the
   backend Service.
 
-The chart does not create or render secret material. It can mount an existing
-Kubernetes Secret containing the SMTP password.
+The chart does not create or render secret material. When SMTP authentication
+is enabled, it can mount an existing Kubernetes Secret containing the SMTP
+password.
 
 ## Prerequisites
 
@@ -42,10 +43,11 @@ kubectl --namespace chore-tracker create secret generic chore-tracker-smtp \
 
 The chart mounts the `smtp-password` key as
 `/run/secrets/smtp_password` and sets
-`CHORE_TRACKER_SMTP_PASSWORD_FILE`. Set `secrets.existingSecret` to
-`chore-tracker-smtp`, or leave it empty when SMTP authentication is not used.
-Never commit the password or a values file containing secret material. After
-rotating the Secret, restart the backend so it reads the new file:
+`CHORE_TRACKER_SMTP_PASSWORD_FILE` when an SMTP host is configured. Set
+`secrets.existingSecret` to `chore-tracker-smtp`, or leave it empty when email
+is disabled or SMTP authentication is not used. Never commit the password or a
+values file containing secret material. After rotating the Secret, restart the
+backend so it reads the new file:
 
 ```bash
 kubectl --namespace chore-tracker rollout restart deployment/chore-tracker-backend
@@ -77,6 +79,17 @@ ingress:
 config:
   environment: production
   reportTimezone: America/Denver
+
+persistence:
+  storageClassName: local-path
+  size: 1Gi
+```
+
+Email delivery is optional and disabled by default. To enable SMTP delivery,
+add the SMTP settings to the values file:
+
+```yaml
+config:
   emailTransport: smtp
   emailFromAddress: chores@example.test
   smtpHost: mail.example.test
@@ -85,11 +98,13 @@ config:
 
 secrets:
   existingSecret: chore-tracker-smtp
-
-persistence:
-  storageClassName: local-path
-  size: 1Gi
 ```
+
+Leave the email values empty to run without email. Supplying the SMTP host and
+sender is enough to enable SMTP; `emailTransport` is only needed to select
+`console` explicitly. Incomplete or conflicting settings stop startup with an
+error naming the variables to fix, and the backend logs the resolved state at
+startup.
 
 The publish workflow builds both images for `linux/amd64` and `linux/arm64` and
 pushes them to GitHub Container Registry as
@@ -113,9 +128,10 @@ ingress:
   enabled: false
 ```
 
-The application's production mode requires HTTPS origins, a non-localhost
-passkey relying-party ID, and a non-console email transport. For a non-TLS test
-cluster, use `development` and `console` email instead.
+The application's production mode requires HTTPS origins and a non-localhost
+passkey relying-party ID. Email delivery is optional and disabled by default.
+The backend logs whether email delivery is disabled, uses the console transport,
+or uses SMTP at startup. For a non-TLS test cluster, use `development` instead.
 
 ## Install or upgrade
 
@@ -368,9 +384,14 @@ its existing Traefik IngressClass and wildcard TLS Secret.
 | `persistence.size` | `1Gi` | Requested SQLite volume size |
 | `config.environment` | `production` | Application environment |
 | `config.reportTimezone` | `America/Denver` | Reporting timezone |
-| `config.emailTransport` | `smtp` | `smtp` or `console` |
+| `config.emailTransport` | `""` | `""` (disabled), `console`, or `smtp` |
+| `config.emailFromAddress` | `""` | Sender address; with `smtpHost`, enables SMTP |
+| `config.smtpHost` | `""` | SMTP host; with `emailFromAddress`, enables SMTP |
+| `config.smtpPort` | `587` | SMTP port |
+| `config.smtpUsername` | `""` | Optional SMTP username; pair with the secret |
+| `config.smtpStarttls` | `true` | Enable STARTTLS for SMTP |
 | `config.extraEnv` | `{}` | Extra non-secret environment variables |
-| `secrets.existingSecret` | `""` | Secret containing the SMTP password |
+| `secrets.existingSecret` | `""` | Secret containing the SMTP password, when SMTP authentication uses one |
 | `secrets.smtpPasswordKey` | `smtp-password` | Key in the existing Secret |
 | `ingress.enabled` | `true` | Create the Ingress |
 | `ingress.className` | `traefik` | Existing IngressClass |
