@@ -149,9 +149,8 @@ class WeeklyRolloverService:
             report = self._reports.generate(
                 report_week_start, generated_at=completed_at
             )
-            assignments = self._assignments.generate(
-                week_start, generated_on=week_start
-            )
+            generation = self._assignments.generate(week_start, generated_on=week_start)
+            assignments = generation.assignments
             self._persistence.mark_completed(week_start, completed_at)
         except Exception as error:
             logger.exception(
