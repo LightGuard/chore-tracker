@@ -28,7 +28,7 @@ homelab Kubernetes cluster.
   using the same deterministic rotation as the scheduled rollover.
 - Passkey-based administrator sign-in, first-run bootstrap, one additional
   administrator invitation, family-member management, and chore/checklist
-  management.
+  management with a reward-neutral chore weight.
 - Homestead, Quest, and Sticker Club v2 themes for family screens, plus themed
   signed-in administrator layouts.
 - Docker Compose and Helm deployment assets, liveness/readiness health

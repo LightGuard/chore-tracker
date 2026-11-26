@@ -44,7 +44,8 @@ class SQLiteWeeklyAssignmentPersistence:
                       member.display_name AS family_member_name,
                       assignment.chore_id, assignment.week_start,
                       assignment.week_end, assignment.chore_name_snapshot,
-                      assignment.chore_description_snapshot
+                      assignment.chore_description_snapshot,
+                      assignment.chore_weight_snapshot
                FROM weekly_assignments AS assignment
                JOIN family_members AS member
                  ON member.id = assignment.family_member_id
@@ -70,6 +71,7 @@ class SQLiteWeeklyAssignmentPersistence:
                     week_end=date.fromisoformat(row["week_end"]),
                     chore_name=row["chore_name_snapshot"],
                     chore_description=row["chore_description_snapshot"],
+                    chore_weight=row["chore_weight_snapshot"],
                     checklist_items=tuple(
                         AssignmentChecklistSnapshot(
                             id=item["id"],
@@ -151,14 +153,15 @@ class SQLiteWeeklyAssignmentPersistence:
             )
             for planned in plan:
                 chore = connection.execute(
-                    "SELECT name, description FROM chores WHERE id = ?",
+                    "SELECT name, description, weight FROM chores WHERE id = ?",
                     (planned.chore_id,),
                 ).fetchone()
                 assignment_id = connection.execute(
                     """INSERT INTO weekly_assignments
                        (family_member_id, chore_id, week_start, week_end,
-                        chore_name_snapshot, chore_description_snapshot)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
+                        chore_name_snapshot, chore_description_snapshot,
+                        chore_weight_snapshot)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
                     (
                         planned.family_member_id,
                         planned.chore_id,
@@ -166,6 +169,7 @@ class SQLiteWeeklyAssignmentPersistence:
                         week_end.isoformat(),
                         chore["name"],
                         chore["description"],
+                        chore["weight"],
                     ),
                 ).lastrowid
                 items = connection.execute(

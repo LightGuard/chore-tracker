@@ -34,10 +34,31 @@ function errorMessage(reason: unknown, fallback: string): string {
   return reason instanceof ApiError ? reason.message : fallback;
 }
 
+const CHORE_WEIGHT_MIN = 0;
+const CHORE_WEIGHT_MAX = 10;
+const CHORE_WEIGHT_ERROR =
+  `Weight must be a whole number between ${CHORE_WEIGHT_MIN} ` +
+  `and ${CHORE_WEIGHT_MAX}.`;
+
+function parseWeight(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const value = Number(trimmed);
+  if (
+    !Number.isInteger(value) ||
+    value < CHORE_WEIGHT_MIN ||
+    value > CHORE_WEIGHT_MAX
+  ) {
+    return null;
+  }
+  return value;
+}
+
 export function ChoreManager({ onSessionExpired }: Props) {
   const [chores, setChores] = useState<ManagedChore[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [weight, setWeight] = useState("1");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -84,26 +105,42 @@ export function ChoreManager({ onSessionExpired }: Props) {
       setError("Chore name must not be blank.");
       return;
     }
+    const parsedWeight = parseWeight(weight);
+    if (parsedWeight === null) {
+      setError(CHORE_WEIGHT_ERROR);
+      return;
+    }
     await run(async () => {
-      await createChore({ name: cleaned, description: description.trim() });
+      await createChore({
+        name: cleaned,
+        description: description.trim(),
+        weight: parsedWeight,
+      });
       setName("");
       setDescription("");
+      setWeight("1");
     });
   }
 
   async function saveChore(
     chore: ManagedChore,
-    changes: { name: string; description: string },
+    changes: { name: string; description: string; weight: string },
   ) {
     const cleaned = changes.name.trim();
     if (!cleaned) {
       setError("Chore name must not be blank.");
       return;
     }
+    const parsedWeight = parseWeight(changes.weight);
+    if (parsedWeight === null) {
+      setError(CHORE_WEIGHT_ERROR);
+      return;
+    }
     await run(() =>
       updateChore(chore.id, {
         name: cleaned,
         description: changes.description.trim(),
+        weight: parsedWeight,
       }),
     );
   }
@@ -228,6 +265,18 @@ export function ChoreManager({ onSessionExpired }: Props) {
                     resize="auto"
                   />
                 </FormControl>
+                <FormControl id="new-chore-weight">
+                  <FormControl.Label>New chore weight (0–10)</FormControl.Label>
+                  <TextField
+                    name="weight"
+                    value={weight}
+                    onChange={({ value }) => setWeight(value)}
+                    inputAttributes={{ type: "number", step: "any" }}
+                  />
+                  <Text variant="caption-1" color="neutral-faded">
+                    0 means no reward weight; 1 is the baseline.
+                  </Text>
+                </FormControl>
                 <View direction="row">
                   <Button type="submit" disabled={busy}>
                     Create chore
@@ -291,7 +340,7 @@ export function ChoreManager({ onSessionExpired }: Props) {
 type ChoreCardProps = {
   chore: ManagedChore;
   busy: boolean;
-  onSave: (changes: { name: string; description: string }) => void;
+  onSave: (changes: { name: string; description: string; weight: string }) => void;
   onToggle: () => void;
   onAddItem: (label: string, isRequired: boolean) => void;
   onUpdateItem: (
@@ -314,11 +363,13 @@ function ChoreCard({
 }: ChoreCardProps) {
   const [name, setName] = useState(chore.name);
   const [description, setDescription] = useState(chore.description);
+  const [weight, setWeight] = useState(String(chore.weight));
   const [newItemLabel, setNewItemLabel] = useState("");
   const [newItemRequired, setNewItemRequired] = useState(true);
 
   useEffect(() => setName(chore.name), [chore.name]);
   useEffect(() => setDescription(chore.description), [chore.description]);
+  useEffect(() => setWeight(String(chore.weight)), [chore.weight]);
 
   const activeItems = chore.checklist_items.filter((item) => item.is_active);
 
@@ -367,10 +418,22 @@ function ChoreCard({
               resize="auto"
             />
           </FormControl>
+          <FormControl id={`chore-weight-${chore.id}`}>
+            <FormControl.Label>Weight (0–10)</FormControl.Label>
+            <TextField
+              name="weight"
+              value={weight}
+              onChange={({ value }) => setWeight(value)}
+              inputAttributes={{ type: "number", step: "any" }}
+            />
+            <Text variant="caption-1" color="neutral-faded">
+              0 means no reward weight; 1 is the baseline.
+            </Text>
+          </FormControl>
           <View direction="row" gap={2} wrap>
             <Button
               disabled={busy}
-              onClick={() => onSave({ name, description })}
+              onClick={() => onSave({ name, description, weight })}
             >
               Save chore details
             </Button>

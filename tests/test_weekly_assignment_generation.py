@@ -603,3 +603,59 @@ def test_assignment_snapshots_copy_optional_flags_and_ignore_catalog_edits(tmp_p
     assert repeated.assignments == generated.assignments
     assert repeated.assignments[0].checklist_items[0].label == "Clean sink"
     assert repeated.assignments[0].checklist_items[0].is_required is False
+
+
+def test_generation_snapshots_chore_weight_and_keeps_prior_weeks_stable(tmp_path):
+    database_path = _database(tmp_path)
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET weight = 4 WHERE name = 'Bathroom'")
+
+    first = generate_weekly_assignments(
+        FIRST_WEEK,
+        database_path=database_path,
+        timezone_name="America/Denver",
+        generated_on=FIRST_WEEK,
+    )
+    bathroom = next(
+        assignment for assignment in first if assignment.chore_name == "Bathroom"
+    )
+    assert bathroom.chore_weight == 4
+
+    with connect(database_path) as connection:
+        original_weights = [
+            dict(row)
+            for row in connection.execute(
+                """SELECT chore_id, chore_weight_snapshot
+                   FROM weekly_assignments WHERE week_start = ?""",
+                (FIRST_WEEK.isoformat(),),
+            )
+        ]
+        connection.execute("UPDATE chores SET weight = 9 WHERE name = 'Bathroom'")
+
+    second = generate_weekly_assignments(
+        date(2026, 11, 23),
+        database_path=database_path,
+        timezone_name="America/Denver",
+        generated_on=date(2026, 11, 23),
+    )
+
+    with connect(database_path) as connection:
+        preserved_weights = [
+            dict(row)
+            for row in connection.execute(
+                """SELECT chore_id, chore_weight_snapshot
+                   FROM weekly_assignments WHERE week_start = ?""",
+                (FIRST_WEEK.isoformat(),),
+            )
+        ]
+        catalog_weights = {
+            row["id"]: row["weight"]
+            for row in connection.execute("SELECT id, weight FROM chores")
+        }
+
+    assert preserved_weights == original_weights
+    assert second
+    assert all(
+        assignment.chore_weight == catalog_weights[assignment.chore_id]
+        for assignment in second
+    )

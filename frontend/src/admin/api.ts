@@ -18,6 +18,7 @@ export type ManagedChore = {
   id: number;
   name: string;
   description: string;
+  weight: number;
   is_active: boolean;
   checklist_items: ManagedChecklistItem[];
 };
@@ -60,6 +61,7 @@ export function listChores(): Promise<ManagedChore[]> {
 export function createChore(args: {
   name: string;
   description: string;
+  weight: number;
 }): Promise<ManagedChore> {
   return apiRequest<ManagedChore>("/chores", {
     method: "POST",
@@ -69,7 +71,12 @@ export function createChore(args: {
 
 export function updateChore(
   choreId: number,
-  changes: { name?: string; description?: string; is_active?: boolean },
+  changes: {
+    name?: string;
+    description?: string;
+    weight?: number;
+    is_active?: boolean;
+  },
 ): Promise<ManagedChore> {
   return apiRequest<ManagedChore>(`/chores/${choreId}`, {
     method: "PATCH",
@@ -179,6 +186,7 @@ export type WeeklyAssignmentSummary = {
   family_member_name: string;
   chore_id: number;
   chore_name: string;
+  chore_weight: number;
   week_start: string;
   week_end: string;
 };

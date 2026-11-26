@@ -118,7 +118,7 @@ All timestamps are stored as UTC text. Local dates are ISO calendar dates in
 | `authentication_challenges` | One-use registration/authentication challenges with expiry |
 | `administrator_enrollment_tokens` | One-use second-administrator invitation tokens |
 | `family_members` | Deactivatable child profiles and saved theme |
-| `chores` | Deactivatable chore catalog entries |
+| `chores` | Deactivatable chore catalog entries with a reward-neutral 0-10 weight |
 | `chore_checklist_items` | Ordered, deactivatable checklist definitions with a required/optional flag |
 
 No private key material is stored. A passkey's private key stays with the
@@ -130,7 +130,7 @@ authenticator.
 | --- | --- |
 | `assignment_rotation_state` | The immutable rotation anchor: the first generated Monday |
 | `weekly_assignment_generations` | Which weeks have been generated and their anchor |
-| `weekly_assignments` | One immutable assignment per child and week, including chore name/description snapshots |
+| `weekly_assignments` | One immutable assignment per child and week, including chore name/description/weight snapshots |
 | `assignment_checklist_items` | Ordered checklist label and required/optional snapshots for an assignment, optionally linked to a source catalog item |
 | `daily_checklist_completions` | One row per assignment checklist item and local calendar date |
 
@@ -178,8 +178,8 @@ Mondays recoverable after a restart.
 
 These contracts are enforced in code, tests, and database triggers.
 
-1. **Assignment snapshots are immutable.** Chore name, description, checklist
-   labels, and order remain as assigned even after catalog edits or
+1. **Assignment snapshots are immutable.** Chore name, description, weight,
+   checklist labels, and order remain as assigned even after catalog edits or
    deactivation.
 2. **Completion history is append/update-only per item and date.** Unchecking
    one item does not remove other items' records or other dates.

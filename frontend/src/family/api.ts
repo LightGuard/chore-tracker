@@ -21,6 +21,7 @@ export type CurrentAssignment = {
   week_end: string;
   chore_name: string;
   chore_description: string;
+  chore_weight: number;
   today: string;
   checklist_items: ChecklistItem[];
   is_complete: boolean;
@@ -41,6 +42,7 @@ export type CompletionHistoryRecord = {
   week_end: string;
   chore_name: string;
   chore_description: string;
+  chore_weight: number;
   completion_date: string;
   completion_status: CompletionStatus;
 };

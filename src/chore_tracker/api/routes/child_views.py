@@ -91,6 +91,7 @@ class CurrentWeeklyAssignment(BaseModel):
     week_end: date
     chore_name: str
     chore_description: str
+    chore_weight: int
     today: date
     checklist_items: list[AssignmentChecklistItem]
     is_complete: bool
@@ -333,6 +334,7 @@ class CompletionHistoryRecord(BaseModel):
     week_end: date
     chore_name: str
     chore_description: str
+    chore_weight: int
     completion_date: date
     completion_status: Literal["complete", "incomplete", "not_yet_recorded"]
 

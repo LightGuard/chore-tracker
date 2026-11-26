@@ -167,6 +167,7 @@ def test_generation_normalizes_the_week_and_reuses_existing_assignments(
         "Bathroom",
         "Kitchen",
     ]
+    assert all(assignment["chore_weight"] == 1 for assignment in payload["assignments"])
     assignment_ids = [assignment["id"] for assignment in payload["assignments"]]
 
     second = generate(client, CURRENT_WEEK)
@@ -180,6 +181,32 @@ def test_generation_normalizes_the_week_and_reuses_existing_assignments(
     assert count(database_path, "weekly_assignments") == 2
     assert count(database_path, "weekly_assignment_generations") == 1
     assert count(database_path, "assignment_rotation_state") == 1
+
+
+def test_generation_returns_the_snapshotted_chore_weight(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    seed_catalog(database_path)
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET weight = 7 WHERE name = 'Bathroom'")
+
+    first = generate(client, CURRENT_WEEK)
+    assert first.status_code == 201
+    generated = {
+        assignment["chore_name"]: assignment["chore_weight"]
+        for assignment in first.json()["assignments"]
+    }
+    assert generated["Bathroom"] == 7
+
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET weight = 9 WHERE name = 'Bathroom'")
+
+    repeated = generate(client, CURRENT_WEEK)
+    assert repeated.status_code == 200
+    preserved = {
+        assignment["chore_name"]: assignment["chore_weight"]
+        for assignment in repeated.json()["assignments"]
+    }
+    assert preserved["Bathroom"] == 7
 
 
 def test_generation_rejects_a_future_week_before_the_anchor_exists(

@@ -75,6 +75,7 @@ week, including immutable chore snapshots and today's checklist state:
   "week_end": "2026-11-29",
   "chore_name": "Kitchen",
   "chore_description": "Reset the kitchen after dinner",
+  "chore_weight": 1,
   "today": "2026-11-25",
   "checklist_items": [
     { "id": 101, "label": "Wipe counters", "position": 0, "is_required": true, "is_completed": true },
@@ -83,6 +84,12 @@ week, including immutable chore snapshots and today's checklist state:
   "is_complete": false
 }
 ```
+
+`chore_weight` is the immutable weight snapshot captured when the week was
+generated (an integer from 0 to 10; see
+[chore weights](#chore-weight)). It is reward-neutral: the API stores and
+returns it, and consuming frontends decide how it maps to their own rewards.
+Later catalog edits do not change the snapshot.
 
 `is_complete` is true when every required checklist item is complete for
 `today`. Optional items are returned and tracked independently, but they do not
@@ -293,6 +300,7 @@ week, including days with no saved completion rows.
       "week_end": "2026-11-29",
       "chore_name": "Kitchen",
       "chore_description": "Reset the kitchen after dinner",
+      "chore_weight": 2,
       "completion_date": "2026-11-25",
       "completion_status": "incomplete"
     }
@@ -312,7 +320,8 @@ week, including days with no saved completion rows.
   least one checklist row exists for the day; otherwise it is
   `not_yet_recorded`. Optional rows are tracked but never block completion.
 - Historical records remain available after a profile or chore is deactivated.
-  Catalog edits do not change assignment snapshots.
+  Catalog edits do not change assignment snapshots, including each record's
+  `chore_weight` snapshot.
 - An unknown profile returns HTTP 404. A known profile with no assignments
   returns HTTP 200 with an empty page.
 
@@ -477,7 +486,7 @@ same-origin check.
 | `GET` | `/chores` | List chores with ordered checklist items |
 | `POST` | `/chores` | Create an inactive chore |
 | `GET` | `/chores/{chore_id}` | Read one chore |
-| `PATCH` | `/chores/{chore_id}` | Update name, description, or active state |
+| `PATCH` | `/chores/{chore_id}` | Update name, description, weight, or active state |
 | `POST` | `/chores/{chore_id}/checklist-items` | Add a checklist item |
 | `PATCH` | `/chores/{chore_id}/checklist-items/{item_id}` | Update label or active state |
 | `DELETE` | `/chores/{chore_id}/checklist-items/{item_id}` | Delete a checklist item |
@@ -486,7 +495,11 @@ same-origin check.
 Create body:
 
 ```json
-{ "name": "Kitchen", "description": "Reset the kitchen after dinner" }
+{
+  "name": "Kitchen",
+  "description": "Reset the kitchen after dinner",
+  "weight": 2
+}
 ```
 
 New chores are always created inactive. A chore cannot be activated until it has
@@ -506,9 +519,9 @@ not block daily completion:
 { "label": "Wipe counters", "is_active": true, "is_required": false }
 ```
 
-The required/optional flag is copied into the immutable weekly assignment
-snapshot when assignments are generated. Later catalog edits do not rewrite an
-existing snapshot.
+The required/optional flag and the chore weight are copied into the immutable
+weekly assignment snapshot when assignments are generated. Later catalog edits
+do not rewrite an existing snapshot.
 
 Reorder body must contain every checklist item for the chore exactly once:
 
@@ -522,9 +535,30 @@ Deleting a catalog item only clears the historical snapshot's
 label and completion history remain. There is no chore delete operation;
 deactivate instead.
 
-Status codes: unknown chore or item 404; invalid/blank/too-long values, duplicate
-or incomplete order 422; activation without an active item 422; removing the
-last active item from an active chore 409.
+Status codes: unknown chore or item 404; invalid/blank/too-long values,
+invalid weight values, duplicate or incomplete order 422; activation without an
+active item 422; removing the last active item from an active chore 409.
+
+### Chore weight
+
+Every chore carries a reward-neutral weight:
+
+- The value is an integer from 0 to 10. New chores default to 1. Existing
+  chores and existing weekly assignment snapshots were backfilled to 1, so
+  introducing weights does not change current rewards.
+- `0` means no reward weight and `1` is the baseline. Higher values express
+  relatively more effort or reward value.
+- `POST /chores` and `PATCH /chores/{chore_id}` accept `weight`, and chore
+  create, list, get, and update responses include it. Fractions, booleans,
+  strings, and values outside 0-10 are rejected with HTTP 422.
+- Weight is chore-level. Optional checklist items have no separate weight; the
+  chore's weight applies to the chore as a whole.
+- The weight is snapshotted into each weekly assignment when assignments are
+  generated. Changing a chore's weight affects the next generated week and never
+  rewrites existing assignments, completion history, or reports.
+- The domain assigns no XP, stickers, or other rewards. Each consuming frontend
+  is responsible for mapping the shared weight to its own reward system; this
+  domain only stores and returns the value.
 
 ## Administrator assignment-generation endpoints
 
@@ -561,6 +595,7 @@ A newly generated week returns HTTP 201:
       "family_member_name": "Alex",
       "chore_id": 3,
       "chore_name": "Kitchen",
+      "chore_weight": 2,
       "week_start": "2026-11-23",
       "week_end": "2026-11-29"
     }
@@ -570,6 +605,9 @@ A newly generated week returns HTTP 201:
 
 An existing week returns HTTP 200 with the same shape and
 `"status": "already_exists"`. No assignment rows or snapshots are changed.
+
+Each assignment echoes the chore weight snapshot captured for that week. Weight
+changes made after generation affect later weeks only.
 
 Manual generation never creates a weekly report and never advances
 `weekly_rollover_state`. When the rollover later reaches that week, it reuses the

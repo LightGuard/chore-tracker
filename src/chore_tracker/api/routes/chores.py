@@ -9,6 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from chore_tracker.api.routes.auth import require_admin, require_same_origin
 from chore_tracker.application.services.family_chore_management import (
+    CHORE_WEIGHT_MAX,
+    CHORE_WEIGHT_MIN,
+    DEFAULT_CHORE_WEIGHT,
     FamilyChoreManagementService,
     ManagementError,
 )
@@ -22,6 +25,12 @@ class ChoreCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
+    weight: int = Field(
+        default=DEFAULT_CHORE_WEIGHT,
+        ge=CHORE_WEIGHT_MIN,
+        le=CHORE_WEIGHT_MAX,
+        strict=True,
+    )
     is_active: bool = False
 
 
@@ -29,6 +38,12 @@ class ChoreUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
+    weight: int | None = Field(
+        default=None,
+        ge=CHORE_WEIGHT_MIN,
+        le=CHORE_WEIGHT_MAX,
+        strict=True,
+    )
     is_active: bool | None = None
 
 
@@ -68,6 +83,7 @@ def _call(operation, *args):
             "duplicate_order_ids": 422,
             "invalid_order": 422,
             "chore_requires_checklist": 422,
+            "invalid_weight": 422,
             "active_checklist_required": 409,
             "last_active_item": 409,
         }
@@ -93,6 +109,7 @@ def create_chore(
         body.name,
         body.description,
         body.is_active,
+        body.weight,
     )
 
 

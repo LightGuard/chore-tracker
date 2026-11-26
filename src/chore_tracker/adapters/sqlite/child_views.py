@@ -39,7 +39,8 @@ class SQLiteChildViewsPersistence:
                 return {"inactive": True}
             assignment = connection.execute(
                 """SELECT id, family_member_id, week_start, week_end,
-                          chore_name_snapshot, chore_description_snapshot
+                          chore_name_snapshot, chore_description_snapshot,
+                          chore_weight_snapshot
                    FROM weekly_assignments
                    WHERE family_member_id = ? AND week_start = ?""",
                 (family_member_id, week_start.isoformat()),
@@ -75,6 +76,7 @@ class SQLiteChildViewsPersistence:
                 "week_end": assignment["week_end"],
                 "chore_name": assignment["chore_name_snapshot"],
                 "chore_description": assignment["chore_description_snapshot"],
+                "chore_weight": assignment["chore_weight_snapshot"],
                 "today": today,
                 "checklist_items": items,
                 "is_complete": bool(items)
@@ -480,11 +482,13 @@ class SQLiteChildViewsPersistence:
                 WITH RECURSIVE assignment_days AS (
                   SELECT a.id AS assignment_id, a.week_start, a.week_end,
                          a.chore_name_snapshot, a.chore_description_snapshot,
+                         a.chore_weight_snapshot,
                          a.week_start AS completion_date
                   FROM weekly_assignments AS a WHERE a.family_member_id = ?
                   UNION ALL
                   SELECT assignment_id, week_start, week_end, chore_name_snapshot,
-                         chore_description_snapshot, date(completion_date, '+1 day')
+                         chore_description_snapshot, chore_weight_snapshot,
+                         date(completion_date, '+1 day')
                   FROM assignment_days WHERE completion_date < week_end
                 ),
                 checklist_counts AS (
@@ -509,7 +513,7 @@ class SQLiteChildViewsPersistence:
                 )
                 SELECT day.assignment_id, day.week_start, day.week_end,
                        day.chore_name_snapshot, day.chore_description_snapshot,
-                       day.completion_date,
+                       day.chore_weight_snapshot, day.completion_date,
                        CASE
                          WHEN COALESCE(checklist.item_count, 0) = 0
                            THEN 'not_yet_recorded'
@@ -543,6 +547,7 @@ class SQLiteChildViewsPersistence:
                         "week_end": row["week_end"],
                         "chore_name": row["chore_name_snapshot"],
                         "chore_description": row["chore_description_snapshot"],
+                        "chore_weight": row["chore_weight_snapshot"],
                         "completion_date": row["completion_date"],
                         "completion_status": row["completion_status"],
                     }
