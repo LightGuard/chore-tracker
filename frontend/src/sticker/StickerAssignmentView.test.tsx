@@ -74,6 +74,7 @@ function assignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignme
     week_end: "2026-11-29",
     chore_name: "Kitchen",
     chore_description: "Wipe and sweep after dinner.",
+    chore_weight: 1,
     today: "2026-11-25",
     checklist_items: [
       { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },

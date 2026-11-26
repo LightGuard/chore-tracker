@@ -45,6 +45,7 @@ const INITIAL_CHORES: ManagedChore[] = [
     id: 1,
     name: "Kitchen",
     description: "Clean the kitchen.",
+    weight: 2,
     is_active: true,
     checklist_items: [
       { id: 11, label: "Sweep floor", position: 0, is_active: true, is_required: true },
@@ -75,6 +76,7 @@ describe("chore manager", () => {
           id: nextChoreId++,
           name: body.name,
           description: body.description,
+          weight: body.weight ?? 1,
           is_active: false,
           checklist_items: [],
         };
@@ -156,9 +158,21 @@ describe("chore manager", () => {
     fireEvent.change(screen.getByLabelText("New chore description"), {
       target: { value: "Park and sweep." },
     });
+    fireEvent.change(screen.getByLabelText("New chore weight (0–10)"), {
+      target: { value: "4" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Create chore" }));
 
     const garage = await screen.findByRole("article", { name: "Chore Garage" });
+
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url).endsWith("/chores") &&
+          init?.method === "POST" &&
+          JSON.parse(String(init.body)).weight === 4,
+      ),
+    ).toBe(true);
 
     fireEvent.change(within(garage).getByLabelText("Add checklist item"), {
       target: { value: "Sweep garage" },
@@ -209,6 +223,23 @@ describe("chore manager", () => {
     ).toBeInTheDocument();
 
     const kitchen = screen.getByRole("article", { name: "Chore Kitchen" });
+    expect(within(kitchen).getByLabelText("Weight (0–10)")).toHaveValue(2);
+    fireEvent.change(within(kitchen).getByLabelText("Weight (0–10)"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(
+      within(kitchen).getByRole("button", { name: "Save chore details" }),
+    );
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, init]) =>
+            String(url).endsWith("/chores/1") &&
+            init?.method === "PATCH" &&
+            JSON.parse(String(init.body)).weight === 3,
+        ),
+      ).toBe(true),
+    );
     fireEvent.click(
       within(kitchen).getAllByRole("button", { name: "Move down" })[0],
     );
@@ -258,5 +289,140 @@ describe("chore manager", () => {
     const onSessionExpired = renderManager();
 
     await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
+  });
+  it("rejects invalid create weights before calling the API", async () => {
+    const fetchMock = installFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.endsWith("/chores") && method === "GET") {
+        return jsonResponse(INITIAL_CHORES);
+      }
+      return jsonResponse({ detail: "Unexpected request" }, 500);
+    });
+
+    renderManager();
+    await screen.findByRole("heading", { name: "Kitchen" });
+
+    fireEvent.change(screen.getByLabelText("New chore name"), {
+      target: { value: "Garage" },
+    });
+    for (const invalid of ["11", "2.5", ""]) {
+      fireEvent.change(screen.getByLabelText("New chore weight (0–10)"), {
+        target: { value: invalid },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Create chore" }));
+
+      expect(
+        await screen.findByText(
+          "Weight must be a whole number between 0 and 10.",
+        ),
+      ).toBeInTheDocument();
+    }
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url).endsWith("/chores") && init?.method === "POST",
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects invalid edit weights before calling the API", async () => {
+    const fetchMock = installFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.endsWith("/chores") && method === "GET") {
+        return jsonResponse(INITIAL_CHORES);
+      }
+      return jsonResponse({ detail: "Unexpected request" }, 500);
+    });
+
+    renderManager();
+    const kitchen = await screen.findByRole("article", {
+      name: "Chore Kitchen",
+    });
+    const weightInput = within(kitchen).getByLabelText("Weight (0–10)");
+    fireEvent.change(weightInput, { target: { value: "-1" } });
+    fireEvent.click(
+      within(kitchen).getByRole("button", { name: "Save chore details" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Weight must be a whole number between 0 and 10.",
+      ),
+    ).toBeInTheDocument();
+    expect(weightInput).toHaveValue(-1);
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url).endsWith("/chores/1") && init?.method === "PATCH",
+      ),
+    ).toBe(false);
+  });
+
+  it("sends the default weight when the create field is untouched", async () => {
+    let posted: unknown = null;
+    let chores: ManagedChore[] = JSON.parse(JSON.stringify(INITIAL_CHORES));
+    installFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.endsWith("/chores") && method === "GET") {
+        return jsonResponse(chores);
+      }
+      if (url.endsWith("/chores") && method === "POST") {
+        posted = JSON.parse(String(init?.body));
+        const created: ManagedChore = {
+          id: 2,
+          name: "Garage",
+          description: "",
+          weight: 1,
+          is_active: false,
+          checklist_items: [],
+        };
+        chores = [...chores, created];
+        return jsonResponse(created, 201);
+      }
+      return jsonResponse({ detail: "Unexpected request" }, 500);
+    });
+
+    renderManager();
+    await screen.findByRole("heading", { name: "Kitchen" });
+    fireEvent.change(screen.getByLabelText("New chore name"), {
+      target: { value: "Garage" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create chore" }));
+
+    await screen.findByRole("article", { name: "Chore Garage" });
+    expect(posted).toEqual({
+      name: "Garage",
+      description: "",
+      weight: 1,
+    });
+  });
+
+  it("shows the API weight validation error", async () => {
+    installFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.endsWith("/chores") && method === "GET") {
+        return jsonResponse(INITIAL_CHORES);
+      }
+      if (url.endsWith("/chores/1") && method === "PATCH") {
+        return jsonResponse(
+          { detail: "Weight must be a whole number between 0 and 10" },
+          422,
+        );
+      }
+      return jsonResponse({ detail: "Unexpected request" }, 500);
+    });
+
+    renderManager();
+    const kitchen = await screen.findByRole("article", { name: "Chore Kitchen" });
+    fireEvent.change(within(kitchen).getByLabelText("Weight (0–10)"), {
+      target: { value: "5" },
+    });
+    fireEvent.click(
+      within(kitchen).getByRole("button", { name: "Save chore details" }),
+    );
+
+    expect(
+      await screen.findByText("Weight must be a whole number between 0 and 10"),
+    ).toBeInTheDocument();
   });
 });
