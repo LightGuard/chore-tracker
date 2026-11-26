@@ -28,9 +28,10 @@ running instance at `/docs`, and the machine-readable schema is at
 
 ## Child-facing endpoints
 
-These endpoints do not create assignments. The weekly rollover or an
-administrator's manual generation request must have created the relevant week
-first.
+These endpoints do not create weekly assignments. The assignment and completion
+endpoints require the weekly rollover or an administrator's manual generation
+request to have created the relevant week first. The claim endpoints below
+create only day-scoped claim records and do not require a generated week.
 
 ### List active family members
 
@@ -97,6 +98,127 @@ block completion. A chore whose items are all optional is complete from the
 start of the day.
 The endpoint returns HTTP 404 when the profile does not exist or has no current
 assignment, and HTTP 409 when the profile exists but is inactive.
+
+### List chores available to claim
+
+```http
+GET /family-members/{family_member_id}/available-chores
+```
+
+Returns the active chores the selected child can claim for the current local day
+in `CHORE_TRACKER_REPORT_TIMEZONE`, ordered by case-insensitive name and then
+ID:
+
+```json
+{
+  "claim_date": "2026-11-25",
+  "chores": [
+    {
+      "id": 3,
+      "name": "Bathroom",
+      "description": "Scrub the bathroom",
+      "weight": 2
+    }
+  ]
+}
+```
+
+A chore is available when it is active, no existing weekly assignment for that
+Monday-Sunday week names it, and nobody has claimed it for that date. Weekly
+assignments take precedence at claim time: a chore already named by the week's
+rotation is rejected as already assigned. Availability is day-specific, so a
+claimed chore is removed for that date but can become available again on a later
+date while it remains unassigned for the week. A claim never changes the
+rotation, so if claims are made before that week's assignments are generated,
+the normal rotation still proceeds unchanged. `weight` is the live chore catalog
+weight; the claim endpoint snapshots it.
+
+Child-facing endpoints are unauthenticated by design. The profile comes only
+from the path, as in the other child endpoints; this is the household trust
+model, not a per-child login. Unknown profiles return HTTP 404 and inactive
+profiles return HTTP 409.
+
+### Claim a chore for the current day
+
+```http
+POST /family-members/{family_member_id}/claimed-chores
+Content-Type: application/json
+
+{ "chore_id": 3 }
+```
+
+Creates an immutable one-day assignment record for the child and that local
+date. A successful claim returns HTTP 201:
+
+```json
+{
+  "id": 7,
+  "family_member_id": 1,
+  "chore_id": 3,
+  "claim_date": "2026-11-25",
+  "week_start": "2026-11-23",
+  "week_end": "2026-11-29",
+  "chore_name": "Bathroom",
+  "chore_description": "Scrub the bathroom",
+  "chore_weight": 2,
+  "claimed_at": "2026-11-25T18:04:12Z"
+}
+```
+
+The claim snapshots the chore name, description, and weight at claim time; later
+catalog edits do not rewrite it. A claim does not create a weekly assignment,
+alter the rotation, advance the rollover checkpoint, generate a weekly report,
+or affect other days. No administrator approval is required. The child identity
+comes only from the path; a body that names another profile is rejected with
+HTTP 422.
+
+A claim is an assignment record only. It does not add checklist snapshot items
+or completion rows, and it is not included in completion history, derived
+statistics, or weekly reports.
+
+Claims are first-come, first-served. The SQLite writer transaction and a unique
+`(chore_id, claim_date)` constraint guarantee that only one child creates the
+claim for a chore and day. The losing request returns HTTP 409 with one of:
+
+- `Chore is already assigned for this week`
+- `Chore is not active`
+- `Chore has already been claimed for this day`
+
+An unknown chore returns HTTP 404. Unknown profiles return HTTP 404 and inactive
+profiles return HTTP 409.
+
+### List a child's one-day chore claims
+
+```http
+GET /family-members/{family_member_id}/claimed-chores
+```
+
+Returns the claims the child holds for the current local day, ordered by claim
+time and then ID:
+
+```json
+{
+  "claim_date": "2026-11-25",
+  "claims": [
+    {
+      "id": 7,
+      "family_member_id": 1,
+      "chore_id": 3,
+      "claim_date": "2026-11-25",
+      "week_start": "2026-11-23",
+      "week_end": "2026-11-29",
+      "chore_name": "Bathroom",
+      "chore_description": "Scrub the bathroom",
+      "chore_weight": 2,
+      "claimed_at": "2026-11-25T18:04:12Z"
+    }
+  ]
+}
+```
+
+Only the profile in the path is returned. Claims from other days are excluded,
+so the list is empty on a day the child has not claimed anything. Unknown
+profiles return HTTP 404 and inactive profiles return HTTP 409.
 
 ### Get a child's derived statistics
 

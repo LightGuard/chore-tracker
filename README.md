@@ -26,6 +26,8 @@ homelab Kubernetes cluster.
   reward-given audit record.
 - Manual weekly assignment generation for a selected week by an administrator,
   using the same deterministic rotation as the scheduled rollover.
+- One-day claims for chores the weekly rotation left unassigned, without
+  administrator approval and without changing the weekly schedule.
 - Passkey-based administrator sign-in, first-run bootstrap, one additional
   administrator invitation, family-member management, and chore/checklist
   management with a reward-neutral chore weight.

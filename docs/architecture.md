@@ -50,8 +50,8 @@ browser-facing port serves the frontend, API proxy, and health endpoints.
   before the API starts. The application never migrates on startup, and
   readiness fails until the schema head matches.
 - **History is immutable.** Assignments, their checklist snapshots, completion
-  history, weekly reports, and report reward records are protected by database
-  triggers. Catalog edits never rewrite past weeks.
+  history, one-day chore claims, weekly reports, and report reward records are
+  protected by database triggers. Catalog edits never rewrite past weeks.
 - **Presentation is separate.** Themes read existing data and persist only a
   per-identity theme preference. No theme changes assignment, completion,
   report, or authentication behavior.
@@ -133,6 +133,7 @@ authenticator.
 | `weekly_assignments` | One immutable assignment per child and week, including chore name/description/weight snapshots |
 | `assignment_checklist_items` | Ordered checklist label and required/optional snapshots for an assignment, optionally linked to a source catalog item |
 | `daily_checklist_completions` | One row per assignment checklist item and local calendar date |
+| `daily_chore_claims` | Immutable one-day claim records for active chores the weekly rotation left unassigned, including chore name/description/weight snapshots |
 
 The assignment tables are protected against updates and deletes. The
 `source_checklist_item_id` link is informational: removing a catalog item sets
@@ -146,6 +147,14 @@ ranking, are computed per request from these rows. XP uses each assignment's
 immutable `chore_weight_snapshot` and Quest's documented mapping, never the live
 chore catalog; see [the Quest XP mapping](themes.md#quest-xp-mapping). Derived
 values are never persisted and never rewrite display ordering.
+
+One-day claims are separate from the weekly assignment tables. A claim names an
+active chore, a child, and one local date inside the week; the unique
+`(chore_id, claim_date)` constraint makes competing claims safe, and claim rows
+are protected against updates and deletes. Claims never create or modify a
+weekly assignment, so the rotation and report snapshots keep their current
+shape. Claims are not included in completion history, derived statistics, or
+weekly reports.
 
 ### Weekly reports
 
@@ -202,6 +211,9 @@ These contracts are enforced in code, tests, and database triggers.
 9. **Report rewards are append-only.** At most one reward audit row exists per
    report entry. The first marking is preserved, and the database rejects
    updates and deletes.
+10. **One-day chore claims are unique and immutable.** At most one claim exists
+    per chore and local date, and claim snapshots are never updated or deleted.
+    A claim never creates or changes a weekly assignment.
 
 ## Weekly rotation
 

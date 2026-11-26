@@ -21,10 +21,11 @@ before changing behavior.
    revision under `migrations/versions/`. Existing databases in the wild must
    still upgrade cleanly.
 2. **Never mutate historical rows.** `weekly_assignments`,
-   `assignment_checklist_items`, `daily_checklist_completions`, `weekly_reports`,
-   `weekly_report_entries`, `weekly_report_days`, and `weekly_report_rewards` are
-   protected by database triggers. Do not weaken a trigger or write a query that
-   updates/deletes them; generate a new week instead.
+   `assignment_checklist_items`, `daily_checklist_completions`,
+   `daily_chore_claims`, `weekly_reports`, `weekly_report_entries`,
+   `weekly_report_days`, and `weekly_report_rewards` are protected by database
+   triggers. Do not weaken a trigger or write a query that updates/deletes them;
+   generate a new week instead.
 3. **Respect the layer boundaries.** `src/chore_tracker/api/` must not import
    `sqlite3` or `chore_tracker.adapters`, must not execute SQL, and must not
    manage transactions. `src/chore_tracker/application/` must not import

@@ -44,7 +44,7 @@ to run, change, deploy, or recover the application.
 | [Operations](operations.md) | Household operator | Admin setup, family/chore setup, manual assignment generation, reports, monitoring, rollover recovery, migrations, troubleshooting |
 | [Backup and restore](backup-restore.md) | Household operator | Backup, verification, restore, upgrades, and recovery scenarios for host, Docker, and Kubernetes |
 | [Deployment](deployment.md) | Operator | Docker Compose, release images, Kubernetes summary, health checks |
-| [Weekly rotation policy](weekly-rotation.md) | Contributors | Rotation anchor, stable ordering, assignment algorithm, manual generation, catalog-change rules |
+| [Weekly rotation policy](weekly-rotation.md) | Contributors | Rotation anchor, stable ordering, assignment algorithm, manual generation, catalog-change rules, one-day claims |
 | [Helm chart README](../deploy/kubernetes/chore-tracker/README.md) | Operator | Chart installation, values reference, test cluster, chart backup/rollback |
 
 ## Conventions
@@ -55,7 +55,7 @@ to run, change, deploy, or recover the application.
 - Use `http://localhost:5173` in a browser, not `127.0.0.1`. Passkey validation
   and the default allowed origin depend on the exact hostname.
 - SQL examples are read-only unless a procedure explicitly says otherwise.
-  Historical assignment, completion, and report rows are immutable.
+  Historical assignment, completion, claim, and report rows are immutable.
 - Never commit `.env`, `.env.docker`, `compose.override.yaml`, `secrets/`, or
   passkey/SMTP material. The repository ignores these paths for a reason.
 - Documentation changes should keep links relative and run
