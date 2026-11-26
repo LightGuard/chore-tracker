@@ -241,8 +241,9 @@ test.describe.serial("theme persistence and selection flow", () => {
     await expect(
       page.getByText("8-DAY STREAK", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByLabel("Rank 2 of 4")).toHaveText("#02");
-    await expect(page.getByText("10 XP TO #1")).toBeVisible();
+    await expect(page.getByText("ACHIEVEMENT RANK")).toBeVisible();
+    await expect(page.getByLabel("XP rank 1 of 4")).toHaveText("#01");
+    await expect(page.getByText("YOU'RE #1")).toBeVisible();
     await expect(page.getByText("QUEST CLEAR")).toBeVisible();
     await expect(
       page.getByRole("progressbar", { name: "Progress to next level" }),
@@ -257,7 +258,8 @@ test.describe.serial("theme persistence and selection flow", () => {
     await expect(
       page.getByText("7-DAY STREAK", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("20 XP TO #1")).toBeVisible();
+    await expect(page.getByLabel("XP rank 1 of 4")).toHaveText("#01");
+    await expect(page.getByText("YOU'RE #1")).toBeVisible();
     await expect(page.getByText("QUEST CLEAR")).toHaveCount(0);
     await expect(wipeCounters).not.toBeChecked();
 

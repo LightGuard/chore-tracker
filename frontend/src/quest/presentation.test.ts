@@ -156,7 +156,7 @@ describe("Quest presentation", () => {
     expect(below).toMatchObject({ xp: 490, level: 1, xpIntoLevel: 490 });
   });
 
-  it("derives rank, player count, and XP gap from weekly standings order", () => {
+  it("derives achievement rank, player count, and XP gap from total XP", () => {
     const positions = questLeaderboard(
       stats({
         family_member_id: 2,
@@ -181,35 +181,137 @@ describe("Quest presentation", () => {
     expect(positions).toEqual({
       rank: 2,
       playerCount: 4,
-      gapToFirstXp: 40,
-      selected: standing(2, "Alex", 38, 3, 380),
+      gapToFirstXp: 260,
     });
   });
 
-  it("uses weighted XP rather than item counts for the gap to first", () => {
+  it("ignores weekly standings order when deriving achievement rank", () => {
     const positions = questLeaderboard(
       stats({
         family_member_id: 2,
         household: {
-          active_players: 2,
+          active_players: 4,
           weekly_standings: [
-            standing(3, "Riley", 10, 1, 200),
-            standing(2, "Alex", 12, 4, 120),
+            standing(2, "Alex", 42, 5, 420),
+            standing(3, "Riley", 38, 3, 380),
+            standing(4, "Avery", 32, 2, 320),
+            standing(1, "Sam", 24, 1, 240),
           ],
           xp_rankings: [
-            ranking(3, "Riley", 200, 1),
-            ranking(2, "Alex", 120, 2),
+            ranking(3, "Riley", 1240, 1),
+            ranking(4, "Avery", 980, 2),
+            ranking(2, "Alex", 720, 3),
+            ranking(1, "Sam", 610, 4),
           ],
         },
       }),
     );
 
-    expect(positions.gapToFirstXp).toBe(80);
+    expect(positions.rank).toBe(3);
+    expect(positions.gapToFirstXp).toBe(520);
   });
 
-  it("uses the first standing as the leader and never returns a negative gap", () => {
+  it("shares a rank for children tied on total XP", () => {
+    const positions = questLeaderboard(
+      stats({
+        family_member_id: 2,
+        household: {
+          active_players: 4,
+          weekly_standings: [
+            standing(3, "Riley", 42, 5, 420),
+            standing(2, "Alex", 38, 3, 380),
+            standing(4, "Avery", 32, 2, 320),
+            standing(1, "Sam", 24, 1, 240),
+          ],
+          xp_rankings: [
+            ranking(3, "Riley", 1240, 1),
+            ranking(2, "Alex", 1240, 1),
+            ranking(4, "Avery", 720, 3),
+            ranking(1, "Sam", 610, 4),
+          ],
+        },
+      }),
+    );
+
+    expect(positions.rank).toBe(1);
+    expect(positions.gapToFirstXp).toBe(0);
+  });
+
+  it("updates the achievement rank when total XP changes", () => {
+    const before = questLeaderboard(
+      stats({
+        family_member_id: 2,
+        household: {
+          active_players: 2,
+          weekly_standings: [standing(2, "Alex", 38, 3, 380)],
+          xp_rankings: [
+            ranking(3, "Riley", 1240, 1),
+            ranking(2, "Alex", 980, 2),
+          ],
+        },
+      }),
+    );
+    const after = questLeaderboard(
+      stats({
+        family_member_id: 2,
+        household: {
+          active_players: 2,
+          weekly_standings: [standing(2, "Alex", 38, 3, 380)],
+          xp_rankings: [
+            ranking(2, "Alex", 1300, 1),
+            ranking(3, "Riley", 1240, 2),
+          ],
+        },
+      }),
+    );
+
+    expect(before.rank).toBe(2);
+    expect(after.rank).toBe(1);
+    expect(after.gapToFirstXp).toBe(0);
+  });
+
+  it("derives the same rank regardless of the ranking list order", () => {
+    const positions = questLeaderboard(
+      stats({
+        family_member_id: 4,
+        household: {
+          active_players: 2,
+          weekly_standings: [
+            standing(4, "Avery", 12, 2, 120),
+            standing(3, "Riley", 30, 4, 300),
+          ],
+          xp_rankings: [
+            ranking(4, "Avery", 120, 2),
+            ranking(3, "Riley", 300, 1),
+          ],
+        },
+      }),
+    );
+    const reversed = questLeaderboard(
+      stats({
+        family_member_id: 4,
+        household: {
+          active_players: 2,
+          weekly_standings: [
+            standing(3, "Riley", 30, 4, 300),
+            standing(4, "Avery", 12, 2, 120),
+          ],
+          xp_rankings: [
+            ranking(3, "Riley", 300, 1),
+            ranking(4, "Avery", 120, 2),
+          ],
+        },
+      }),
+    );
+
+    expect(positions).toEqual(reversed);
+    expect(positions).toEqual({ rank: 2, playerCount: 2, gapToFirstXp: 180 });
+  });
+
+  it("never reports a negative gap when the selected child leads", () => {
     const leader = questLeaderboard(
       stats({
+        family_member_id: 1,
         household: {
           active_players: 2,
           weekly_standings: [
@@ -222,7 +324,9 @@ describe("Quest presentation", () => {
     );
     expect(leader.rank).toBe(1);
     expect(leader.gapToFirstXp).toBe(0);
+  });
 
+  it("returns a null achievement rank when the selected child is not ranked", () => {
     const missing = questLeaderboard(
       stats({
         family_member_id: 99,
@@ -237,7 +341,6 @@ describe("Quest presentation", () => {
       }),
     );
     expect(missing.rank).toBeNull();
-    expect(missing.selected).toBeNull();
     expect(missing.gapToFirstXp).toBe(0);
   });
 });

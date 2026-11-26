@@ -65,6 +65,14 @@ export function QuestAssignmentView({
     leaderboard?.rank != null
       ? `#${String(leaderboard.rank).padStart(2, "0")}`
       : "#--";
+  const rankGapLabel =
+    leaderboard?.rank == null
+      ? stats
+        ? "RANK UNAVAILABLE"
+        : "STATS UNAVAILABLE"
+      : leaderboard.rank === 1
+        ? "YOU'RE #1"
+        : `${leaderboard.gapToFirstXp} XP TO #1`;
   const nextLevelXp = level ? level.level * 500 : 0;
   const progressStyle = {
     "--quest-progress": `${Math.round((level?.progress ?? 0) * 100)}%`,
@@ -109,8 +117,8 @@ export function QuestAssignmentView({
           </div>
         </div>
         <p className="quest-rank">
-          <span>RANK</span>
-          <strong aria-label={`Rank ${leaderboard?.rank ?? "unknown"} of ${leaderboard?.playerCount ?? 0}`}>
+          <span>XP RANK</span>
+          <strong aria-label={`XP rank ${leaderboard?.rank ?? "unknown"} of ${leaderboard?.playerCount ?? 0}`}>
             {rankLabel}
           </strong>
         </p>
@@ -268,17 +276,11 @@ export function QuestAssignmentView({
       </div>
 
       <div className="quest-squad" aria-live="polite">
-        <span className="quest-squad-label">SQUAD RANK</span>
+        <span className="quest-squad-label">ACHIEVEMENT RANK</span>
         <strong>
           {rankLabel} <span>OF {leaderboard?.playerCount ?? "–"}</span>
         </strong>
-        <span className="quest-gap">
-          {leaderboard?.rank === 1
-            ? "YOU'RE #1"
-            : leaderboard
-              ? `${leaderboard.gapToFirstXp} XP TO #1`
-              : "STATS UNAVAILABLE"}
-        </span>
+        <span className="quest-gap">{rankGapLabel}</span>
       </div>
     </div>
   );
