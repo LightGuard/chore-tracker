@@ -158,7 +158,7 @@ describe("ChoreClaims", () => {
   });
 
   it("does not create a claim when the confirmation is canceled", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/available-chores")) {
         return jsonResponse({
