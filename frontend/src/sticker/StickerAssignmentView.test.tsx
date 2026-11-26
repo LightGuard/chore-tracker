@@ -54,6 +54,14 @@ function stats(days: DerivedStatsDay[]): DerivedStats {
           current_streak: 2,
         },
       ],
+      xp_rankings: [
+        {
+          family_member_id: 1,
+          display_name: "Alex",
+          total_xp: 120,
+          rank: 1,
+        },
+      ],
     },
   };
 }
