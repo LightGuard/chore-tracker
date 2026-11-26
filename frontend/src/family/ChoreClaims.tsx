@@ -223,21 +223,34 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
               if (event.key === "Escape") setPendingChore(null);
             }}
           >
-            <Text as="h2" variant="headline-3" attributes={{ id: "claim-dialog-title" }}>
+            <Text
+              as="h2"
+              variant="headline-3"
+              attributes={{ id: "claim-dialog-title" }}
+            >
               Claim this extra chore?
             </Text>
             <Text attributes={{ id: "claim-dialog-description" }}>
-              Are you sure you want to claim <strong>{pendingChore.name}</strong> for today?
+              Are you sure you want to claim{" "}
+              <strong>{pendingChore.name}</strong> for today?
             </Text>
             <View direction="row" gap={2} justify="end">
-              <Button variant="outline" disabled={busyChoreId !== null} onClick={() => setPendingChore(null)}>
+              <Button
+                variant="outline"
+                disabled={busyChoreId !== null}
+                onClick={() => setPendingChore(null)}
+              >
                 Cancel
               </Button>
-              <Button variant="solid" disabled={busyChoreId !== null} onClick={() => {
-                const choreId = pendingChore.id;
-                setPendingChore(null);
-                void handleClaim(choreId);
-              }}>
+              <Button
+                variant="solid"
+                disabled={busyChoreId !== null}
+                onClick={() => {
+                  const choreId = pendingChore.id;
+                  setPendingChore(null);
+                  void handleClaim(choreId);
+                }}
+              >
                 Confirm claim
               </Button>
             </View>
