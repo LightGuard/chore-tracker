@@ -3,7 +3,8 @@
 The SQLite database is the only durable application state. A backup restores
 the family and chore catalog, administrator records and passkey metadata, the
 rotation anchor, all weekly assignments and checklist snapshots, every daily
-completion, every weekly report and day snapshot, and the rollover checkpoint.
+completion, every weekly report and day snapshot, every report reward record,
+and the rollover checkpoint.
 
 Private passkey keys are not in the database; they stay on the authenticator.
 Restoring a database restores the credential records that were present when the
@@ -311,14 +312,16 @@ The script:
 
 1. creates a temporary database from the current migrations;
 2. seeds two children, three chores, two weeks of assignments, daily
-   completions, a finalized weekly report, and a rollover checkpoint;
+   completions, a finalized weekly report with a reward record, and a rollover
+   checkpoint;
 3. backs up with SQLite's online backup API and validates integrity;
 4. renames the source database to simulate loss;
 5. restores the backup;
-6. compares a deterministic fingerprint of all history tables between the backup
-   and restored database;
-7. asserts assignment, completion, report entry/day, and checkpoint counts; and
-8. reads the restored report through the application service.
+6. compares a deterministic fingerprint of all history tables, including report
+   reward records, between the backup and restored database;
+7. asserts assignment, completion, report entry/day, reward, and checkpoint
+   counts; and
+8. reads the restored report and its reward through the application service.
 
 Expected output:
 
@@ -332,6 +335,7 @@ Backup and restore verification passed
   assignment rows: 4 (two weeks x two children)
   completion rows: 13
   weekly reports: 1 (2 entries, 14 day snapshots)
+  report reward rows: 1
   report totals: 10/14 completed days
   rollover checkpoint: 2026-11-23
   data fingerprint: ...
@@ -346,7 +350,9 @@ secret and is not used for encryption.
 
 1. Check readiness (`GET /health/ready`) before letting users back in.
 2. Sign in as an administrator and confirm the expected reports are listed.
-3. Open a report and spot-check the week, entries, and daily statuses.
+3. Open a report and spot-check the week, entries, and daily statuses. Confirm
+   reward records through the report API response or the documented `sqlite3`
+   query.
 4. Select a child and verify the current assignment and history.
 5. Expect the scheduler to catch up any Mondays that were missed between the
    backup and the restore. This is safe and idempotent; the checkpoint prevents

@@ -588,8 +588,9 @@ calendar range 422.
 
 ## Weekly report endpoints
 
-These require an administrator session and are read-only. Reports are created
-only by the Monday rollover. Unauthenticated requests return HTTP 401.
+These require an administrator session. Reports are created only by the Monday
+rollover and their snapshot rows are immutable; the only report write is
+recording a reward for one entry. Unauthenticated requests return HTTP 401.
 
 ### List report headers
 
@@ -647,7 +648,8 @@ Returns one finalized report header plus a bounded page of entries:
       "days": [
         { "date": "2026-11-16", "status": "complete" },
         { "date": "2026-11-17", "status": "complete" }
-      ]
+      ],
+      "reward": null
     }
   ],
   "total": 2,
@@ -664,6 +666,55 @@ never recalculated from current household data. An unknown week returns HTTP
 The administrator UI uses five entries per page, but the API allows up to 100.
 Each day's `complete` status is calculated from required checklist snapshot
 items only; optional items never make a day incomplete.
+
+Each entry's `reward` is `null` until the child's reward is recorded. After
+marking, it contains the persisted audit record:
+
+```json
+{
+  "rewarded_at": "2026-11-26T15:30:00Z",
+  "rewarded_by": {
+    "administrator_id": 1,
+    "email": "admin@example.test"
+  }
+}
+```
+
+### Mark a report entry rewarded
+
+```http
+PUT /reports/{week_start}/entries/{entry_id}/reward
+```
+
+Records that the reward for one child's reporting week has been given. The path
+identifies the immutable report entry, so reward state is tracked independently
+for each child and week. The request has no body and returns the persisted
+reward:
+
+```json
+{
+  "rewarded_at": "2026-11-26T15:30:00Z",
+  "rewarded_by": {
+    "administrator_id": 1,
+    "email": "admin@example.test"
+  }
+}
+```
+
+The timestamp is the server time at the first successful marking, and the
+administrator identity comes from the authenticated session. Repeated requests
+for the same entry are idempotent: they return the original audit record
+without creating a conflicting duplicate, and the first recorded action is
+preserved even when a different administrator repeats the request. There is no
+unmark or acknowledged/reviewed status.
+
+`week_start` is normalized to Monday, and the entry must belong to that week's
+finalized report. A successful request returns HTTP 200. Unknown reports,
+unknown entries, and out-of-week entries return HTTP 404; malformed dates,
+non-positive entry ids, or entry ids beyond SQLite's signed 64-bit range return
+HTTP 422. The endpoint requires an administrator session and a trusted origin:
+unauthenticated requests return 401 and untrusted origins return 403. Reward
+rows are append-only and never modify the report snapshot.
 
 ## Health endpoints
 

@@ -50,8 +50,8 @@ browser-facing port serves the frontend, API proxy, and health endpoints.
   before the API starts. The application never migrates on startup, and
   readiness fails until the schema head matches.
 - **History is immutable.** Assignments, their checklist snapshots, completion
-  history, and weekly reports are protected by database triggers. Catalog edits
-  never rewrite past weeks.
+  history, weekly reports, and report reward records are protected by database
+  triggers. Catalog edits never rewrite past weeks.
 - **Presentation is separate.** Themes read existing data and persist only a
   per-identity theme preference. No theme changes assignment, completion,
   report, or authentication behavior.
@@ -152,12 +152,18 @@ rewrite display ordering.
 | `weekly_reports` | One immutable report per week with family-wide totals and timestamps |
 | `weekly_report_entries` | Per-assignment snapshot: child name, chore name/description, weekly totals |
 | `weekly_report_days` | Seven `complete` or `incomplete` statuses per entry |
+| `weekly_report_rewards` | One append-only reward audit record per report entry: timestamp and acting administrator |
 | `report_deliveries` | Reserved durable per-administrator delivery state; email delivery is optional and not implemented in the MVP |
 
 A report is generated from persisted assignment snapshots and completion rows,
 not from the current catalog. It is written in one transaction. Reports and all
 descendant rows are immutable. Only finalized reports are readable through the
 API.
+
+Reward tracking lives outside the report snapshot. A reward row is inserted at
+most once per report entry, records the timestamp and the acting administrator,
+and is protected against updates and deletes. Marking a reward never rewrites
+report data, so existing report and audit behavior stays compatible.
 
 ### Rollover state
 
@@ -191,6 +197,9 @@ These contracts are enforced in code, tests, and database triggers.
    was generated manually or by the rollover.
 8. **Unknown or retired theme ids never block use.** The frontend falls back to
    Homestead; the API returns the raw stored value.
+9. **Report rewards are append-only.** At most one reward audit row exists per
+   report entry. The first marking is preserved, and the database rejects
+   updates and deletes.
 
 ## Weekly rotation
 

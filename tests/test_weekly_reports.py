@@ -20,6 +20,7 @@ from chore_tracker.application.services.weekly_assignment_generation import (
 )
 from chore_tracker.application.services.weekly_reports import (
     DailyStatus,
+    WeeklyReportReward,
     WeeklyReportService,
     WeeklyReportSummary,
 )
@@ -656,3 +657,155 @@ def test_reports_complete_days_from_required_items_only(tmp_path) -> None:
         completed_days=13,
         incomplete_days=1,
     )
+
+
+def _add_administrator(database_path: Path, email: str = "admin@example.test") -> int:
+    with connect(database_path) as connection:
+        administrator_id = connection.execute(
+            "INSERT INTO administrators (email) VALUES (?)", (email,)
+        ).lastrowid
+    return administrator_id
+
+
+def test_marking_a_reward_records_audit_details_and_is_idempotent(tmp_path) -> None:
+    database_path, _, _ = _prepared_week(tmp_path)
+    service = _service(database_path)
+    report = service.generate(WEEK_START, generated_at=GENERATED_AT)
+    alex_entry = _entry(report, "Alex")
+    administrator_id = _add_administrator(database_path)
+    second_administrator_id = _add_administrator(
+        database_path, "other-admin@example.test"
+    )
+
+    # A date in the middle of the week normalizes to the reporting week.
+    reward = service.mark_entry_rewarded(
+        date(2026, 11, 18),
+        alex_entry.id,
+        administrator_id,
+        rewarded_at=GENERATED_AT,
+    )
+
+    assert reward == WeeklyReportReward(
+        rewarded_at=GENERATED_AT,
+        administrator_id=administrator_id,
+        administrator_email="admin@example.test",
+    )
+    page = service.get_report_entries(WEEK_START)
+    assert page is not None
+    page_rewards = {entry.family_member_name: entry.reward for entry in page.entries}
+    assert page_rewards["Alex"] == reward
+    assert page_rewards["Sam"] is None
+    full_report = service.get_report(WEEK_START)
+    assert full_report is not None
+    assert _entry(full_report, "Alex").reward == reward
+
+    # A repeated marking request, even from another administrator, keeps the
+    # first recorded audit action instead of creating a conflicting duplicate.
+    repeated = service.mark_entry_rewarded(
+        WEEK_START,
+        alex_entry.id,
+        second_administrator_id,
+        rewarded_at=GENERATED_AT + timedelta(hours=1),
+    )
+    assert repeated == reward
+    with connect(database_path) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_report_rewards").fetchone()[
+                0
+            ]
+            == 1
+        )
+
+
+def test_marking_a_reward_for_an_unknown_entry_or_week_returns_none(tmp_path) -> None:
+    database_path, _, _ = _prepared_week(tmp_path)
+    service = _service(database_path)
+    report = service.generate(WEEK_START, generated_at=GENERATED_AT)
+    entry = _entry(report, "Alex")
+    administrator_id = _add_administrator(database_path)
+
+    assert (
+        service.mark_entry_rewarded(
+            WEEK_START, 999999, administrator_id, rewarded_at=GENERATED_AT
+        )
+        is None
+    )
+    assert (
+        service.mark_entry_rewarded(
+            WEEK_START + timedelta(days=7),
+            entry.id,
+            administrator_id,
+            rewarded_at=GENERATED_AT,
+        )
+        is None
+    )
+    with connect(database_path) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_report_rewards").fetchone()[
+                0
+            ]
+            == 0
+        )
+
+
+def test_marking_a_reward_requires_a_finalized_report(tmp_path) -> None:
+    database_path, member_ids, _ = _prepared_week(tmp_path)
+    service = _service(database_path)
+    service.generate(WEEK_START, generated_at=GENERATED_AT)
+    administrator_id = _add_administrator(database_path)
+    next_week = WEEK_START + timedelta(days=7)
+
+    with connect(database_path) as connection:
+        chore_id = connection.execute(
+            "SELECT id FROM chores WHERE name = 'Kitchen'"
+        ).fetchone()["id"]
+        assignment_id = connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot
+            )
+            VALUES (?, ?, ?, ?, 'Kitchen', 'Clean')
+            """,
+            (
+                member_ids["Alex"],
+                chore_id,
+                next_week.isoformat(),
+                (next_week + timedelta(days=6)).isoformat(),
+            ),
+        ).lastrowid
+        report_id = connection.execute(
+            """
+            INSERT INTO weekly_reports (
+                week_start, week_end, family_member_count, total_days,
+                completed_days, incomplete_days, generated_at
+            )
+            VALUES (?, ?, 0, 0, 0, 0, '2026-11-30T10:00:00Z')
+            """,
+            (next_week.isoformat(), (next_week + timedelta(days=6)).isoformat()),
+        ).lastrowid
+        entry_id = connection.execute(
+            """
+            INSERT INTO weekly_report_entries (
+                report_id, weekly_assignment_id, position, family_member_id,
+                family_member_name_snapshot, chore_name_snapshot,
+                chore_description_snapshot, completed_days, incomplete_days
+            )
+            VALUES (?, ?, 0, ?, 'Alex', 'Kitchen', 'Clean', 0, 7)
+            """,
+            (report_id, assignment_id, member_ids["Alex"]),
+        ).lastrowid
+
+    assert (
+        service.mark_entry_rewarded(
+            next_week, entry_id, administrator_id, rewarded_at=GENERATED_AT
+        )
+        is None
+    )
+    with connect(database_path) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_report_rewards").fetchone()[
+                0
+            ]
+            == 0
+        )

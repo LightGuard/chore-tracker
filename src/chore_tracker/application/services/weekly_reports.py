@@ -36,6 +36,15 @@ class WeeklyReportDay:
 
 
 @dataclass(frozen=True, slots=True)
+class WeeklyReportReward:
+    """Persisted audit record for one child's rewarded weekly report."""
+
+    rewarded_at: datetime
+    administrator_id: int
+    administrator_email: str
+
+
+@dataclass(frozen=True, slots=True)
 class WeeklyReportEntry:
     """Persisted report entry for one child's weekly assignment."""
 
@@ -48,6 +57,7 @@ class WeeklyReportEntry:
     completed_days: int
     incomplete_days: int
     days: tuple[WeeklyReportDay, ...]
+    reward: WeeklyReportReward | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +160,14 @@ class WeeklyReportPersistence(Protocol):
         self, week_start: date, limit: int, offset: int
     ) -> WeeklyReportEntryPage | None: ...
 
+    def mark_rewarded(
+        self,
+        week_start: date,
+        entry_id: int,
+        administrator_id: int,
+        rewarded_at: datetime,
+    ) -> WeeklyReportReward | None: ...
+
 
 def _normalize_week(value: date | datetime, timezone: ZoneInfo) -> date:
     """Normalize a date or aware datetime to Monday in the configured timezone."""
@@ -164,11 +182,11 @@ def _normalize_week(value: date | datetime, timezone: ZoneInfo) -> date:
     return local_date - timedelta(days=local_date.weekday())
 
 
-def _normalize_generated_at(value: datetime) -> datetime:
+def _normalize_timestamp(value: datetime) -> datetime:
     if not isinstance(value, datetime):
-        raise TypeError("generated_at must be a timezone-aware datetime")
+        raise TypeError("timestamp must be a timezone-aware datetime")
     if value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError("generated_at must be a timezone-aware datetime")
+        raise ValueError("timestamp must be a timezone-aware datetime")
     return value.astimezone(UTC)
 
 
@@ -206,7 +224,7 @@ def build_weekly_report_draft(
     if not isinstance(assignments, tuple):
         raise TypeError("assignments must be a tuple")
 
-    normalized_generated_at = _normalize_generated_at(generated_at)
+    normalized_generated_at = _normalize_timestamp(generated_at)
     assignment_ids = set()
     entry_drafts = []
     ordered = sorted(
@@ -299,7 +317,7 @@ class WeeklyReportService:
         self, week: date | datetime, *, generated_at: datetime | None = None
     ) -> WeeklyReport:
         normalized = _normalize_week(week, self._timezone)
-        timestamp = _normalize_generated_at(
+        timestamp = _normalize_timestamp(
             generated_at if generated_at is not None else datetime.now(UTC)
         )
         return self._persistence.generate(
@@ -325,6 +343,30 @@ class WeeklyReportService:
         _validate_page(limit, offset)
         return self._persistence.get_entries(
             _normalize_week(week, self._timezone), limit, offset
+        )
+
+    def mark_entry_rewarded(
+        self,
+        week: date | datetime,
+        entry_id: int,
+        administrator_id: int,
+        *,
+        rewarded_at: datetime | None = None,
+    ) -> WeeklyReportReward | None:
+        """Record a reward for one child's report entry.
+
+        Returning ``None`` means the report week or entry was not found. A
+        repeated request returns the original audit record instead of creating
+        a conflicting duplicate; the first marking is the recorded action.
+        """
+        timestamp = _normalize_timestamp(
+            rewarded_at if rewarded_at is not None else datetime.now(UTC)
+        )
+        return self._persistence.mark_rewarded(
+            _normalize_week(week, self._timezone),
+            entry_id,
+            administrator_id,
+            timestamp,
         )
 
 

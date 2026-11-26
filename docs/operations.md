@@ -250,6 +250,23 @@ Reports are readable only by authenticated administrators. The API returns HTTP
 401 without a session. The records are persisted in SQLite and are included in
 every database backup.
 
+### Record a report reward
+
+The reports API records that one child's reward for a reporting week has been
+given. The record is append-only and keeps the timestamp and the administrator
+identity; it never modifies the immutable report snapshot. Marking cannot be
+undone through the application, and the reports UI does not offer a reward
+control yet.
+
+```http
+PUT /reports/{week_start}/entries/{entry_id}/reward
+```
+
+The request has no body and is idempotent: repeating it returns the original
+audit record instead of creating a conflicting duplicate. See
+[API](api.md#mark-a-report-entry-rewarded) for payloads, status codes, and audit
+details.
+
 ### Inspect persisted reports from the database
 
 If the UI is unavailable, inspect the database read-only. Use the `sqlite3` CLI
@@ -277,6 +294,18 @@ sqlite3 ./data/chore-tracker.db "
 
 ```bash
 sqlite3 ./data/chore-tracker.db "
+  SELECT r.week_start, e.family_member_name_snapshot,
+         w.rewarded_at, a.email
+  FROM weekly_report_rewards w
+  JOIN weekly_report_entries e ON e.id = w.weekly_report_entry_id
+  JOIN weekly_reports r ON r.id = e.report_id
+  JOIN administrators a ON a.id = w.rewarded_by_administrator_id
+  ORDER BY r.week_start DESC, e.position;
+"
+```
+
+```bash
+sqlite3 ./data/chore-tracker.db "
   SELECT week_start, COUNT(*) AS assignments
   FROM weekly_assignments
   GROUP BY week_start
@@ -293,9 +322,10 @@ sqlite3 ./data/chore-tracker.db "
 
 These queries are read-only. Do not update or delete rows in
 `weekly_assignments`, `assignment_checklist_items`,
-`daily_checklist_completions`, `weekly_reports`, `weekly_report_entries`, or
-`weekly_report_days`; triggers and application contracts assume they are
-immutable. Do not delete the rollover checkpoint to force a rerun.
+`daily_checklist_completions`, `weekly_reports`, `weekly_report_entries`,
+`weekly_report_days`, or `weekly_report_rewards`; triggers and application
+contracts assume they are immutable. Do not delete the rollover checkpoint to
+force a rerun.
 
 ## Recovering a missed or failed rollover
 
@@ -488,6 +518,7 @@ The SQLite database contains the entire application state:
 - the rotation anchor and weekly assignments;
 - checklist snapshots and daily completion history;
 - immutable weekly reports and day snapshots;
+- append-only weekly report reward records;
 - the durable rollover checkpoint.
 
 Back it up before every upgrade or risky operation. Full procedures, including
@@ -516,8 +547,11 @@ the tested verification script, are in
   administrator as a recovery path. Lost invitations and lost passkeys require a
   backup restore or operator intervention.
 - **Immutable history.** Assignments, their checklist snapshots, completions,
-  and reports cannot be edited or deleted through the application. This is a
-  deliberate auditability property; recovery is retry- and backup-based.
+  reports, and report reward records cannot be edited or deleted through the
+  application. This is a deliberate auditability property; recovery is retry-
+  and backup-based.
+- **Reward marking cannot be undone.** Recording a report reward is append-only;
+  the database blocks updates and deletes, and there is no unmark flow.
 - **No email-based account recovery, no multi-family tenancy, no child
   identities.** These are out of scope for the MVP.
 - **Themes are presentation only.** XP, levels, streaks, stickers, standings,

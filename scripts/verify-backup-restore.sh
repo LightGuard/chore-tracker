@@ -77,6 +77,9 @@ with connect(database_path) as connection:
                 """,
                 (chore_id, label, position),
             )
+    administrator_id = connection.execute(
+        "INSERT INTO administrators (email) VALUES ('admin@example.test')"
+    ).lastrowid
 
 assignments = WeeklyAssignmentGenerationService(
     SQLiteWeeklyAssignmentPersistence(database_path), timezone
@@ -124,6 +127,20 @@ results = WeeklyRolloverService(
 assert len(results) == 1, results
 assert results[0].report_week_start == report_week
 assert results[0].assignment_week_start == current_week
+
+with connect(database_path) as connection:
+    rewarded_entry_id = connection.execute(
+        "SELECT id FROM weekly_report_entries ORDER BY position LIMIT 1"
+    ).fetchone()["id"]
+    connection.execute(
+        """
+        INSERT INTO weekly_report_rewards (
+            weekly_report_entry_id, rewarded_at, rewarded_by_administrator_id
+        )
+        VALUES (?, '2026-11-23T11:00:00Z', ?)
+        """,
+        (rewarded_entry_id, administrator_id),
+    )
 PY
 
 echo "Backing up the database with SQLite's online backup API"
@@ -176,6 +193,7 @@ tables = (
     "weekly_reports",
     "weekly_report_entries",
     "weekly_report_days",
+    "weekly_report_rewards",
     "assignment_rotation_state",
     "weekly_assignment_generations",
     "weekly_rollover_state",
@@ -210,6 +228,7 @@ with sqlite3.connect(restored_path) as connection:
     reports = count("weekly_reports")
     report_entries = count("weekly_report_entries")
     report_days = count("weekly_report_days")
+    report_rewards = count("weekly_report_rewards")
 
 report = WeeklyReportService(
     SQLiteWeeklyReportPersistence(restored_path), "America/Denver"
@@ -219,6 +238,11 @@ assert report.summary.family_member_count == 2
 assert report.summary.completed_days == 10
 assert report.summary.total_days == 14
 assert report.entries[0].completed_days == 7
+rewarded_entry = next(
+    entry for entry in report.entries if entry.family_member_name == "Alex"
+)
+assert rewarded_entry.reward is not None, "restored report reward is missing"
+assert rewarded_entry.reward.administrator_email == "admin@example.test"
 
 checkpoint = SQLiteWeeklyRolloverPersistence(restored_path).last_completed_week_start()
 assert checkpoint == expected_checkpoint, checkpoint
@@ -228,11 +252,13 @@ assert completions == 13, completions
 assert reports == 1, reports
 assert report_entries == 2, report_entries
 assert report_days == 14, report_days
+assert report_rewards == 1, report_rewards
 
 print("Backup and restore verification passed")
 print(f"  assignment rows: {assignments} (two weeks x two children)")
 print(f"  completion rows: {completions}")
 print(f"  weekly reports: {reports} ({report_entries} entries, {report_days} day snapshots)")
+print(f"  report reward rows: {report_rewards}")
 print(f"  report totals: {report.summary.completed_days}/{report.summary.total_days} completed days")
 print(f"  rollover checkpoint: {checkpoint}")
 print(f"  data fingerprint: {restored_digest[:16]}...")
