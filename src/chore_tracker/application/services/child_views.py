@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from chore_tracker.application.services.achievement_rankings import xp_rankings
 from chore_tracker.application.services.quest_rewards import xp_for_weighted_items
+
+# From 20:00 in the report timezone, a chore assigned to another child that
+# is not done today can be claimed as a one-day takeover. Before that hour a
+# chore is claimable only when the weekly rotation left it unassigned.
+CLAIM_TAKEOVER_HOUR = 20
 
 
 class ChildViewError(Exception):
@@ -66,6 +71,26 @@ class ChoreAlreadyClaimed(ChildViewError):
     detail = "Chore has already been claimed for this day"
 
 
+class ChoreAlreadyDone(ChildViewError):
+    status_code = 409
+    detail = "Chore has already been completed today"
+
+
+class ClaimNotFound(ChildViewError):
+    status_code = 404
+    detail = "Chore claim was not found"
+
+
+class StaleClaim(ChildViewError):
+    status_code = 409
+    detail = "That claim is not for today"
+
+
+class ChoreClaimedByAnotherChild(ChildViewError):
+    status_code = 409
+    detail = "This chore was claimed by another child today"
+
+
 def _with_quest_xp(member: dict[str, Any]) -> dict[str, Any]:
     """Attach Quest XP derived from the member's weighted completion facts."""
     member["lifetime_xp"] = xp_for_weighted_items(member["lifetime_weighted_items"])
@@ -112,18 +137,28 @@ class ChildViewsService:
             raise CompletionDateOutsideAssignment
         return result["completion"]
 
+    @staticmethod
+    def _claim_window(now: datetime) -> tuple[date, bool]:
+        day = now.date()
+        return day, now.hour >= CLAIM_TAKEOVER_HOUR
+
     def list_claimable_chores(
-        self, family_member_id: int, today: date
+        self, family_member_id: int, now: datetime
     ) -> dict[str, Any]:
-        result = self._persistence.list_claimable_chores(family_member_id, today)
+        day, after_takeover_hour = self._claim_window(now)
+        result = self._persistence.list_claimable_chores(
+            family_member_id, day, after_takeover_hour
+        )
         if result is None:
             raise FamilyMemberNotFound
         if result.get("inactive"):
             raise FamilyMemberInactive
         return result
 
-    def list_claimed_chores(self, family_member_id: int, today: date) -> dict[str, Any]:
-        result = self._persistence.list_claimed_chores(family_member_id, today)
+    def list_claimed_chores(
+        self, family_member_id: int, now: datetime
+    ) -> dict[str, Any]:
+        result = self._persistence.list_claimed_chores(family_member_id, now.date())
         if result is None:
             raise FamilyMemberNotFound
         if result.get("inactive"):
@@ -131,9 +166,12 @@ class ChildViewsService:
         return result
 
     def claim_chore(
-        self, family_member_id: int, chore_id: int, today: date
+        self, family_member_id: int, chore_id: int, now: datetime
     ) -> dict[str, Any]:
-        result = self._persistence.claim_chore(family_member_id, chore_id, today)
+        day, after_takeover_hour = self._claim_window(now)
+        result = self._persistence.claim_chore(
+            family_member_id, chore_id, day, after_takeover_hour
+        )
         if result is None:
             raise FamilyMemberNotFound
         if result.get("inactive"):
@@ -144,8 +182,26 @@ class ChildViewsService:
             raise ChoreInactive
         if result.get("assignment_exists"):
             raise ChoreAlreadyAssigned
+        if result.get("chore_already_done"):
+            raise ChoreAlreadyDone
         if result.get("claim_exists"):
             raise ChoreAlreadyClaimed
+        return result["claim"]
+
+    def set_claim_completion(
+        self, family_member_id: int, claim_id: int, is_completed: bool, today: date
+    ) -> dict[str, Any]:
+        result = self._persistence.set_claim_completion(
+            family_member_id, claim_id, is_completed, today
+        )
+        if result is None:
+            raise FamilyMemberNotFound
+        if result.get("inactive"):
+            raise FamilyMemberInactive
+        if result.get("claim_missing"):
+            raise ClaimNotFound
+        if result.get("stale_claim"):
+            raise StaleClaim
         return result["claim"]
 
     def update_assignment_checklist_completion(
@@ -173,6 +229,8 @@ class ChildViewsService:
             raise CompletionDateOutsideAssignment
         if result.get("item_missing"):
             raise ChecklistItemNotFound
+        if result.get("chore_taken_over"):
+            raise ChoreClaimedByAnotherChild
         return result["completion"]
 
     def get_derived_stats(

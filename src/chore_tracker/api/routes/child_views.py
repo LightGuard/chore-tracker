@@ -29,6 +29,14 @@ def _today(request: Request) -> date:
     return request.app.state.child_views_today()
 
 
+def _now(request: Request) -> datetime:
+    """Local clock for claim availability (date plus the 20:00 takeover rule)."""
+    settings_provider = globals().get("get_settings")
+    if settings_provider is not None:
+        return datetime.now(ZoneInfo(settings_provider().report_timezone))
+    return request.app.state.child_views_now()
+
+
 def _report_timezone(request: Request) -> str:
     settings_provider = globals().get("get_settings")
     if settings_provider is not None:
@@ -146,13 +154,15 @@ def get_current_assignment(family_member_id: int, request: Request) -> dict[str,
 
 
 class AvailableChore(BaseModel):
-    """One unassigned chore a child can claim for the current day."""
+    """One chore a child can claim for the current day."""
 
     model_config = ConfigDict(extra="forbid")
     id: int
     name: str
     description: str
     weight: int
+    # Set when this is another child's unfinished weekly chore after 20:00.
+    assigned_to: str | None = None
 
 
 class ClaimableChores(BaseModel):
@@ -184,6 +194,14 @@ class DailyChoreClaim(BaseModel):
     chore_description: str
     chore_weight: int
     claimed_at: datetime
+    is_completed: bool = False
+
+
+class ClaimCompletionUpdate(BaseModel):
+    """Desired done state for one one-day claim."""
+
+    model_config = ConfigDict(extra="forbid")
+    is_completed: bool
 
 
 class ClaimedChores(BaseModel):
@@ -201,13 +219,11 @@ class ClaimedChores(BaseModel):
         404: {"description": "Family member was not found."},
         409: {"description": "The selected family member is inactive."},
     },
-    summary="List unassigned chores a child can claim for today",
+    summary="List chores a child can claim for today",
 )
 def list_available_chores(family_member_id: int, request: Request) -> dict[str, Any]:
     return _invoke(
-        lambda: _service(request).list_claimable_chores(
-            family_member_id, _today(request)
-        )
+        lambda: _service(request).list_claimable_chores(family_member_id, _now(request))
     )
 
 
@@ -222,7 +238,7 @@ def list_available_chores(family_member_id: int, request: Request) -> dict[str, 
 )
 def list_claimed_chores(family_member_id: int, request: Request) -> dict[str, Any]:
     return _invoke(
-        lambda: _service(request).list_claimed_chores(family_member_id, _today(request))
+        lambda: _service(request).list_claimed_chores(family_member_id, _now(request))
     )
 
 
@@ -238,14 +254,40 @@ def list_claimed_chores(family_member_id: int, request: Request) -> dict[str, An
             )
         },
     },
-    summary="Claim an unassigned chore for today",
+    summary="Claim a chore for today",
 )
 def claim_chore(
     family_member_id: int, body: ChoreClaimRequest, request: Request
 ) -> dict[str, Any]:
     return _invoke(
         lambda: _service(request).claim_chore(
-            family_member_id, body.chore_id, _today(request)
+            family_member_id, body.chore_id, _now(request)
+        )
+    )
+
+
+@router.put(
+    "/{family_member_id}/claimed-chores/{claim_id}/completion",
+    response_model=DailyChoreClaim,
+    responses={
+        404: {"description": "Family member or chore claim was not found."},
+        409: {
+            "description": (
+                "The selected family member is inactive or the claim is stale."
+            )
+        },
+    },
+    summary="Set a claimed chore's done state for its day",
+)
+def update_claim_completion(
+    family_member_id: int,
+    claim_id: int,
+    body: ClaimCompletionUpdate,
+    request: Request,
+) -> dict[str, Any]:
+    return _invoke(
+        lambda: _service(request).set_claim_completion(
+            family_member_id, claim_id, body.is_completed, _now(request).date()
         )
     )
 
@@ -410,7 +452,12 @@ def get_assignment_completion(
     response_model=ChecklistCompletionResult,
     responses={
         404: {"description": "Family member, assignment, or checklist item not found."},
-        409: {"description": "The selected family member is inactive."},
+        409: {
+            "description": (
+                "The selected family member is inactive or the chore was "
+                "claimed by another child today."
+            )
+        },
         422: {"description": "The date is outside the assignment week."},
     },
     summary="Set a checklist item's completion state for a local date",

@@ -40,6 +40,7 @@ import {
 } from "../theme/storage";
 import { useThemeCatalog } from "../theme/useThemeCatalog";
 import { FamilyCompletionHistory } from "./FamilyCompletionHistory";
+import { ChoreClaims } from "./ChoreClaims";
 import {
   getActiveFamilyMembers,
   getCurrentAssignment,
@@ -730,6 +731,16 @@ export function FamilyChorePage() {
                         </View>
                       </Card>
                     ))}
+
+                  {selectedMember && (
+                    <ChoreClaims
+                      key={selectedMember.id}
+                      familyMemberId={selectedMember.id}
+                      onStatsChange={() =>
+                        setStatsRefreshKey((value) => value + 1)
+                      }
+                    />
+                  )}
 
                   {selectedMember && (
                     <View gap={3} paddingTop={4} className="history-wrap">

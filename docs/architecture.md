@@ -134,6 +134,7 @@ authenticator.
 | `assignment_checklist_items` | Ordered checklist label and required/optional snapshots for an assignment, optionally linked to a source catalog item |
 | `daily_checklist_completions` | One row per assignment checklist item and local calendar date |
 | `daily_chore_claims` | Immutable one-day claim records for active chores the weekly rotation left unassigned, including chore name/description/weight snapshots |
+| `daily_chore_claim_completions` | One append/update-only row per claim holding its done state; never deleted |
 
 The assignment tables are protected against updates and deletes. The
 `source_checklist_item_id` link is informational: removing a catalog item sets
@@ -151,10 +152,20 @@ values are never persisted and never rewrite display ordering.
 One-day claims are separate from the weekly assignment tables. A claim names an
 active chore, a child, and one local date inside the week; the unique
 `(chore_id, claim_date)` constraint makes competing claims safe, and claim rows
-are protected against updates and deletes. Claims never create or modify a
-weekly assignment, so the rotation and report snapshots keep their current
-shape. Claims are not included in completion history, derived statistics, or
-weekly reports.
+are protected against updates and deletes. From 20:00 local time, a chore
+weekly-assigned to another active child that is not done today can also be
+claimed as a one-day takeover. Claims never create or modify a weekly
+assignment, so the rotation and report snapshots keep their current shape.
+
+Marking a claim done writes one append/update-only row in
+`daily_chore_claim_completions`; the row can be toggled but never deleted (and
+only for the current local date). The claim's weight snapshot then contributes
+to the claimant's derived weighted XP for that day, so the child who took over
+another child's undone chore earns the XP and the original child's day stays
+incomplete. Once such a takeover exists, the original child's checklist writes
+for that chore and date are rejected, so the same chore cannot be completed
+twice. Claims never write weekly checklist completion rows and are not included
+in completion history, weekly day states, or weekly reports.
 
 ### Weekly reports
 
@@ -213,7 +224,9 @@ These contracts are enforced in code, tests, and database triggers.
    updates and deletes.
 10. **One-day chore claims are unique and immutable.** At most one claim exists
     per chore and local date, and claim snapshots are never updated or deleted.
-    A claim never creates or changes a weekly assignment.
+    A claim never creates or changes a weekly assignment. Its done state lives
+    in an append/update-only completion row that is never deleted, and only
+    that row contributes the claim's weight to derived XP.
 
 ## Weekly rotation
 

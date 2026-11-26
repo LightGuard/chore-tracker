@@ -1186,6 +1186,57 @@ body[data-theme="homestead"] {
   padding-top: 0.7rem !important;
 }
 
+/* ---------------------------------------------------------------------------
+   One-day child chore claims (ticket #96)
+   Theme-neutral layout shared by Homestead, Quest and Sticker Club: rely on
+   ReShaped's own surface/foreground tokens and keep the added CSS to layout.
+ --------------------------------------------------------------------------- */
+
+.chore-claims {
+  padding-top: 0.35rem;
+}
+
+.chore-claims-card {
+  width: 100%;
+}
+
+.chore-claims-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chore-claims-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid
+    var(--rs-color-border-neutral-faded, rgba(125, 125, 125, 0.22));
+}
+
+.chore-claims-list > li:first-child .chore-claims-item {
+  border-top: 0;
+}
+
+.chore-claims-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.chore-claims-note {
+  font-weight: 600;
+}
+
+.chore-claims-status {
+  border: 1px solid
+    var(--rs-color-border-neutral-faded, rgba(125, 125, 125, 0.22));
+  border-radius: 0.5rem;
+}
+
 .history-heading-row {
   display: flex;
   align-items: center;

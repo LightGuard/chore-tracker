@@ -106,7 +106,24 @@ function installFetch(
 ) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    const method = (init?.method ?? "GET").toUpperCase();
     if (url.endsWith("/themes")) return jsonResponse(themes);
+    // Ticket #96: the mounted ChoreClaims section needs these endpoints to
+    // return valid payloads. Give them neutral defaults before the per-test
+    // handler's generic fallback can return a members array for them.
+    if (url.endsWith("/available-chores") && method === "GET") {
+      return jsonResponse({ claim_date: "2026-11-18", chores: [] });
+    }
+    if (url.endsWith("/claimed-chores") && method === "GET") {
+      return jsonResponse({ claim_date: "2026-11-18", claims: [] });
+    }
+    if (
+      url.includes("/claimed-chores/") &&
+      url.endsWith("/completion") &&
+      method === "PUT"
+    ) {
+      return jsonResponse({});
+    }
     return handler(input, init);
   });
   vi.stubGlobal("fetch", fetchMock);

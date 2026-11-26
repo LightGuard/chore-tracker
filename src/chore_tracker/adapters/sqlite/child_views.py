@@ -107,12 +107,50 @@ class SQLiteChildViewsPersistence:
             "chore_description": row["chore_description_snapshot"],
             "chore_weight": row["chore_weight_snapshot"],
             "claimed_at": row["claimed_at"],
+            "is_completed": bool(row["is_completed"]),
         }
 
+    @staticmethod
+    def _claim_select() -> str:
+        """Columns for a claim joined to its day-specific done state."""
+        return """SELECT claim.id, claim.family_member_id, claim.chore_id,
+                         claim.claim_date, claim.week_start, claim.week_end,
+                         claim.chore_name_snapshot,
+                         claim.chore_description_snapshot,
+                         claim.chore_weight_snapshot, claim.claimed_at,
+                         COALESCE(completion.is_completed, 0) AS is_completed
+                  FROM daily_chore_claims AS claim
+                  LEFT JOIN daily_chore_claim_completions AS completion
+                    ON completion.claim_id = claim.id"""
+
+    # A weekly-assigned chore counts as "done today" when it has checklist
+    # items and every required item has a completed completion row for the day.
+    # This mirrors the is_complete rule used by the child's current assignment.
+    _CHORE_NOT_DONE_SQL = """
+        (
+          (SELECT COUNT(*) FROM assignment_checklist_items AS item
+           WHERE item.weekly_assignment_id = assignment.id) = 0
+          OR EXISTS (
+            SELECT 1 FROM assignment_checklist_items AS item
+            LEFT JOIN daily_checklist_completions AS completion
+              ON completion.assignment_checklist_item_id = item.id
+             AND completion.completion_date = :day
+            WHERE item.weekly_assignment_id = assignment.id
+              AND item.is_required = 1
+              AND COALESCE(completion.is_completed, 0) = 0
+          )
+        )
+    """
+
     def list_claimable_chores(
-        self, family_member_id: int, day: date
+        self, family_member_id: int, day: date, after_takeover_hour: bool
     ) -> dict[str, Any] | None:
-        """Return active chores left unassigned and unclaimed for one date."""
+        """Return chores a child can claim for one local date.
+
+        Unassigned active chores are always available. After 20:00 local time,
+        chores assigned to another active child that are not done today also
+        become available as one-day takeovers.
+        """
         week_start = day - timedelta(days=day.weekday())
         with transaction(self._database_path) as connection:
             status = self._member_status(connection, family_member_id)
@@ -121,26 +159,60 @@ class SQLiteChildViewsPersistence:
             if status == "inactive":
                 return {"inactive": True}
             rows = connection.execute(
-                """SELECT chore.id, chore.name, chore.description, chore.weight
-                   FROM chores AS chore
-                   WHERE chore.is_active = 1
-                     AND NOT EXISTS (
-                       SELECT 1 FROM weekly_assignments AS assignment
-                       WHERE assignment.chore_id = chore.id
-                         AND assignment.week_start = ?
-                     )
-                     AND NOT EXISTS (
-                       SELECT 1 FROM daily_chore_claims AS claim
-                       WHERE claim.chore_id = chore.id
-                         AND claim.claim_date = ?
-                     )
-                   ORDER BY chore.name COLLATE NOCASE, chore.id""",
-                (week_start.isoformat(), day.isoformat()),
+                f"""SELECT * FROM (
+                      SELECT chore.id, chore.name, chore.description,
+                             chore.weight, NULL AS assigned_to
+                      FROM chores AS chore
+                      WHERE chore.is_active = 1
+                        AND NOT EXISTS (
+                          SELECT 1 FROM weekly_assignments AS assignment
+                          WHERE assignment.chore_id = chore.id
+                            AND assignment.week_start = :week_start
+                        )
+                        AND NOT EXISTS (
+                          SELECT 1 FROM daily_chore_claims AS claim
+                          WHERE claim.chore_id = chore.id
+                            AND claim.claim_date = :day
+                        )
+                      UNION ALL
+                      SELECT chore.id, chore.name, chore.description,
+                             chore.weight, member.display_name AS assigned_to
+                      FROM chores AS chore
+                      JOIN weekly_assignments AS assignment
+                        ON assignment.chore_id = chore.id
+                      JOIN family_members AS member
+                        ON member.id = assignment.family_member_id
+                      WHERE :after_20 = 1
+                        AND chore.is_active = 1
+                        AND assignment.week_start = :week_start
+                        AND assignment.family_member_id != :family_member_id
+                        AND member.is_active = 1
+                        AND NOT EXISTS (
+                          SELECT 1 FROM daily_chore_claims AS claim
+                          WHERE claim.chore_id = chore.id
+                            AND claim.claim_date = :day
+                        )
+                        AND {self._CHORE_NOT_DONE_SQL}
+                    ) AS available
+                    ORDER BY name COLLATE NOCASE, id""",
+                {
+                    "week_start": week_start.isoformat(),
+                    "day": day.isoformat(),
+                    "family_member_id": family_member_id,
+                    "after_20": int(after_takeover_hour),
+                },
             ).fetchall()
-            return {
-                "claim_date": day,
-                "chores": [dict(row) for row in rows],
-            }
+            chores = [
+                {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "weight": row["weight"],
+                    "assigned_to": row["assigned_to"],
+                }
+                for row in rows
+            ]
+            return {"claim_date": day, "chores": chores}
 
     def list_claimed_chores(
         self, family_member_id: int, day: date
@@ -153,13 +225,9 @@ class SQLiteChildViewsPersistence:
             if status == "inactive":
                 return {"inactive": True}
             rows = connection.execute(
-                """SELECT id, family_member_id, chore_id, claim_date, week_start,
-                          week_end, chore_name_snapshot,
-                          chore_description_snapshot, chore_weight_snapshot,
-                          claimed_at
-                   FROM daily_chore_claims
-                   WHERE family_member_id = ? AND claim_date = ?
-                   ORDER BY claimed_at, id""",
+                f"""{self._claim_select()}
+                   WHERE claim.family_member_id = ? AND claim.claim_date = ?
+                   ORDER BY claim.claimed_at, claim.id""",
                 (family_member_id, day.isoformat()),
             ).fetchall()
             return {
@@ -168,9 +236,18 @@ class SQLiteChildViewsPersistence:
             }
 
     def claim_chore(
-        self, family_member_id: int, chore_id: int, day: date
+        self,
+        family_member_id: int,
+        chore_id: int,
+        day: date,
+        after_takeover_hour: bool,
     ) -> dict[str, Any] | None:
-        """Claim one unassigned chore for one child and one local date."""
+        """Claim an unassigned chore, or take over an undone chore after 20:00.
+
+        A chore weekly-assigned to another active child can be claimed after
+        20:00 only while it is not done today. Either way the result is a single
+        one-day claim; weekly assignments and rotation are never modified.
+        """
         week_start = day - timedelta(days=day.weekday())
         week_end = week_start + timedelta(days=6)
         with transaction(self._database_path) as connection:
@@ -191,12 +268,32 @@ class SQLiteChildViewsPersistence:
             if not chore["is_active"]:
                 return {"chore_inactive": True}
             assigned = connection.execute(
-                """SELECT 1 FROM weekly_assignments
-                   WHERE chore_id = ? AND week_start = ?""",
+                """SELECT assignment.id, assignment.family_member_id,
+                          member.is_active AS owner_active
+                   FROM weekly_assignments AS assignment
+                   JOIN family_members AS member
+                     ON member.id = assignment.family_member_id
+                   WHERE assignment.chore_id = ?
+                     AND assignment.week_start = ?""",
                 (chore_id, week_start.isoformat()),
             ).fetchone()
-            if assigned is not None:
+            takeover = (
+                assigned is not None
+                and after_takeover_hour
+                and assigned["family_member_id"] != family_member_id
+                and bool(assigned["owner_active"])
+            )
+            if assigned is not None and not takeover:
                 return {"assignment_exists": True}
+            if takeover:
+                done = connection.execute(
+                    f"""SELECT NOT {self._CHORE_NOT_DONE_SQL} AS is_done
+                        FROM weekly_assignments AS assignment
+                        WHERE assignment.id = :assignment_id""",
+                    {"assignment_id": assigned["id"], "day": day.isoformat()},
+                ).fetchone()["is_done"]
+                if done:
+                    return {"chore_already_done": True}
             existing = connection.execute(
                 """SELECT 1 FROM daily_chore_claims
                    WHERE chore_id = ? AND claim_date = ?""",
@@ -232,11 +329,55 @@ class SQLiteChildViewsPersistence:
                     return {"claim_exists": True}
                 raise
             row = connection.execute(
-                """SELECT id, family_member_id, chore_id, claim_date, week_start,
-                          week_end, chore_name_snapshot,
-                          chore_description_snapshot, chore_weight_snapshot,
-                          claimed_at
-                   FROM daily_chore_claims WHERE id = ?""",
+                f"{self._claim_select()} WHERE claim.id = ?",
+                (claim_id,),
+            ).fetchone()
+            return {"claim": self._claim(row)}
+
+    def set_claim_completion(
+        self,
+        family_member_id: int,
+        claim_id: int,
+        is_completed: bool,
+        day: date,
+    ) -> dict[str, Any] | None:
+        """Set the done state of one child's one-day claim for today."""
+        with transaction(self._database_path) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            status = self._member_status(connection, family_member_id)
+            if status is None:
+                return None
+            if status == "inactive":
+                return {"inactive": True}
+            claim = connection.execute(
+                """SELECT id, claim_date FROM daily_chore_claims
+                   WHERE id = ? AND family_member_id = ?""",
+                (claim_id, family_member_id),
+            ).fetchone()
+            if claim is None:
+                return {"claim_missing": True}
+            if claim["claim_date"] != day.isoformat():
+                return {"stale_claim": True}
+            completed_at = (
+                datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+                if is_completed
+                else None
+            )
+            connection.execute(
+                """INSERT INTO daily_chore_claim_completions
+                   (claim_id, is_completed, completed_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT (claim_id) DO UPDATE SET
+                     is_completed = excluded.is_completed,
+                     completed_at = CASE
+                       WHEN daily_chore_claim_completions.is_completed
+                            = excluded.is_completed
+                       THEN daily_chore_claim_completions.completed_at
+                       ELSE excluded.completed_at END""",
+                (claim_id, int(is_completed), completed_at),
+            )
+            row = connection.execute(
+                f"{self._claim_select()} WHERE claim.id = ?",
                 (claim_id,),
             ).fetchone()
             return {"claim": self._claim(row)}
@@ -324,6 +465,22 @@ class SQLiteChildViewsPersistence:
             ).fetchone()
             if item is None:
                 return {"item_missing": True}
+            # Once another child takes over this chore for the day, the
+            # originally assigned child cannot also complete it: the day must
+            # not be counted as complete for them, and the XP belongs to the
+            # claimant alone.
+            taken_over = connection.execute(
+                """SELECT 1 FROM daily_chore_claims AS claim
+                   JOIN weekly_assignments AS assignment
+                     ON assignment.chore_id = claim.chore_id
+                    AND assignment.week_start = claim.week_start
+                   WHERE assignment.id = ?
+                     AND claim.claim_date = ?
+                     AND claim.family_member_id != ?""",
+                (assignment_id, day.isoformat(), family_member_id),
+            ).fetchone()
+            if taken_over is not None:
+                return {"chore_taken_over": True}
             completed_at = (
                 datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
                 if is_completed
@@ -465,6 +622,28 @@ class SQLiteChildViewsPersistence:
                        = assignment_days.assignment_id
                    AND completion.completion_date = assignment_days.day
                 ),
+                claim_day_facts AS (
+                  SELECT claim.family_member_id,
+                         claim.claim_date AS day,
+                         SUM(claim.chore_weight_snapshot) AS completed_weight
+                  FROM daily_chore_claim_completions AS completion
+                  JOIN daily_chore_claims AS claim
+                    ON claim.id = completion.claim_id
+                  WHERE completion.is_completed = 1
+                  GROUP BY claim.family_member_id, claim.claim_date
+                ),
+                -- Claim completions add weighted XP items only. They do not
+                -- count as checklist items, complete days, or streak days, and
+                -- never reach completion history or weekly report snapshots.
+                all_day_facts AS (
+                  SELECT family_member_id, day, completed_items,
+                         completed_weight, is_complete
+                  FROM day_facts
+                  UNION ALL
+                  SELECT family_member_id, day, 0 AS completed_items,
+                         completed_weight, 0 AS is_complete
+                  FROM claim_day_facts
+                ),
                 streak_anchors AS (
                   SELECT scope.id AS family_member_id,
                          CASE
@@ -539,7 +718,7 @@ class SQLiteChildViewsPersistence:
                        COALESCE(streak.current_streak, 0)
                          AS current_streak
                 FROM member_scope AS scope
-                LEFT JOIN day_facts AS fact
+                LEFT JOIN all_day_facts AS fact
                   ON fact.family_member_id = scope.id
                 LEFT JOIN streak_counts AS streak
                   ON streak.family_member_id = scope.id

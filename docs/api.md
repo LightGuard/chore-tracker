@@ -117,18 +117,34 @@ ID:
       "id": 3,
       "name": "Bathroom",
       "description": "Scrub the bathroom",
-      "weight": 2
+      "weight": 2,
+      "assigned_to": null
+    },
+    {
+      "id": 7,
+      "name": "Yard",
+      "description": "Rake leaves",
+      "weight": 1,
+      "assigned_to": "Sam"
     }
   ]
 }
 ```
 
-A chore is available when it is active, no existing weekly assignment for that
-Monday-Sunday week names it, and nobody has claimed it for that date. Weekly
-assignments take precedence at claim time: a chore already named by the week's
-rotation is rejected as already assigned. Availability is day-specific, so a
-claimed chore is removed for that date but can become available again on a later
-date while it remains unassigned for the week. A claim never changes the
+A chore is available in either of two cases:
+
+- It is active, no weekly assignment for that Monday-Sunday week names it, and
+  nobody has claimed it for that date. `assigned_to` is `null` for these chores.
+- From **20:00 local time** until the end of the day, it is also available when
+  a weekly assignment for this week names it for a **different active child**,
+  that chore has **not been done today**, and nobody has claimed it for that
+  date. `assigned_to` is that child's display name. "Done today" uses the same
+  rule as the daily checklist: the assignment has checklist items and every
+  required item has a completed completion row for the date.
+
+The child's own weekly chore is never offered. Availability is day-specific, so
+a claimed chore is removed for that date but can become available again on a
+later date while it remains unassigned for the week. A claim never changes the
 rotation, so if claims are made before that week's assignments are generated,
 the normal rotation still proceeds unchanged. `weight` is the live chore catalog
 weight; the claim endpoint snapshots it.
@@ -161,7 +177,8 @@ date. A successful claim returns HTTP 201:
   "chore_name": "Bathroom",
   "chore_description": "Scrub the bathroom",
   "chore_weight": 2,
-  "claimed_at": "2026-11-25T18:04:12Z"
+  "claimed_at": "2026-11-25T18:04:12Z",
+  "is_completed": false
 }
 ```
 
@@ -170,19 +187,26 @@ catalog edits do not rewrite it. A claim does not create a weekly assignment,
 alter the rotation, advance the rollover checkpoint, generate a weekly report,
 or affect other days. No administrator approval is required. The child identity
 comes only from the path; a body that names another profile is rejected with
-HTTP 422.
+HTTP 422. `is_completed` is the claim's [done state](#mark-a-claimed-chore-done)
+and starts `false`.
 
-A claim is an assignment record only. It does not add checklist snapshot items
-or completion rows, and it is not included in completion history, derived
-statistics, or weekly reports.
+A claim is a day-scoped assignment record. It does not add checklist snapshot
+items or weekly completion rows, and it is not included in completion history,
+current-week day states, or weekly reports. Marking a claim done contributes its
+weight snapshot to the claimant's derived XP; see
+[Quest XP mapping](themes.md#quest-xp-mapping).
 
 Claims are first-come, first-served. The SQLite writer transaction and a unique
 `(chore_id, claim_date)` constraint guarantee that only one child creates the
-claim for a chore and day. The losing request returns HTTP 409 with one of:
+claim for a chore and day, whether the chore was unassigned or taken over. The
+losing request returns HTTP 409 with one of:
 
-- `Chore is already assigned for this week`
+- `Chore is already assigned for this week` (including a takeover attempted
+  before 20:00 or of the child's own chore)
 - `Chore is not active`
 - `Chore has already been claimed for this day`
+- `Chore has already been completed today` (the takeover chore was finished
+  before the claim completed)
 
 An unknown chore returns HTTP 404. Unknown profiles return HTTP 404 and inactive
 profiles return HTTP 409.
@@ -210,7 +234,8 @@ time and then ID:
       "chore_name": "Bathroom",
       "chore_description": "Scrub the bathroom",
       "chore_weight": 2,
-      "claimed_at": "2026-11-25T18:04:12Z"
+      "claimed_at": "2026-11-25T18:04:12Z",
+      "is_completed": false
     }
   ]
 }
@@ -219,6 +244,32 @@ time and then ID:
 Only the profile in the path is returned. Claims from other days are excluded,
 so the list is empty on a day the child has not claimed anything. Unknown
 profiles return HTTP 404 and inactive profiles return HTTP 409.
+
+### Mark a claimed chore done
+
+```http
+PUT /family-members/{family_member_id}/claimed-chores/{claim_id}/completion
+Content-Type: application/json
+
+{ "is_completed": true }
+```
+
+Sets the done state of one of the child's one-day claims and returns the updated
+claim with HTTP 200. The claim is day-specific, so no date is needed in the
+body; the profile and claim both come from the path. A child can only update
+their own claims; another child's claim or an unknown id returns HTTP 404. A
+claim whose `claim_date` is not the current local date returns HTTP 409 with
+`That claim is not for today`, so a stale claim cannot add retroactive XP. An
+inactive profile also returns HTTP 409.
+
+Toggling the done state is append/update-only: one row per claim is kept and is
+never deleted. When `is_completed` is `true`, the claim's `chore_weight_snapshot`
+is added to the claimant's derived weighted XP for that day; unchecking removes
+it. If the claim took over another child's weekly chore, no weekly checklist
+completion rows are written for the original child: their day is not counted as
+complete, they earn no XP for the claimed chore, and their
+[checklist completion endpoint](#set-checklist-completion-for-a-date) rejects
+further changes to that chore for the day with HTTP 409.
 
 ### Get a child's derived statistics
 
@@ -418,7 +469,12 @@ state:
 Unchecking one item updates only that item's row for that date; records for
 other items and other dates remain. Completion writes acquire a SQLite write
 reservation before reading and updating, so concurrent requests serialize.
-Status codes match the read endpoint.
+Status codes match the read endpoint, with one addition: HTTP 409
+`This chore was claimed by another child today` when a
+[one-day takeover claim](#mark-a-claimed-chore-done) exists for that chore and
+date. The originally assigned child cannot then complete the same chore for that
+day, so the day is not counted complete for them and the XP stays with the
+claimant.
 
 ### Get completion history
 

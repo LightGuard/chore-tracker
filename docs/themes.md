@@ -158,6 +158,14 @@ editing a chore's weight only affects future weeks. With the default weight of
 | 5 | 50 |
 | 10 | 100 |
 
+A [one-day chore claim](api.md#mark-a-claimed-chore-done) that a child marks done
+also contributes its weight snapshot as one weighted item, using the same
+`weight × 10` factor. The XP goes to the child who claimed the chore, even when
+the chore was originally assigned to another child; the original child's day is
+not counted complete. Claim completions are never counted as completed checklist
+items, complete days, or streak days, and never appear in completion history or
+weekly reports.
+
 Optional checklist items follow the same mapping. A weight-0 chore still
 records completion, complete days, and streaks; it simply awards no XP. The
 calculation lives in

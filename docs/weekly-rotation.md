@@ -93,8 +93,18 @@ immutable one-day record outside `weekly_assignments`; it never adds, replaces,
 or regenerates a weekly assignment and never moves the rotation anchor.
 Availability is evaluated per local date, so a claimed chore is no longer
 available for that date but can be claimed again on a later date while it
-remains unassigned for the week. A chore already named by a weekly assignment
-for the week is not claimable through this path.
+remains unassigned for the week.
+
+From 20:00 local time until the end of the day, a chore weekly-assigned to a
+different active child that is not done today also becomes claimable as a
+one-day takeover. The child's own weekly chore and chores that are already
+complete are never offered. A takeover still creates only the one-day claim
+record: it never edits the original weekly assignment, its checklist snapshots,
+or its completion rows. If the claiming child marks the claim done, they earn
+its weight-derived XP and the originally assigned child's day is not counted as
+complete: that child's checklist writes for the chore and day are rejected so
+the chore cannot be completed twice. See
+[available chores and claims](api.md#list-chores-available-to-claim).
 
 ## Implementation boundary
 
