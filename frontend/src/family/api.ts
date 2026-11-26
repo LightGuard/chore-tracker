@@ -69,6 +69,13 @@ export type DerivedStatsStanding = {
   current_streak: number;
 };
 
+export type DerivedStatsXpRanking = {
+  family_member_id: number;
+  display_name: string;
+  total_xp: number;
+  rank: number;
+};
+
 export type DerivedStats = {
   family_member_id: number;
   display_name: string;
@@ -89,6 +96,7 @@ export type DerivedStats = {
   household: {
     active_players: number;
     weekly_standings: DerivedStatsStanding[];
+    xp_rankings: DerivedStatsXpRanking[];
   };
 };
 

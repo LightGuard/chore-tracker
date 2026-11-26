@@ -73,6 +73,32 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
           current_streak: 1,
         },
       ],
+      xp_rankings: [
+        {
+          family_member_id: 3,
+          display_name: "Riley",
+          total_xp: 1240,
+          rank: 1,
+        },
+        {
+          family_member_id: 1,
+          display_name: "Alex",
+          total_xp: 1240,
+          rank: 1,
+        },
+        {
+          family_member_id: 4,
+          display_name: "Avery",
+          total_xp: 720,
+          rank: 3,
+        },
+        {
+          family_member_id: 2,
+          display_name: "Sam",
+          total_xp: 610,
+          rank: 4,
+        },
+      ],
     },
     ...overrides,
   };

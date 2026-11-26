@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { DerivedStats, DerivedStatsStanding } from "../family/api";
+import type {
+  DerivedStats,
+  DerivedStatsStanding,
+  DerivedStatsXpRanking,
+} from "../family/api";
 import {
   levelForXp,
   questLeaderboard,
@@ -19,6 +23,20 @@ function standing(
     completed_checklist_items: completed,
     complete_days: 0,
     current_streak: streak,
+  };
+}
+
+function ranking(
+  id: number,
+  name: string,
+  totalXp: number,
+  rank: number,
+): DerivedStatsXpRanking {
+  return {
+    family_member_id: id,
+    display_name: name,
+    total_xp: totalXp,
+    rank,
   };
 }
 
@@ -43,6 +61,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
     household: {
       active_players: 1,
       weekly_standings: [standing(1, "Alex", 0, 0)],
+      xp_rankings: [ranking(1, "Alex", 0, 1)],
     },
     ...overrides,
   };
@@ -133,6 +152,12 @@ describe("Quest presentation", () => {
             standing(4, "Avery", 32, 2),
             standing(1, "Sam", 24, 1),
           ],
+          xp_rankings: [
+            ranking(3, "Riley", 1240, 1),
+            ranking(2, "Alex", 980, 2),
+            ranking(4, "Avery", 720, 3),
+            ranking(1, "Sam", 610, 4),
+          ],
         },
       }),
     );
@@ -151,6 +176,7 @@ describe("Quest presentation", () => {
         household: {
           active_players: 2,
           weekly_standings: [standing(1, "Alex", 22, 4), standing(2, "Sam", 10, 1)],
+          xp_rankings: [ranking(1, "Alex", 220, 1), ranking(2, "Sam", 100, 2)],
         },
       }),
     );
@@ -163,6 +189,7 @@ describe("Quest presentation", () => {
         household: {
           active_players: 2,
           weekly_standings: [standing(1, "Alex", 22, 4), standing(2, "Sam", 10, 1)],
+          xp_rankings: [ranking(1, "Alex", 220, 1), ranking(2, "Sam", 100, 2)],
         },
       }),
     );

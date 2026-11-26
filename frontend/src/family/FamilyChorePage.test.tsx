@@ -67,6 +67,7 @@ function derivedStats(memberId: number, completeDays: number): DerivedStats {
     household: {
       active_players: 2,
       weekly_standings: [],
+      xp_rankings: [],
     },
   };
 }
