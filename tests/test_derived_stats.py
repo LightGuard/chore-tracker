@@ -210,6 +210,14 @@ def test_returns_generic_completion_facts_and_current_week_day_states(
                     "current_streak": 1,
                 }
             ],
+            "xp_rankings": [
+                {
+                    "family_member_id": member_id,
+                    "display_name": "Alex",
+                    "total_xp": 80,
+                    "rank": 1,
+                }
+            ],
         },
     }
 
@@ -407,6 +415,210 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
     assert all(
         "rank" not in standing for standing in payload["household"]["weekly_standings"]
     )
+    assert payload["household"]["xp_rankings"] == [
+        {
+            "family_member_id": alex_id,
+            "display_name": "Alex",
+            "total_xp": 60,
+            "rank": 1,
+        },
+        {
+            "family_member_id": sam_id,
+            "display_name": "Sam",
+            "total_xp": 60,
+            "rank": 1,
+        },
+        {
+            "family_member_id": riley_id,
+            "display_name": "Riley",
+            "total_xp": 40,
+            "rank": 3,
+        },
+        {
+            "family_member_id": amy_id,
+            "display_name": "amy",
+            "total_xp": 0,
+            "rank": 4,
+        },
+        {
+            "family_member_id": bea_id,
+            "display_name": "Bea",
+            "total_xp": 0,
+            "rank": 4,
+        },
+    ]
+    assert all(
+        ranking["family_member_id"] != inactive_id
+        for ranking in payload["household"]["xp_rankings"]
+    )
+
+
+def test_xp_rankings_are_independent_of_display_and_weekly_ordering(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        zoe_id = create_member(connection, "Zoe")
+        mia_id = create_member(connection, "Mia")
+        amy_id = create_member(connection, "Amy")
+
+        # Lifetime XP order is Mia, Amy, Zoe. Current-week activity is the
+        # opposite so the display-oriented weekly standings lead with Zoe.
+        _, zoe_items = create_assignment(connection, zoe_id, "2026-11-09")
+        complete_day(connection, zoe_items, "2026-11-12")
+        _, mia_items = create_assignment(connection, mia_id, "2026-11-02")
+        for day in ("2026-11-03", "2026-11-04", "2026-11-05"):
+            complete_day(connection, mia_items, day)
+        _, amy_items = create_assignment(connection, amy_id, "2026-11-02")
+        for day in ("2026-11-03", "2026-11-04"):
+            complete_day(connection, amy_items, day)
+
+    payload = client.get(f"/family-members/{zoe_id}/derived-stats").json()
+
+    assert [
+        standing["family_member_id"]
+        for standing in payload["household"]["weekly_standings"]
+    ] == [zoe_id, amy_id, mia_id]
+    assert payload["household"]["xp_rankings"] == [
+        {
+            "family_member_id": mia_id,
+            "display_name": "Mia",
+            "total_xp": 60,
+            "rank": 1,
+        },
+        {
+            "family_member_id": amy_id,
+            "display_name": "Amy",
+            "total_xp": 40,
+            "rank": 2,
+        },
+        {
+            "family_member_id": zoe_id,
+            "display_name": "Zoe",
+            "total_xp": 20,
+            "rank": 3,
+        },
+    ]
+
+    # Renaming children changes the alphabetical display order without
+    # changing anyone's achievement rank.
+    with connect(database_path) as connection:
+        connection.execute(
+            "UPDATE family_members SET display_name = 'Aaa' WHERE id = ?", (mia_id,)
+        )
+        connection.execute(
+            "UPDATE family_members SET display_name = 'Zzz' WHERE id = ?", (zoe_id,)
+        )
+
+    renamed = client.get(f"/family-members/{zoe_id}/derived-stats").json()
+
+    assert [
+        standing["family_member_id"]
+        for standing in renamed["household"]["weekly_standings"]
+    ] == [zoe_id, mia_id, amy_id]
+    assert [
+        (ranking["family_member_id"], ranking["total_xp"], ranking["rank"])
+        for ranking in renamed["household"]["xp_rankings"]
+    ] == [
+        (mia_id, 60, 1),
+        (amy_id, 40, 2),
+        (zoe_id, 20, 3),
+    ]
+
+
+def test_xp_rankings_share_ties_and_skip_occupied_positions(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        alex_id = create_member(connection, "Alex")
+        sam_id = create_member(connection, "Sam")
+        riley_id = create_member(connection, "Riley")
+        avery_id = create_member(connection, "Avery")
+
+        _, alex_items = create_assignment(connection, alex_id, "2026-11-02")
+        for day in (
+            "2026-11-02",
+            "2026-11-03",
+            "2026-11-04",
+            "2026-11-05",
+            "2026-11-06",
+        ):
+            complete_day(connection, alex_items, day)
+        _, sam_items = create_assignment(connection, sam_id, "2026-11-02")
+        for day in ("2026-11-02", "2026-11-03", "2026-11-04"):
+            complete_day(connection, sam_items, day)
+        _, riley_items = create_assignment(connection, riley_id, "2026-11-02")
+        for day in ("2026-11-02", "2026-11-03", "2026-11-04"):
+            complete_day(connection, riley_items, day)
+        _, avery_items = create_assignment(connection, avery_id, "2026-11-02")
+        complete_day(connection, avery_items, "2026-11-02")
+
+    payload = client.get(f"/family-members/{alex_id}/derived-stats").json()
+
+    assert [
+        (ranking["display_name"], ranking["total_xp"], ranking["rank"])
+        for ranking in payload["household"]["xp_rankings"]
+    ] == [
+        ("Alex", 100, 1),
+        ("Riley", 60, 2),
+        ("Sam", 60, 2),
+        ("Avery", 20, 4),
+    ]
+
+
+def test_xp_rankings_reflect_changed_xp_totals(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        alex_id = create_member(connection, "Alex")
+        sam_id = create_member(connection, "Sam")
+        _, alex_items = create_assignment(connection, alex_id, "2026-11-09")
+        complete_day(connection, alex_items, "2026-11-09")
+        _, sam_items = create_assignment(connection, sam_id, "2026-11-09")
+        complete_day(connection, sam_items, "2026-11-09")
+        complete_day(connection, sam_items, "2026-11-10")
+
+    first = client.get(f"/family-members/{alex_id}/derived-stats").json()
+    assert [
+        (ranking["display_name"], ranking["total_xp"], ranking["rank"])
+        for ranking in first["household"]["xp_rankings"]
+    ] == [("Sam", 40, 1), ("Alex", 20, 2)]
+
+    with connect(database_path) as connection:
+        alex_item_rows = connection.execute(
+            """SELECT item.id
+               FROM assignment_checklist_items AS item
+               JOIN weekly_assignments AS assignment
+                 ON assignment.id = item.weekly_assignment_id
+               WHERE assignment.family_member_id = ?
+               ORDER BY item.position""",
+            (alex_id,),
+        ).fetchall()
+        alex_item_ids = [row["id"] for row in alex_item_rows]
+        complete_day(connection, alex_item_ids, "2026-11-10")
+        complete_day(connection, alex_item_ids, "2026-11-11")
+
+    second = client.get(f"/family-members/{alex_id}/derived-stats").json()
+    assert [
+        (ranking["display_name"], ranking["total_xp"], ranking["rank"])
+        for ranking in second["household"]["xp_rankings"]
+    ] == [("Alex", 60, 1), ("Sam", 40, 2)]
+
+    with connect(database_path) as connection:
+        sam_item_rows = connection.execute(
+            """SELECT item.id
+               FROM assignment_checklist_items AS item
+               JOIN weekly_assignments AS assignment
+                 ON assignment.id = item.weekly_assignment_id
+               WHERE assignment.family_member_id = ?
+               ORDER BY item.position""",
+            (sam_id,),
+        ).fetchall()
+        complete_day(connection, [row["id"] for row in sam_item_rows], "2026-11-11")
+
+    tied = client.get(f"/family-members/{alex_id}/derived-stats").json()
+    assert [
+        (ranking["display_name"], ranking["total_xp"], ranking["rank"])
+        for ranking in tied["household"]["xp_rankings"]
+    ] == [("Alex", 60, 1), ("Sam", 60, 1)]
 
 
 def test_empty_history_returns_zeroes_for_an_active_child_without_an_assignment(
@@ -432,6 +644,14 @@ def test_empty_history_returns_zeroes_for_an_active_child_without_an_assignment(
         for day in payload["current_week"]["days"]
     )
     assert payload["household"]["weekly_standings"][0]["family_member_id"] == member_id
+    assert payload["household"]["xp_rankings"] == [
+        {
+            "family_member_id": member_id,
+            "display_name": "Taylor",
+            "total_xp": 0,
+            "rank": 1,
+        }
+    ]
 
 
 def test_unknown_and_inactive_members_return_the_existing_child_view_errors(

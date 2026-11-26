@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from chore_tracker.application.services.achievement_rankings import xp_rankings
+
 
 class ChildViewError(Exception):
     """Application error translated by the HTTP adapter."""
@@ -170,6 +172,7 @@ class ChildViewsService:
                     }
                     for member in active_members
                 ],
+                "xp_rankings": xp_rankings(active_members),
             },
         }
 

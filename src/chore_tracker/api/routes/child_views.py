@@ -185,12 +185,23 @@ class DerivedStatsStanding(BaseModel):
     current_streak: int
 
 
+class DerivedStatsXpRanking(BaseModel):
+    """One active child's family-wide achievement rank by total XP."""
+
+    model_config = ConfigDict(extra="forbid")
+    family_member_id: int
+    display_name: str
+    total_xp: int
+    rank: int
+
+
 class DerivedStatsHousehold(BaseModel):
-    """Active household counts and generic weekly standings."""
+    """Active household counts, weekly standings, and total-XP rankings."""
 
     model_config = ConfigDict(extra="forbid")
     active_players: int
     weekly_standings: list[DerivedStatsStanding]
+    xp_rankings: list[DerivedStatsXpRanking]
 
 
 class DerivedStats(BaseModel):
