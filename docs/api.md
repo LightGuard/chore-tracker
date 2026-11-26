@@ -572,7 +572,8 @@ Every chore carries a reward-neutral weight:
   rewrites existing assignments, completion history, or reports.
 - The domain assigns no XP, stickers, or other rewards. Each consuming frontend
   is responsible for mapping the shared weight to its own reward system; this
-  domain only stores and returns the value.
+  domain only stores and returns the value. Sticker Club's mapping lives in
+  [Sticker Club v2](themes.md#sticker-club-v2).
 
 ## Administrator assignment-generation endpoints
 

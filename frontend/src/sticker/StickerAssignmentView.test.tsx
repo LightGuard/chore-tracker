@@ -134,27 +134,57 @@ function renderView(
 }
 
 describe("Sticker Club v2 view", () => {
-  it("maps the week count, rail states, and all-done stamp", () => {
-    renderView({
-      current: assignment({
-        checklist_items: [
-          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
-          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
-          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: true },
-        ],
-        is_complete: true,
-      }),
-    });
+  it("maps the weighted week count, rail states, and all-done stamp", () => {
+    renderView();
 
-    expect(screen.getByRole("status")).toHaveTextContent("STICKER 2 OF 7");
+    expect(screen.getByRole("status")).toHaveTextContent("2 STICKERS");
     expect(screen.getByText("Sticker earned.")).toBeInTheDocument();
+    expect(
+      screen.getByText("One sticker for each finished day."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2 of 7 days")).toBeInTheDocument();
     const rail = screen.getByRole("list", { name: "This week's stickers" });
     expect(rail).toBeInTheDocument();
-    expect(screen.getByLabelText("Wednesday, complete, today")).toBeInTheDocument();
+    expect(screen.getByLabelText("Wednesday, complete, 1 sticker, today")).toBeInTheDocument();
     expect(within(rail).getAllByText("DONE")).toHaveLength(2);
     expect(within(rail).getByText("PART")).toBeInTheDocument();
+    expect(within(rail).getAllByText("+1")).toHaveLength(2);
     expect(within(rail).getAllByText("—").length).toBeGreaterThan(0);
     expect(screen.queryByText(/leaderboard|rank/i)).not.toBeInTheDocument();
+  });
+
+  it("multiplies weighted stickers per complete day", () => {
+    const current = assignment({ chore_weight: 2 });
+    renderView({ current });
+
+    expect(screen.getByRole("status")).toHaveTextContent("4 STICKERS");
+    expect(screen.getByText("2 stickers per finished day")).toBeInTheDocument();
+    expect(
+      screen.getByText("2 stickers for each finished day."),
+    ).toBeInTheDocument();
+    const rail = screen.getByRole("list", { name: "This week's stickers" });
+    expect(within(rail).getAllByText("+2")).toHaveLength(2);
+    expect(screen.getByLabelText("Monday, complete, 2 stickers")).toBeInTheDocument();
+    expect(screen.getByLabelText("Wednesday, complete, 2 stickers, today")).toBeInTheDocument();
+    expect(screen.getByText("2 of 7 days")).toBeInTheDocument();
+  });
+
+  it("mints no stickers for a weight-0 chore", () => {
+    renderView({ current: assignment({ chore_weight: 0 }) });
+
+    expect(screen.getByRole("status")).toHaveTextContent("0 STICKERS");
+    expect(screen.getByText("No sticker weight")).toBeInTheDocument();
+    expect(
+      screen.getByText("This chore mints no stickers."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This chore's weight is 0, so finished days mint no stickers. A new week starts with a clean sheet.",
+      ),
+    ).toBeInTheDocument();
+    const rail = screen.getByRole("list", { name: "This week's stickers" });
+    expect(within(rail).getAllByText("DONE")).toHaveLength(2);
+    expect(within(rail).queryByText(/^\+/)).not.toBeInTheDocument();
   });
 
   it("does not show the stamp before the day is complete and toggles jobs", () => {
@@ -168,7 +198,7 @@ describe("Sticker Club v2 view", () => {
     });
     const { onToggle } = renderView({ current });
 
-    expect(screen.queryByText(/STICKER .* OF 7/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/STICKERS$/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Wednesday, incomplete, today")).toBeInTheDocument();
     expect(screen.getByText("NEXT")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: "Take out trash" }));
@@ -184,6 +214,12 @@ describe("Sticker Club v2 view", () => {
       error: "Stats service unavailable",
     });
 
+    render(
+      <StickerHeaderCount count={null} status="error" />,
+    );
+    expect(
+      screen.getByRole("status", { name: "Sticker count unavailable" }),
+    ).toHaveTextContent("—");
     expect(screen.getByText("Sticker count unavailable")).toBeInTheDocument();
     expect(screen.getByText("Stats service unavailable")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Kitchen" })).toBeInTheDocument();
@@ -191,12 +227,21 @@ describe("Sticker Club v2 view", () => {
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
 
-  it("labels the header count as N of 7 this week and never fabricates zero", () => {
+  it("labels the header count in stickers this week and never fabricates zero", () => {
     const { rerender } = render(
       <StickerHeaderCount count={3} status="ready" />,
     );
-    expect(screen.getByLabelText("3 of 7 this week")).toHaveTextContent("3");
-    expect(screen.getByText("OF 7 STICKERS")).toBeInTheDocument();
+    expect(screen.getByLabelText("3 stickers this week")).toHaveTextContent("3");
+    expect(screen.getByText("STICKERS THIS WEEK")).toBeInTheDocument();
+
+    rerender(<StickerHeaderCount count={1} status="ready" />);
+    expect(screen.getByLabelText("1 sticker this week")).toHaveTextContent("1");
+    expect(screen.getByText("STICKER THIS WEEK")).toBeInTheDocument();
+
+    rerender(<StickerHeaderCount count={null} status="ready" />);
+    expect(
+      screen.getByRole("status", { name: "Sticker count unavailable" }),
+    ).toHaveTextContent("—");
 
     rerender(<StickerHeaderCount count={null} status="error" />);
     expect(screen.getByLabelText("Sticker count unavailable")).toHaveTextContent("—");

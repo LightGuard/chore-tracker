@@ -149,7 +149,9 @@ Zero means no reward weight and 1 is the baseline. The weight is copied into the
 immutable weekly assignment snapshot when a week is generated, so changing it
 affects the next generated week and never existing assignments. Each consuming
 frontend is responsible for mapping the weight to its own rewards; the chore
-catalog only stores it. Optional checklist items have no separate weight.
+catalog only stores it. Sticker Club v2's mapping is documented in
+[Sticker Club v2](themes.md#sticker-club-v2). Optional checklist items have no
+separate weight.
 
 The rotation uses only active chores and active checklist items. To retire a
 chore, deactivate it. An active chore must be deactivated before its last active

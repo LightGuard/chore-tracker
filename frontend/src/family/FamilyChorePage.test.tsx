@@ -678,13 +678,13 @@ describe("family chore page", () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: /Alex/ }));
     expect(
-      await screen.findByLabelText("3 of 7 this week"),
+      await screen.findByLabelText("3 stickers this week"),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Switch child" }));
     fireEvent.click(screen.getByRole("button", { name: /Sam/ }));
 
-    expect(screen.queryByLabelText("3 of 7 this week")).toBeNull();
+    expect(screen.queryByLabelText("3 stickers this week")).toBeNull();
     expect(
       await screen.findByLabelText("Sticker count loading"),
     ).toBeInTheDocument();
@@ -695,9 +695,9 @@ describe("family chore page", () => {
     });
 
     expect(
-      await screen.findByLabelText("1 of 7 this week"),
+      await screen.findByLabelText("1 sticker this week"),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("3 of 7 this week")).toBeNull();
-    expect(screen.getByText("OF 7 STICKERS")).toBeInTheDocument();
+    expect(screen.queryByLabelText("3 stickers this week")).toBeNull();
+    expect(screen.getByText("STICKER THIS WEEK")).toBeInTheDocument();
   });
 });
