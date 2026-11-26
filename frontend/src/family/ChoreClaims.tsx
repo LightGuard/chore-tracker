@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -62,8 +62,15 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
   const [conflict, setConflict] = useState("");
   const [actionError, setActionError] = useState("");
   const [busyChoreId, setBusyChoreId] = useState<number | null>(null);
+  const [pendingChore, setPendingChore] = useState<AvailableChore | null>(null);
+  const claimInProgress = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (pendingChore) dialogRef.current?.focus();
+  }, [pendingChore]);
 
   const applyData = useCallback(
     (avail: ClaimableChores, claimed: ClaimedChores) => {
@@ -112,7 +119,8 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
   }, [familyMemberId, applyData]);
 
   async function handleClaim(choreId: number) {
-    if (busyChoreId !== null) return;
+    if (claimInProgress.current) return;
+    claimInProgress.current = true;
     setBusyChoreId(choreId);
     setConflict("");
     setActionError("");
@@ -130,6 +138,7 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
         setActionError(messageFor(reason, CLAIM_ERROR));
       }
     } finally {
+      claimInProgress.current = false;
       setBusyChoreId(null);
     }
   }
@@ -193,6 +202,60 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
         <Alert color="critical" title="Couldn't save that change">
           {actionError}
         </Alert>
+      )}
+
+      {pendingChore && (
+        <div
+          className="chore-claim-dialog-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setPendingChore(null);
+          }}
+        >
+          <div
+            ref={dialogRef}
+            className="chore-claim-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="claim-dialog-title"
+            aria-describedby="claim-dialog-description"
+            tabIndex={-1}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setPendingChore(null);
+            }}
+          >
+            <Text
+              as="h2"
+              variant="headline-3"
+              attributes={{ id: "claim-dialog-title" }}
+            >
+              Claim this extra chore?
+            </Text>
+            <Text attributes={{ id: "claim-dialog-description" }}>
+              Are you sure you want to claim{" "}
+              <strong>{pendingChore.name}</strong> for today?
+            </Text>
+            <View direction="row" gap={2} justify="end">
+              <Button
+                variant="outline"
+                disabled={busyChoreId !== null}
+                onClick={() => setPendingChore(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="solid"
+                disabled={busyChoreId !== null}
+                onClick={() => {
+                  const choreId = pendingChore.id;
+                  setPendingChore(null);
+                  void handleClaim(choreId);
+                }}
+              >
+                Confirm claim
+              </Button>
+            </View>
+          </div>
+        </div>
       )}
 
       <Card
@@ -288,7 +351,7 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
                     <Button
                       variant="solid"
                       disabled={busyChoreId !== null}
-                      onClick={() => void handleClaim(chore.id)}
+                      onClick={() => setPendingChore(chore)}
                     >
                       Claim
                     </Button>
