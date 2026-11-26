@@ -45,8 +45,10 @@ before changing behavior.
 8. **Secrets never enter the repo.** `.env*` (except the examples), `secrets/`,
    `compose.override.yaml`, and passkey/SMTP material are gitignored. `VITE_*`
    values are compiled into public browser assets and are never secrets.
-9. **Stay in scope.** One issue per change. Do not add XP, currencies, reward
-   economies, or Sticker Club mappings; those are tracked separately.
+9. **Stay in scope.** One issue per change. Do not add currencies, reward
+   economies, persistent XP, or Sticker Club mappings; those are tracked
+   separately. Quest's derived XP mapping is maintained in its own module and
+   documented in `docs/themes.md`.
 10. **Update the docs in the same change.** User-visible behavior belongs in
     `docs/`. Keep links relative and run `python scripts/check-docs-links.py`.
 

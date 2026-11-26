@@ -123,21 +123,55 @@ the family screens to use it. Administrator screens keep the signed-in
 administrator's theme and do not inherit a child's Quest selection.
 
 Quest reads `GET /family-members/{family_member_id}/derived-stats` after a child
-is selected and after each successful checklist change. The player HUD maps
-lifetime completed items to XP and level, current-week facts to weekly XP and
-the seven-day rail, the lifetime streak to the streak strip, and the weekly
-standings order to rank, player count, and XP gap to first. A completed day
-shows the all-done "QUEST CLEAR" state; optional checklist items contribute XP
-when checked but never block completion. The shared payload also publishes
-`household.xp_rankings`, a family-wide achievement rank derived from total XP
-that is independent of the weekly standings order and the child display order.
-Stats are never written by the theme.
+is selected and after each successful checklist change. The player HUD uses the
+precomputed `lifetime.xp` and `current_week.xp` for XP and level, the
+current-week days for the seven-day rail, the lifetime streak for the streak
+strip, and the weighted weekly standings order for rank, player count, and XP
+gap to first. A completed day shows the all-done "QUEST CLEAR" state; optional
+checklist items contribute XP when checked but never block completion. The
+shared payload also publishes `household.xp_rankings`, a family-wide
+achievement rank derived from weighted total XP that is independent of the
+weekly standings order and the child display order. Stats are never written by
+the theme.
+
+#### Quest XP mapping
+
+Quest interprets the shared chore weight as XP per completed checklist item:
+
+```text
+XP = completed checklist items × chore weight × 10
+```
+
+The factor of 10 is Quest's base XP per item; the shared chore domain still
+assigns no XP of its own. Quest reads the weight from the immutable assignment
+snapshot (`chore_weight_snapshot`) rather than the live chore catalog, so
+editing a chore's weight only affects future weeks. With the default weight of
+1 this is the same 10 XP per completed item as before weights existed.
+
+| Chore weight | XP per completed checklist item |
+| --- | --- |
+| 0 | 0 |
+| 1 (default) | 10 |
+| 2 | 20 |
+| 5 | 50 |
+| 10 | 100 |
+
+Optional checklist items follow the same mapping. A weight-0 chore still
+records completion, complete days, and streaks; it simply awards no XP. The
+calculation lives in
+`src/chore_tracker/application/services/quest_rewards.py`, and the derived-stats
+endpoint exposes the resulting `xp` values so every Quest surface uses one
+calculation. The Quest presentation constant `QUEST_XP_PER_ITEM_WEIGHT`
+applies the
+same factor to today's potential XP in the assignment HUD; keep the two in step
+if the reward rate changes. The mapping is independent of the shared chore
+domain, which continues to store only the neutral 0–10 weight.
 
 The stats request is independent of the checklist. If it fails, the checklist
 remains usable and the HUD shows an actionable retry; switching children clears
 the previous child's stats before the new request resolves. Quest deliberately
-has no seasons, currencies, shops, rewards, inventory, navigation, or other
-non-functional controls.
+has no seasons, currencies, shops, inventory, navigation, or other non-functional
+controls.
 
 ### Sticker Club v2
 
