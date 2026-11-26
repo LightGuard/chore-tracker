@@ -1129,6 +1129,13 @@ def install_test_hooks():
 
     app.include_router(router)
     app.state.child_views_today = lambda: test_today
+    # Claim availability reads a local clock (date plus the 20:00 takeover
+    # rule). Keep the frozen fixture date at a pre-20:00 hour so existing
+    # browser tests see only unassigned chores. A future spec that needs the
+    # takeover rule can add a fixture control to move this hour.
+    app.state.child_views_now = lambda: datetime.combine(
+        test_today, time(12, 0), tzinfo=ZoneInfo(REPORT_TIMEZONE)
+    )
     return app
 
 

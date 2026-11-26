@@ -193,6 +193,7 @@ app.state.child_views_service_factory = lambda configured_settings: ChildViewsSe
 app.state.child_views_today = lambda: datetime.now(
     ZoneInfo(settings.report_timezone)
 ).date()
+app.state.child_views_now = lambda: datetime.now(ZoneInfo(settings.report_timezone))
 app.state.assignment_generation_service_factory = lambda: (
     WeeklyAssignmentGenerationService(
         SQLiteWeeklyAssignmentPersistence(settings.database_path),

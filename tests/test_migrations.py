@@ -51,6 +51,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "weekly_report_rewards",
             "weekly_rollover_state",
             "daily_chore_claims",
+            "daily_chore_claim_completions",
             "report_deliveries",
             "administrator_passkey_credentials",
             "authentication_challenges",
@@ -61,7 +62,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0012_daily_chore_claims"
+        assert revision == "0013_claim_completions"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:

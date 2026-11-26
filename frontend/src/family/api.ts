@@ -54,6 +54,38 @@ export type CompletionHistoryPage = {
   offset: number;
 };
 
+export type AvailableChore = {
+  id: number;
+  name: string;
+  description: string;
+  weight: number;
+  assigned_to: string | null;
+};
+
+export type ClaimableChores = {
+  claim_date: string;
+  chores: AvailableChore[];
+};
+
+export type DailyChoreClaim = {
+  id: number;
+  family_member_id: number;
+  chore_id: number;
+  claim_date: string;
+  week_start: string;
+  week_end: string;
+  chore_name: string;
+  chore_description: string;
+  chore_weight: number;
+  claimed_at: string;
+  is_completed: boolean;
+};
+
+export type ClaimedChores = {
+  claim_date: string;
+  claims: DailyChoreClaim[];
+};
+
 export type DerivedStatsDayState = "complete" | "incomplete" | "not_recorded";
 
 export type DerivedStatsDay = {
@@ -166,5 +198,52 @@ export function getDerivedStats(
   return apiRequest<DerivedStats>(
     `/family-members/${familyMemberId}/derived-stats`,
     { signal },
+  );
+}
+
+export function getAvailableChores(
+  familyMemberId: number,
+  signal?: AbortSignal,
+): Promise<ClaimableChores> {
+  return apiRequest<ClaimableChores>(
+    `/family-members/${familyMemberId}/available-chores`,
+    { signal },
+  );
+}
+
+export function getClaimedChores(
+  familyMemberId: number,
+  signal?: AbortSignal,
+): Promise<ClaimedChores> {
+  return apiRequest<ClaimedChores>(
+    `/family-members/${familyMemberId}/claimed-chores`,
+    { signal },
+  );
+}
+
+export function claimChore(args: {
+  familyMemberId: number;
+  choreId: number;
+}): Promise<DailyChoreClaim> {
+  return apiRequest<DailyChoreClaim>(
+    `/family-members/${args.familyMemberId}/claimed-chores`,
+    {
+      method: "POST",
+      body: JSON.stringify({ chore_id: args.choreId }),
+    },
+  );
+}
+
+export function setClaimCompletion(args: {
+  familyMemberId: number;
+  claimId: number;
+  isCompleted: boolean;
+}): Promise<DailyChoreClaim> {
+  return apiRequest<DailyChoreClaim>(
+    `/family-members/${args.familyMemberId}/claimed-chores/${args.claimId}/completion`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ is_completed: args.isCompleted }),
+    },
   );
 }

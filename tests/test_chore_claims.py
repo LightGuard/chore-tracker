@@ -158,12 +158,14 @@ def test_available_chores_are_active_unassigned_and_still_claimable(
                 "name": "Bathroom",
                 "description": "Scrub the bathroom",
                 "weight": 2,
+                "assigned_to": None,
             },
             {
                 "id": catalog.chores["Garage"],
                 "name": "Garage",
                 "description": "Sweep the garage",
                 "weight": 0,
+                "assigned_to": None,
             },
         ],
     }
@@ -273,6 +275,7 @@ def test_successful_claim_creates_an_immutable_one_day_snapshot(tmp_path, monkey
         "chore_description": "Scrub the bathroom",
         "chore_weight": 2,
         "claimed_at": payload["claimed_at"],
+        "is_completed": False,
     }
     assert payload["claimed_at"].endswith("Z")
     assert (
@@ -484,7 +487,7 @@ def test_competing_claims_create_exactly_one_one_day_assignment(tmp_path):
         barrier.wait(timeout=5)
         service = ChildViewsService(SQLiteChildViewsPersistence(database_path))
         try:
-            service.claim_chore(member_id, catalog.chores["Bathroom"], TODAY.date())
+            service.claim_chore(member_id, catalog.chores["Bathroom"], TODAY)
         except ChoreAlreadyClaimed:
             return "conflict"
         return "claimed"
