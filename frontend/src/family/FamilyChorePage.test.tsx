@@ -49,6 +49,7 @@ function derivedStats(memberId: number, completeDays: number): DerivedStats {
     timezone: "America/Denver",
     lifetime: {
       completed_checklist_items: completeDays * 2,
+      xp: completeDays * 20,
       complete_days: completeDays,
       current_streak: completeDays,
     },
@@ -56,6 +57,7 @@ function derivedStats(memberId: number, completeDays: number): DerivedStats {
       week_start: "2026-11-16",
       week_end: "2026-11-22",
       completed_checklist_items: completeDays * 2,
+      xp: completeDays * 20,
       complete_days: completeDays,
       days: Array.from({ length: 7 }, (_, index) => ({
         date: `2026-11-${16 + index}`,

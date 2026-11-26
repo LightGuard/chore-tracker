@@ -24,6 +24,7 @@ function stats(days: DerivedStatsDay[]): DerivedStats {
     timezone: "America/Denver",
     lifetime: {
       completed_checklist_items: 13,
+      xp: 130,
       complete_days: 4,
       current_streak: 2,
     },
@@ -31,6 +32,7 @@ function stats(days: DerivedStatsDay[]): DerivedStats {
       week_start: "2026-11-23",
       week_end: "2026-11-29",
       completed_checklist_items: 13,
+      xp: 130,
       complete_days: days.filter((entry) => entry.state === "complete").length,
       days,
     },
@@ -41,6 +43,7 @@ function stats(days: DerivedStatsDay[]): DerivedStats {
           family_member_id: 1,
           display_name: "Alex",
           completed_checklist_items: 13,
+          xp: 130,
           complete_days: 4,
           current_streak: 2,
         },

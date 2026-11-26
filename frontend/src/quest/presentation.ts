@@ -1,6 +1,6 @@
 import type { DerivedStats, DerivedStatsStanding } from "../family/api";
 
-export const QUEST_XP_PER_ITEM = 10;
+export const QUEST_XP_PER_ITEM_WEIGHT = 10;
 export const QUEST_XP_PER_LEVEL = 500;
 
 export type QuestLevelProgress = {
@@ -19,8 +19,10 @@ export type QuestLeaderboard = {
   selected: DerivedStatsStanding | null;
 };
 
-export function xpFromCompletedItems(completedItems: number): number {
-  return Math.max(0, completedItems) * QUEST_XP_PER_ITEM;
+export function xpForObjectives(itemCount: number, choreWeight: number): number {
+  return (
+    Math.max(0, itemCount) * Math.max(0, choreWeight) * QUEST_XP_PER_ITEM_WEIGHT
+  );
 }
 
 export function levelForXp(xp: number): number {
@@ -28,7 +30,7 @@ export function levelForXp(xp: number): number {
 }
 
 export function questLevelProgress(stats: DerivedStats): QuestLevelProgress {
-  const xp = xpFromCompletedItems(stats.lifetime.completed_checklist_items);
+  const xp = Math.max(0, stats.lifetime.xp);
   const xpIntoLevel = xp % QUEST_XP_PER_LEVEL;
   return {
     xp,
@@ -36,9 +38,7 @@ export function questLevelProgress(stats: DerivedStats): QuestLevelProgress {
     xpIntoLevel,
     xpForNextLevel: QUEST_XP_PER_LEVEL,
     progress: xpIntoLevel / QUEST_XP_PER_LEVEL,
-    weeklyXp: xpFromCompletedItems(
-      stats.current_week.completed_checklist_items,
-    ),
+    weeklyXp: Math.max(0, stats.current_week.xp),
   };
 }
 
@@ -50,15 +50,7 @@ export function questLeaderboard(stats: DerivedStats): QuestLeaderboard {
   const selected = selectedIndex === -1 ? null : standings[selectedIndex];
   const leader = standings[0] ?? null;
   const gapToFirstXp =
-    selected && leader
-      ? xpFromCompletedItems(
-          Math.max(
-            0,
-            leader.completed_checklist_items -
-              selected.completed_checklist_items,
-          ),
-        )
-      : 0;
+    selected && leader ? Math.max(0, leader.xp - selected.xp) : 0;
 
   return {
     rank: selectedIndex === -1 ? null : selectedIndex + 1,

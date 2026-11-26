@@ -43,10 +43,11 @@ homelab Kubernetes cluster.
 - Sending weekly report email. Email/SMTP configuration is optional and
   validated, but report email delivery and retry handling are not implemented
   in the MVP; production does not require email settings.
-- Persistent game systems such as XP, currencies, reward economies, or
-  inventories. The weekly-report reward flag is an administrative audit record,
-  not a reward system. Themes derive their presentation from existing completion
-  facts only.
+- Persistent game systems such as currencies, reward economies, or
+  inventories. Quest derives XP and levels from completion facts and the
+  snapshot chore weight at read time; no XP, level, or reward state is stored.
+  The weekly-report reward flag is an administrative audit record, not a reward
+  system.
 
 ### Known limitations
 

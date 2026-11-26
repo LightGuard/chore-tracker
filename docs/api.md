@@ -104,9 +104,11 @@ assignment, and HTTP 409 when the profile exists but is inactive.
 GET /family-members/{family_member_id}/derived-stats
 ```
 
-Returns theme-neutral completion facts. The response is read-only, computed per
-request, and not cached or persisted. Unknown profiles return HTTP 404;
-inactive profiles return HTTP 409, matching current-assignment behavior.
+Returns completion facts shared by family-facing themes. The `xp` fields apply
+Quest's documented weight mapping; the completion counts and day states stay
+theme-neutral. The response is read-only, computed per request, and not cached
+or persisted. Unknown profiles return HTTP 404; inactive profiles return HTTP
+409, matching current-assignment behavior.
 
 ```json
 {
@@ -116,6 +118,7 @@ inactive profiles return HTTP 409, matching current-assignment behavior.
   "timezone": "America/Denver",
   "lifetime": {
     "completed_checklist_items": 124,
+    "xp": 1240,
     "complete_days": 31,
     "current_streak": 4
   },
@@ -123,6 +126,7 @@ inactive profiles return HTTP 409, matching current-assignment behavior.
     "week_start": "2026-11-23",
     "week_end": "2026-11-29",
     "completed_checklist_items": 22,
+    "xp": 220,
     "complete_days": 3,
     "days": [
       {
@@ -152,6 +156,7 @@ inactive profiles return HTTP 409, matching current-assignment behavior.
         "family_member_id": 2,
         "display_name": "Sam",
         "completed_checklist_items": 28,
+        "xp": 280,
         "complete_days": 4,
         "current_streak": 2
       }
@@ -179,6 +184,13 @@ Field semantics:
 - `lifetime.completed_checklist_items` counts persisted completion rows with
   `is_completed = true` across all assignments, including optional items. It
   does not consult the current catalog.
+- `lifetime.xp` and `current_week.xp` apply Quest's documented weight-to-XP
+  mapping to the same completion rows: each completed item contributes
+  `10 × chore_weight_snapshot` from its assignment. The immutable assignment
+  snapshot is used, never the live chore catalog, so changing a chore's weight
+  only affects future weeks. Optional items count, a weight of 0 contributes no
+  XP, and the default weight of 1 yields `10 × completed_checklist_items`.
+  See [the Quest mapping](themes.md#quest-xp-mapping).
 - `lifetime.complete_days` counts assignment days where every required
   immutable checklist snapshot item was complete. Optional items do not block a
   day. A chore with no required items is complete for days through the current
@@ -192,14 +204,16 @@ Field semantics:
   not affect `state`. A day with outstanding required items and no persisted
   rows is `not_recorded`. With no required items, days through today are
   `complete` and later days remain `not_recorded`.
-- `household.weekly_standings` includes every active child, ordered by
-  current-week completed items descending, current streak descending, then
-  case-insensitive display name ascending. It has no rank field; achievement
-  rank is a separate derived value.
+- `household.weekly_standings` includes every active child with their
+  current-week `xp`. Entries are ordered by current-week XP descending, current
+  streak descending, then case-insensitive display name ascending. It has no
+  rank field; achievement rank is a separate derived value. This ordering is
+  weight-sensitive, so a heavier chore can outrank a larger item count.
 - `household.xp_rankings` includes every active child with their family-wide
   achievement `rank` and the `total_xp` it is based on. `total_xp` uses the
-  application's existing total-XP calculation,
-  `10 × lifetime.completed_checklist_items`, so optional completed items count.
+  same weighted calculation as `lifetime.xp`: the sum of
+  `10 × chore_weight_snapshot` over completed items, including optional items.
+  It is not `10 × completed_checklist_items` once weights differ from 1.
   Equal totals share a rank, and the next distinct total skips the occupied
   positions (competition ranking: 1, 1, 3). Entries are ordered by rank
   ascending, then case-insensitive display name and id, making the response
@@ -211,15 +225,12 @@ Field semantics:
 
 Themes map these facts in their presentation layer:
 
-- **Quest** uses `XP = 10 × lifetime.completed_checklist_items` and
-  `level = 1 + floor(XP / 500)`. Current-week XP is `10 ×
-  current_week.completed_checklist_items`; rank, player count, and XP gap to
-  first come from the order of `household.weekly_standings`.
-- **Sticker Club v2** multiplies `current_week.complete_days` by the
-  `chore_weight` snapshot from the current assignment to total stickers, and uses
-  `current_week.days` as its seven-slot week rail. Its weight-to-sticker mapping
-  is documented in [Sticker Club v2](themes.md#sticker-club-v2); it ignores
-  weekly standings.
+- **Quest** displays the precomputed `lifetime.xp` and `current_week.xp`
+  and uses `level = 1 + floor(XP / 500)`. Rank, player count, and XP gap to
+  first come from the weighted order of `household.weekly_standings`. The
+  mapping is documented in [the Quest mapping](themes.md#quest-xp-mapping).
+- **Sticker Club v2** uses `current_week.complete_days` as its sticker count and
+  `current_week.days` as its seven-slot week rail. It ignores weekly standings.
 
 A theme may read `household.xp_rankings` for the shared family-wide achievement
 rank; it is independent of the weekly standings order and of the child display

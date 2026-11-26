@@ -2,20 +2,15 @@
 
 Ranking is derived per request from persisted completion facts. It is never
 stored and it never changes the configured display order of children.
+
+Each member's XP is calculated by the Quest mapping in
+`chore_tracker.application.services.quest_rewards`; callers pass the computed
+`lifetime_xp` so this module stays a pure ordering step.
 """
 
 from __future__ import annotations
 
 from typing import Any
-
-# The application's existing total-XP calculation. Every completed checklist
-# item, required or optional, is worth ten XP; see the Quest theme mapping.
-XP_PER_COMPLETED_CHECKLIST_ITEM = 10
-
-
-def total_xp(completed_checklist_items: int) -> int:
-    """Return total XP for a count of completed checklist items."""
-    return completed_checklist_items * XP_PER_COMPLETED_CHECKLIST_ITEM
 
 
 def xp_rankings(members: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -31,7 +26,7 @@ def xp_rankings(members: list[dict[str, Any]]) -> list[dict[str, Any]]:
             {
                 "family_member_id": member["family_member_id"],
                 "display_name": member["display_name"],
-                "total_xp": total_xp(member["lifetime_completed_items"]),
+                "total_xp": member["lifetime_xp"],
             }
             for member in members
             if member["is_active"]

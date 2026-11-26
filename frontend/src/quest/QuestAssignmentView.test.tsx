@@ -12,6 +12,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
     timezone: "America/Denver",
     lifetime: {
       completed_checklist_items: 124,
+      xp: 1240,
       complete_days: 31,
       current_streak: 4,
     },
@@ -19,6 +20,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
       week_start: "2026-11-23",
       week_end: "2026-11-29",
       completed_checklist_items: 38,
+      xp: 380,
       complete_days: 3,
       days: [
         {
@@ -48,6 +50,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
           family_member_id: 3,
           display_name: "Riley",
           completed_checklist_items: 42,
+          xp: 420,
           complete_days: 5,
           current_streak: 5,
         },
@@ -55,6 +58,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
           family_member_id: 1,
           display_name: "Alex",
           completed_checklist_items: 38,
+          xp: 380,
           complete_days: 3,
           current_streak: 4,
         },
@@ -62,6 +66,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
           family_member_id: 4,
           display_name: "Avery",
           completed_checklist_items: 32,
+          xp: 320,
           complete_days: 2,
           current_streak: 2,
         },
@@ -69,6 +74,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
           family_member_id: 2,
           display_name: "Sam",
           completed_checklist_items: 24,
+          xp: 240,
           complete_days: 1,
           current_streak: 1,
         },
@@ -222,5 +228,18 @@ describe("Quest assignment view", () => {
     expect(screen.getByRole("checkbox", { name: "Sweep floor" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("scales today's XP chip by the chore weight", () => {
+    renderView({ assignment: assignment({ chore_weight: 3 }) });
+    expect(screen.getByText("+90 XP TODAY")).toBeInTheDocument();
+    cleanup();
+
+    renderView({ assignment: assignment({ chore_weight: 0 }) });
+    expect(screen.getByText("+0 XP TODAY")).toBeInTheDocument();
+    cleanup();
+
+    renderView({ assignment: assignment({ chore_weight: 1 }) });
+    expect(screen.getByText("+30 XP TODAY")).toBeInTheDocument();
   });
 });

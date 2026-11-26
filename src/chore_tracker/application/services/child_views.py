@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from chore_tracker.application.services.achievement_rankings import xp_rankings
+from chore_tracker.application.services.quest_rewards import xp_for_weighted_items
 
 
 class ChildViewError(Exception):
@@ -43,6 +44,15 @@ class CompletionDateOutsideAssignment(ChildViewError):
 class ChecklistItemNotFound(ChildViewError):
     status_code = 404
     detail = "Checklist item was not found in the weekly assignment"
+
+
+def _with_quest_xp(member: dict[str, Any]) -> dict[str, Any]:
+    """Attach Quest XP derived from the member's weighted completion facts."""
+    member["lifetime_xp"] = xp_for_weighted_items(member["lifetime_weighted_items"])
+    member["current_week_xp"] = xp_for_weighted_items(
+        member["current_week_weighted_items"]
+    )
+    return member
 
 
 class ChildViewsService:
@@ -123,10 +133,14 @@ class ChildViewsService:
         if not selected["is_active"]:
             raise FamilyMemberInactive
 
+        selected = _with_quest_xp(selected)
+        for member in result["members"]:
+            _with_quest_xp(member)
+
         active_members = [member for member in result["members"] if member["is_active"]]
         active_members.sort(
             key=lambda member: (
-                -member["current_week_completed_items"],
+                -member["current_week_xp"],
                 -member["current_streak"],
                 member["display_name"].casefold(),
                 member["family_member_id"],
@@ -148,6 +162,7 @@ class ChildViewsService:
             "timezone": timezone_name,
             "lifetime": {
                 "completed_checklist_items": selected["lifetime_completed_items"],
+                "xp": selected["lifetime_xp"],
                 "complete_days": selected["lifetime_complete_days"],
                 "current_streak": selected["current_streak"],
             },
@@ -155,6 +170,7 @@ class ChildViewsService:
                 "week_start": week_start.isoformat(),
                 "week_end": week_end.isoformat(),
                 "completed_checklist_items": selected["current_week_completed_items"],
+                "xp": selected["current_week_xp"],
                 "complete_days": selected["current_week_complete_days"],
                 "days": week_days,
             },
@@ -167,6 +183,7 @@ class ChildViewsService:
                         "completed_checklist_items": member[
                             "current_week_completed_items"
                         ],
+                        "xp": member["current_week_xp"],
                         "complete_days": member["current_week_complete_days"],
                         "current_streak": member["current_streak"],
                     }

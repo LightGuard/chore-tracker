@@ -1,7 +1,11 @@
 import type { CSSProperties } from "react";
 import { Alert, Button, Checkbox, Loader } from "reshaped";
 import type { ChecklistItem, CurrentAssignment, DerivedStats } from "../family/api";
-import { questLeaderboard, questLevelProgress } from "./presentation";
+import {
+  questLeaderboard,
+  questLevelProgress,
+  xpForObjectives,
+} from "./presentation";
 import type { DerivedStatsStatus } from "../family/useDerivedStats";
 
 const questDateFormatter = new Intl.DateTimeFormat("en", {
@@ -48,6 +52,7 @@ export function QuestAssignmentView({
     (item) => item.is_completed,
   ).length;
   const itemCount = assignment.checklist_items.length;
+  const todayXp = xpForObjectives(itemCount, assignment.chore_weight);
   const hasOptionalItems = assignment.checklist_items.some(
     (item) => !item.is_required,
   );
@@ -149,7 +154,7 @@ export function QuestAssignmentView({
           <p className="quest-description">{assignment.chore_description}</p>
         )}
         <div className="quest-meta">
-          <span className="quest-xp-chip">+{itemCount * 10} XP TODAY</span>
+          <span className="quest-xp-chip">+{todayXp} XP TODAY</span>
           <span>{level ? `${level.weeklyXp} XP THIS WEEK` : "WEEKLY XP --"}</span>
           <span>{itemCount} OBJECTIVES</span>
           <span>{completedCount} / {itemCount} CLEARED</span>
