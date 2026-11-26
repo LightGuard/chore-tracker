@@ -126,13 +126,15 @@ Quest reads `GET /family-members/{family_member_id}/derived-stats` after a child
 is selected and after each successful checklist change. The player HUD uses the
 precomputed `lifetime.xp` and `current_week.xp` for XP and level, the
 current-week days for the seven-day rail, the lifetime streak for the streak
-strip, and the weighted weekly standings order for rank, player count, and XP
-gap to first. A completed day shows the all-done "QUEST CLEAR" state; optional
-checklist items contribute XP when checked but never block completion. The
-shared payload also publishes `household.xp_rankings`, a family-wide
-achievement rank derived from weighted total XP that is independent of the
-weekly standings order and the child display order. Stats are never written by
-the theme.
+strip, and `household.xp_rankings` for the family-wide achievement rank. The
+player count is `household.active_players`. The XP gap to first is measured
+against the highest `total_xp`, so it stays on the same lifetime scale as the
+rank. Ranking uses weighted lifetime total XP and is independent of the weekly
+standings order and the child display order; children tied on total XP share a
+rank. The HUD labels the value `XP RANK` and the squad strip labels it
+`ACHIEVEMENT RANK` so it is not mistaken for display position. A completed day
+shows the all-done "QUEST CLEAR" state; optional checklist items contribute XP
+when checked but never block completion. Stats are never written by the theme.
 
 #### Quest XP mapping
 

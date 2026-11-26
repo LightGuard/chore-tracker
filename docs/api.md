@@ -226,9 +226,12 @@ Field semantics:
 Themes map these facts in their presentation layer:
 
 - **Quest** displays the precomputed `lifetime.xp` and `current_week.xp`
-  and uses `level = 1 + floor(XP / 500)`. Rank, player count, and XP gap to
-  first come from the weighted order of `household.weekly_standings`. The
-  mapping is documented in [the Quest mapping](themes.md#quest-xp-mapping).
+  and uses `level = 1 + floor(XP / 500)`. Achievement rank comes from
+  `household.xp_rankings`, the player count from
+  `household.active_players`, and the XP gap to first is measured against the
+  highest `total_xp`; `household.weekly_standings` no longer supplies the
+  rank. The mapping is documented in
+  [the Quest mapping](themes.md#quest-xp-mapping).
 - **Sticker Club v2** uses `current_week.complete_days` as its sticker count and
   `current_week.days` as its seven-slot week rail. It ignores weekly standings.
 

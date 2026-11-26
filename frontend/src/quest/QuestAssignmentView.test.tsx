@@ -160,7 +160,7 @@ function renderView(overrides: {
 afterEach(cleanup);
 
 describe("Quest assignment view", () => {
-  it("renders XP, level progress, streak, weekly days, and leaderboard gap", () => {
+  it("renders XP, level progress, streak, weekly days, and achievement rank", () => {
     renderView({});
 
     expect(screen.getByRole("heading", { name: "Kitchen" })).toBeInTheDocument();
@@ -168,8 +168,10 @@ describe("Quest assignment view", () => {
     expect(screen.getByText("380 XP THIS WEEK")).toBeInTheDocument();
     expect(screen.getByText("LVL 03")).toBeInTheDocument();
     expect(screen.getByText("4-DAY STREAK")).toBeInTheDocument();
-    expect(screen.getByText("40 XP TO #1")).toBeInTheDocument();
-    expect(screen.getByLabelText("Rank 2 of 4")).toHaveTextContent("#02");
+    expect(screen.getByText("XP RANK")).toBeInTheDocument();
+    expect(screen.getByText("ACHIEVEMENT RANK")).toBeInTheDocument();
+    expect(screen.getByText("YOU'RE #1")).toBeInTheDocument();
+    expect(screen.getByLabelText("XP rank 1 of 4")).toHaveTextContent("#01");
     expect(screen.getByRole("progressbar", { name: "Progress to next level" })).toHaveAttribute(
       "aria-valuenow",
       "240",
@@ -177,6 +179,105 @@ describe("Quest assignment view", () => {
     expect(screen.getByText(/3 \/ 7/)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Wipe counters" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Sweep floor" })).not.toBeChecked();
+  });
+
+  it("shows the family-wide achievement rank, not the weekly standings position", () => {
+    renderView({
+      stats: stats({
+        household: {
+          active_players: 4,
+          weekly_standings: [
+            {
+              family_member_id: 1,
+              display_name: "Alex",
+              completed_checklist_items: 42,
+              xp: 420,
+              complete_days: 5,
+              current_streak: 5,
+            },
+            {
+              family_member_id: 3,
+              display_name: "Riley",
+              completed_checklist_items: 38,
+              xp: 380,
+              complete_days: 3,
+              current_streak: 4,
+            },
+            {
+              family_member_id: 4,
+              display_name: "Avery",
+              completed_checklist_items: 32,
+              xp: 320,
+              complete_days: 2,
+              current_streak: 2,
+            },
+            {
+              family_member_id: 2,
+              display_name: "Sam",
+              completed_checklist_items: 24,
+              xp: 240,
+              complete_days: 1,
+              current_streak: 1,
+            },
+          ],
+          xp_rankings: [
+            {
+              family_member_id: 3,
+              display_name: "Riley",
+              total_xp: 1240,
+              rank: 1,
+            },
+            {
+              family_member_id: 4,
+              display_name: "Avery",
+              total_xp: 980,
+              rank: 2,
+            },
+            {
+              family_member_id: 1,
+              display_name: "Alex",
+              total_xp: 720,
+              rank: 3,
+            },
+            {
+              family_member_id: 2,
+              display_name: "Sam",
+              total_xp: 610,
+              rank: 4,
+            },
+          ],
+        },
+      }),
+    });
+
+    expect(screen.getByLabelText("XP rank 3 of 4")).toHaveTextContent("#03");
+    expect(screen.getByText("520 XP TO #1")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("XP rank 1 of 4"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows an unavailable gap when the selected child has no achievement rank", () => {
+    renderView({
+      stats: stats({
+        household: {
+          active_players: 2,
+          weekly_standings: [],
+          xp_rankings: [
+            {
+              family_member_id: 3,
+              display_name: "Riley",
+              total_xp: 240,
+              rank: 1,
+            },
+          ],
+        },
+      }),
+    });
+
+    expect(screen.getByLabelText("XP rank unknown of 2")).toHaveTextContent("#--");
+    expect(screen.getByText("RANK UNAVAILABLE")).toBeInTheDocument();
+    expect(screen.queryByText(/XP TO #1/)).not.toBeInTheDocument();
   });
 
   it("shows a clear, non-color-only all-done state and toggles objectives", () => {
@@ -193,7 +294,7 @@ describe("Quest assignment view", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("QUEST CLEAR");
     expect(screen.getByText(/Every objective is done today/)).toBeInTheDocument();
-    expect(screen.queryByText("SQUAD RANK")).toBeInTheDocument();
+    expect(screen.getByText("ACHIEVEMENT RANK")).toBeInTheDocument();
     expect(screen.queryByText(/shop|reward|season/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Sweep floor" }));

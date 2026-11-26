@@ -1,4 +1,4 @@
-import type { DerivedStats, DerivedStatsStanding } from "../family/api";
+import type { DerivedStats } from "../family/api";
 
 export const QUEST_XP_PER_ITEM_WEIGHT = 10;
 export const QUEST_XP_PER_LEVEL = 500;
@@ -16,7 +16,6 @@ export type QuestLeaderboard = {
   rank: number | null;
   playerCount: number;
   gapToFirstXp: number;
-  selected: DerivedStatsStanding | null;
 };
 
 export function xpForObjectives(itemCount: number, choreWeight: number): number {
@@ -42,20 +41,27 @@ export function questLevelProgress(stats: DerivedStats): QuestLevelProgress {
   };
 }
 
+/**
+ * Family-wide achievement rank from the shared `household.xp_rankings` value.
+ *
+ * The rank comes from each child's lifetime total XP, so it is independent of
+ * the weekly standings order and the configured display order. Children tied on
+ * total XP share a rank. The XP gap is measured against the highest lifetime
+ * total so it stays on the same scale as the rank.
+ */
 export function questLeaderboard(stats: DerivedStats): QuestLeaderboard {
-  const standings = stats.household.weekly_standings;
-  const selectedIndex = standings.findIndex(
-    (standing) => standing.family_member_id === stats.family_member_id,
+  const rankings = stats.household.xp_rankings;
+  const selected = rankings.find(
+    (ranking) => ranking.family_member_id === stats.family_member_id,
   );
-  const selected = selectedIndex === -1 ? null : standings[selectedIndex];
-  const leader = standings[0] ?? null;
-  const gapToFirstXp =
-    selected && leader ? Math.max(0, leader.xp - selected.xp) : 0;
+  const leadingXp = rankings.reduce(
+    (highest, ranking) => Math.max(highest, ranking.total_xp),
+    0,
+  );
 
   return {
-    rank: selectedIndex === -1 ? null : selectedIndex + 1,
+    rank: selected?.rank ?? null,
     playerCount: stats.household.active_players,
-    gapToFirstXp,
-    selected,
+    gapToFirstXp: selected ? Math.max(0, leadingXp - selected.total_xp) : 0,
   };
 }
