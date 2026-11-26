@@ -64,8 +64,13 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
   const [busyChoreId, setBusyChoreId] = useState<number | null>(null);
   const [pendingChore, setPendingChore] = useState<AvailableChore | null>(null);
   const claimInProgress = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (pendingChore) dialogRef.current?.focus();
+  }, [pendingChore]);
 
   const applyData = useCallback(
     (avail: ClaimableChores, claimed: ClaimedChores) => {
@@ -200,8 +205,24 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
       )}
 
       {pendingChore && (
-        <div className="chore-claim-dialog-backdrop">
-          <div className="chore-claim-dialog" role="dialog" aria-modal="true" aria-labelledby="claim-dialog-title" aria-describedby="claim-dialog-description">
+        <div
+          className="chore-claim-dialog-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setPendingChore(null);
+          }}
+        >
+          <div
+            ref={dialogRef}
+            className="chore-claim-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="claim-dialog-title"
+            aria-describedby="claim-dialog-description"
+            tabIndex={-1}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setPendingChore(null);
+            }}
+          >
             <Text as="h2" variant="headline-3" attributes={{ id: "claim-dialog-title" }}>
               Claim this extra chore?
             </Text>
