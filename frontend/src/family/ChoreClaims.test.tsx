@@ -232,6 +232,7 @@ describe("ChoreClaims", () => {
     renderClaims(onStatsChange);
 
     fireEvent.click(await screen.findByRole("button", { name: "Claim" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm claim" }));
 
     const message = await screen.findByText(/no longer available to claim/i);
     expect(message).toHaveTextContent("updated list");
