@@ -19,6 +19,10 @@ import {
   type ClaimedChores,
   type DailyChoreClaim,
 } from "./api";
+import {
+  DEFAULT_CLAIM_WEIGHT_LABEL,
+  type ClaimWeightLabel,
+} from "./claimsPresentation";
 
 const LOAD_ERROR =
   "We couldn't load the extra chores. Check your connection and try again.";
@@ -47,9 +51,18 @@ function formatClaimDate(value: string): string {
 type Props = {
   familyMemberId: number;
   onStatsChange?: () => void;
+  /**
+   * Theme-supplied wording for a chore's shared weight. Defaults to the
+   * neutral wording so the component stays usable without a theme.
+   */
+  weightLabel?: ClaimWeightLabel;
 };
 
-export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
+export function ChoreClaims({
+  familyMemberId,
+  onStatsChange,
+  weightLabel = DEFAULT_CLAIM_WEIGHT_LABEL,
+}: Props) {
   const headingId = useId();
   const availableHeadingId = useId();
   const claimedHeadingId = useId();
@@ -273,7 +286,7 @@ export function ChoreClaims({ familyMemberId, onStatsChange }: Props) {
                       )}
                       <View direction="row" gap={2} wrap align="center">
                         <Text variant="caption-1" color="neutral-faded">
-                          Weight {chore.weight}
+                          {weightLabel(chore.weight)}
                         </Text>
                         {chore.assigned_to !== null && (
                           <Text

@@ -177,6 +177,28 @@ same factor to today's potential XP in the assignment HUD; keep the two in step
 if the reward rate changes. The mapping is independent of the shared chore
 domain, which continues to store only the neutral 0–10 weight.
 
+### Wording for the shared weight
+
+The extra-chores area (`ChoreClaims`) is shared by every family theme, but the
+shared weight means different things per theme. The component therefore takes a
+`weightLabel` function instead of hardcoding one vocabulary, and
+`src/family/claimsPresentation.ts` resolves it from the active theme id:
+
+| Theme | Default wording for weight 2 |
+| --- | --- |
+| Homestead | `Weight 2` |
+| Quest | `Worth 20 XP` (the shared weight as one weighted objective) |
+| Sticker Club v2 | `Weight 2` |
+| Unknown or retired id | `Weight 2` |
+
+Quest's override reuses the existing `xpForObjectives` mapping rather than
+restating the factor, so it stays in step with the documented XP rule. Sticker
+Club keeps the neutral wording because a claimed chore does not mint stickers:
+sticker totals come only from complete days on the weekly assignment. Add an
+entry to `THEME_CLAIM_WEIGHT_LABELS` for a theme that needs its own wording;
+keep a new label presentation-only, and do not word it as a reward the theme
+does not actually award.
+
 The stats request is independent of the checklist. If it fails, the checklist
 remains usable and the HUD shows an actionable retry; switching children clears
 the previous child's stats before the new request resolves. Quest deliberately
