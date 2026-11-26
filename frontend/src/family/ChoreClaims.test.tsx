@@ -95,37 +95,41 @@ describe("ChoreClaims", () => {
     let claimedGets = 0;
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      const method = (init?.method ?? "GET").toUpperCase();
-      if (url.endsWith("/available-chores") && method === "GET") {
-        availableGets += 1;
-        return jsonResponse({
-          claim_date: "2026-11-25",
-          chores: availableGets === 1 ? [AVAILABLE_CHORE] : [],
-        });
-      }
-      if (url.endsWith("/claimed-chores") && method === "GET") {
-        claimedGets += 1;
-        return jsonResponse({
-          claim_date: "2026-11-25",
-          claims: claimedGets === 1 ? [] : [CLAIM],
-        });
-      }
-      if (url.endsWith("/claimed-chores") && method === "POST") {
-        return jsonResponse(CLAIM, 201);
-      }
-      return jsonResponse({ detail: "Not found" }, 404);
+        const url = String(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url.endsWith("/available-chores") && method === "GET") {
+          availableGets += 1;
+          return jsonResponse({
+            claim_date: "2026-11-25",
+            chores: availableGets === 1 ? [AVAILABLE_CHORE] : [],
+          });
+        }
+        if (url.endsWith("/claimed-chores") && method === "GET") {
+          claimedGets += 1;
+          return jsonResponse({
+            claim_date: "2026-11-25",
+            claims: claimedGets === 1 ? [] : [CLAIM],
+          });
+        }
+        if (url.endsWith("/claimed-chores") && method === "POST") {
+          return jsonResponse(CLAIM, 201);
+        }
+        return jsonResponse({ detail: "Not found" }, 404);
       },
     );
     vi.stubGlobal("fetch", fetchMock);
     const onStatsChange = vi.fn();
     renderClaims(onStatsChange);
+
     expect(await screen.findByText("Bathroom")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     expect(
       screen.getByRole("dialog", { name: "Claim this extra chore?" }),
     ).toHaveTextContent("Bathroom");
-    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+    expect(
+      fetchMock.mock.calls.some(([, init]) => init?.method === "POST"),
+    ).toBe(false);
+
     fireEvent.click(screen.getByRole("button", { name: "Confirm claim" }));
     await waitFor(() => {
       expect(
@@ -137,6 +141,7 @@ describe("ChoreClaims", () => {
         ),
       ).toBe(true);
     });
+
     const availableSection = screen.getByRole("region", {
       name: "Available today",
     });
@@ -147,49 +152,58 @@ describe("ChoreClaims", () => {
       await screen.findByText("No extra chores available right now."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).toBeNull();
+
     const claimedSection = screen.getByRole("region", {
       name: "Claimed today",
     });
     expect(within(claimedSection).getByText("Bathroom")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Mark done" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: "Mark done" }),
+    ).toBeInTheDocument();
     expect(availableGets).toBe(2);
     expect(claimedGets).toBe(2);
     expect(onStatsChange).toHaveBeenCalled();
   });
 
-  it("does not create a claim when the confirmation is canceled", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      const method = (init?.method ?? "GET").toUpperCase();
-      if (url.endsWith("/available-chores") && method === "GET") {
-        return jsonResponse({
-          claim_date: "2026-11-25",
-          chores: [AVAILABLE_CHORE],
-        });
-      }
-      if (url.endsWith("/claimed-chores") && method === "GET") {
-        return jsonResponse({ claim_date: "2026-11-25", claims: [] });
-      }
-      return jsonResponse({ detail: "Not found" }, 404);
-    });
+  it("does not create a claim when the confirmation is canceled or dismissed", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url.endsWith("/available-chores") && method === "GET") {
+          return jsonResponse({
+            claim_date: "2026-11-25",
+            chores: [AVAILABLE_CHORE],
+          });
+        }
+        if (url.endsWith("/claimed-chores") && method === "GET") {
+          return jsonResponse({ claim_date: "2026-11-25", claims: [] });
+        }
+        return jsonResponse({ detail: "Not found" }, 404);
+      },
+    );
     vi.stubGlobal("fetch", fetchMock);
     const { container } = renderClaims();
+
     fireEvent.click(await screen.findByRole("button", { name: "Claim" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).toBeNull();
+
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
+
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     const backdrop = container.querySelector(".chore-claim-dialog-backdrop");
     expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByRole("button", { name: "Claim" })).toBeInTheDocument();
-    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+    expect(
+      fetchMock.mock.calls.some(([, init]) => init?.method === "POST"),
+    ).toBe(false);
   });
-
   it("shows a friendly conflict message and refreshes both lists on 409", async () => {
     let availableGets = 0;
     const detail = "Chore has already been claimed for this day";
