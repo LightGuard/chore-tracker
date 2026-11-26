@@ -27,7 +27,9 @@ homelab Kubernetes cluster.
 - Manual weekly assignment generation for a selected week by an administrator,
   using the same deterministic rotation as the scheduled rollover.
 - One-day claims for chores the weekly rotation left unassigned, without
-  administrator approval and without changing the weekly schedule.
+  administrator approval and without changing the weekly schedule. From 20:00,
+  a child can also take over another child's unfinished chore for the day and
+  mark it done to earn its weight-derived XP.
 - Passkey-based administrator sign-in, first-run bootstrap, one additional
   administrator invitation, family-member management, and chore/checklist
   management with a reward-neutral chore weight.
