@@ -93,6 +93,11 @@ describe("weekly report history", () => {
     expect(link).toHaveAttribute("href", "/admin/reports/2026-11-16");
     expect(screen.getByText(/Mon, Nov 23, 2026/)).toBeInTheDocument();
     expect(screen.getByText(/Mon, Nov 16, 2026/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /mark reward/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Rewarded")).not.toBeInTheDocument();
+    expect(screen.queryByText("Not rewarded")).not.toBeInTheDocument();
   });
 
   it("shows a clear empty state when no reports have been generated", async () => {

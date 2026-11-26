@@ -240,7 +240,7 @@ generated or already existed, and lists the child/chore pairs for that week.
 1. Sign in at `/admin`.
 2. Open **Reports** (`/admin/reports`).
 3. Select a week to see the summary, each child's assigned chore, all seven
-   daily statuses, and weekly totals.
+   daily statuses, weekly totals, and each child's reward state.
 4. Use Previous/Next when a report has more than five entries.
 
 The report list is newest week first. An empty state means no report has been
@@ -252,20 +252,30 @@ every database backup.
 
 ### Record a report reward
 
-The reports API records that one child's reward for a reporting week has been
-given. The record is append-only and keeps the timestamp and the administrator
-identity; it never modifies the immutable report snapshot. Marking cannot be
-undone through the application, and the reports UI does not offer a reward
-control yet.
+Each child's row in a report detail view has a **Reward** column:
+
+- An unrewarded child shows **Not rewarded** with a **Mark rewarded** button.
+- Selecting the button records the reward and replaces the row state with
+  **Rewarded**, the recorded timestamp, and the administrator's email address.
+- Reloading the page or returning to the report shows the persisted state.
+
+The reward is tracked independently for each child and reporting week. The
+action is available only in the report detail view; the report history does not
+offer a list-level shortcut. Marking cannot be undone through the application,
+and the record is append-only: it keeps the timestamp and administrator identity
+without modifying the immutable report snapshot. If a request fails, a
+child-specific alert leaves the row **Not rewarded**; if the session has
+expired, the administrator is signed out instead and no reward is recorded.
+
+The corresponding API request has no body and is idempotent: repeating it
+returns the original audit record instead of creating a conflicting duplicate.
 
 ```http
 PUT /reports/{week_start}/entries/{entry_id}/reward
 ```
 
-The request has no body and is idempotent: repeating it returns the original
-audit record instead of creating a conflicting duplicate. See
-[API](api.md#mark-a-report-entry-rewarded) for payloads, status codes, and audit
-details.
+See [API](api.md#mark-a-report-entry-rewarded) for payloads, status codes, and
+audit details.
 
 ### Inspect persisted reports from the database
 

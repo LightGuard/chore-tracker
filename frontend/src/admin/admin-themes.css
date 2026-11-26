@@ -868,6 +868,28 @@
   color: var(--q-faint);
 }
 
+.theme-quest .report-reward-pill.rewarded {
+  background: rgba(201, 244, 93, 0.08);
+  color: var(--q-lime);
+}
+
+.theme-quest .report-reward-pill.pending {
+  background: #18222c;
+  color: var(--q-faint);
+}
+
+.theme-quest .report-reward-audit {
+  color: var(--q-faint);
+}
+
+.theme-quest .report-reward-audit time {
+  color: var(--q-ink);
+}
+
+.theme-quest .report-reward-notice {
+  color: var(--q-lime);
+}
+
 .theme-quest .report-link-button {
   border-color: var(--q-line-bright);
   background: var(--q-panel);

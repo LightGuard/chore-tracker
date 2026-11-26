@@ -10,7 +10,11 @@ import { Reshaped } from "reshaped";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReportDetail } from "./ReportDetail";
-import type { WeeklyReportDay, WeeklyReportEntry } from "./api";
+import type {
+  WeeklyReportDay,
+  WeeklyReportEntry,
+  WeeklyReportReward,
+} from "./api";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -119,6 +123,24 @@ const reportHeader = {
     incomplete_days: 21,
   },
 };
+
+const ALEX_REWARD: WeeklyReportReward = {
+  rewarded_at: "2026-11-26T15:30:00Z",
+  rewarded_by: {
+    administrator_id: 1,
+    email: "admin@example.test",
+  },
+};
+
+function reportResponse(reportEntries: WeeklyReportEntry[]) {
+  return jsonResponse({
+    ...reportHeader,
+    entries: reportEntries,
+    total: reportEntries.length,
+    limit: 5,
+    offset: 0,
+  });
+}
 
 function renderDetail(onSessionExpired = vi.fn()) {
   return render(
@@ -249,6 +271,149 @@ describe("weekly report detail", () => {
     const onSessionExpired = vi.fn();
 
     renderDetail(onSessionExpired);
+
+    await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
+  });
+
+  it("marks an entry rewarded and shows the persisted audit details", async () => {
+    const fetchMock = installFetch((_url, init) => {
+      if (init?.method === "PUT") return jsonResponse(ALEX_REWARD);
+      return reportResponse(entries.slice(0, 5));
+    });
+
+    renderDetail();
+
+    const table = await screen.findByRole("table", {
+      name: "Report entries for Nov 16 – 22, 2026",
+    });
+    const alex = within(table).getByRole("row", {
+      name: "Report entry for Alex",
+    });
+    expect(within(alex).getByText("Not rewarded")).toBeInTheDocument();
+
+    fireEvent.click(
+      within(alex).getByRole("button", { name: "Mark reward for Alex" }),
+    );
+
+    await waitFor(() =>
+      expect(within(alex).getByText("Rewarded")).toBeInTheDocument(),
+    );
+    expect(
+      within(alex).queryByRole("button", { name: "Mark reward for Alex" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(alex).getByText("admin@example.test", { exact: false }),
+    ).toBeInTheDocument();
+    const rewardedAt = alex.querySelector("time");
+    expect(rewardedAt?.getAttribute("datetime")).toBe(
+      ALEX_REWARD.rewarded_at,
+    );
+
+    const putCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PUT",
+    );
+    expect(String(putCall?.[0])).toContain(
+      "/reports/2026-11-16/entries/1/reward",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Alex's reward was recorded.",
+    );
+    const jordan = within(table).getByRole("row", {
+      name: "Report entry for Jordan",
+    });
+    expect(within(jordan).getByText("Not rewarded")).toBeInTheDocument();
+  });
+
+  it("shows a persisted reward without offering the action again", async () => {
+    installFetch(() =>
+      reportResponse(
+        entries
+          .slice(0, 5)
+          .map((entry) =>
+            entry.id === 1 ? { ...entry, reward: ALEX_REWARD } : entry,
+          ),
+      ),
+    );
+
+    renderDetail();
+
+    const table = await screen.findByRole("table", {
+      name: "Report entries for Nov 16 – 22, 2026",
+    });
+    const alex = within(table).getByRole("row", {
+      name: "Report entry for Alex",
+    });
+    expect(within(alex).getByText("Rewarded")).toBeInTheDocument();
+    expect(
+      within(alex).getByText("admin@example.test", { exact: false }),
+    ).toBeInTheDocument();
+    expect(
+      within(alex).queryByRole("button", { name: "Mark reward for Alex" }),
+    ).not.toBeInTheDocument();
+    const sam = within(table).getByRole("row", {
+      name: "Report entry for Sam",
+    });
+    expect(
+      within(sam).getByRole("button", { name: "Mark reward for Sam" }),
+    ).toBeInTheDocument();
+  });
+
+  it("communicates a reward API failure without showing a false success", async () => {
+    installFetch((_url, init) => {
+      if (init?.method === "PUT") {
+        return jsonResponse(
+          { detail: "Weekly report entry was not found" },
+          404,
+        );
+      }
+      return reportResponse(entries.slice(0, 5));
+    });
+
+    renderDetail();
+
+    const table = await screen.findByRole("table", {
+      name: "Report entries for Nov 16 – 22, 2026",
+    });
+    const alex = within(table).getByRole("row", {
+      name: "Report entry for Alex",
+    });
+    fireEvent.click(
+      within(alex).getByRole("button", { name: "Mark reward for Alex" }),
+    );
+
+    expect(
+      await screen.findByText("Couldn't record Alex's reward"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Weekly report entry was not found"),
+    ).toBeInTheDocument();
+    expect(within(alex).getByText("Not rewarded")).toBeInTheDocument();
+    expect(within(alex).queryByText("Rewarded")).not.toBeInTheDocument();
+    expect(
+      within(alex).getByRole("button", { name: "Mark reward for Alex" }),
+    ).toBeEnabled();
+  });
+
+  it("expires the session when marking a reward is unauthorized", async () => {
+    installFetch((_url, init) => {
+      if (init?.method === "PUT") {
+        return jsonResponse({ detail: "Authentication required" }, 401);
+      }
+      return reportResponse(entries.slice(0, 5));
+    });
+    const onSessionExpired = vi.fn();
+
+    renderDetail(onSessionExpired);
+
+    const table = await screen.findByRole("table", {
+      name: "Report entries for Nov 16 – 22, 2026",
+    });
+    const alex = within(table).getByRole("row", {
+      name: "Report entry for Alex",
+    });
+    fireEvent.click(
+      within(alex).getByRole("button", { name: "Mark reward for Alex" }),
+    );
 
     await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
   });

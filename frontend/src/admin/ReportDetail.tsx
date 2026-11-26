@@ -5,12 +5,14 @@ import { ApiError } from "../api/client";
 import {
   getReport,
   isUnauthorized,
+  markReportEntryRewarded,
   type WeeklyReportDetail,
   type WeeklyReportEntry,
 } from "./api";
 import {
   formatGeneratedAt,
   formatReportWeekday,
+  formatRewardTimestamp,
   formatWeekRange,
   fromLocalDate,
   reportCompletionPercent,
@@ -19,6 +21,13 @@ import {
 const PAGE_SIZE = 5;
 const LOAD_ERROR =
   "We couldn't load this weekly report. Check your connection and try again.";
+const REWARD_ERROR =
+  "We couldn't record that reward. Check your connection and try again.";
+
+type RewardError = {
+  entryName: string;
+  message: string;
+};
 
 type LoadStatus = "loading" | "ready" | "missing" | "error";
 
@@ -49,12 +58,19 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
   const [offset, setOffset] = useState(0);
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [error, setError] = useState("");
+  const [rewardError, setRewardError] = useState<RewardError | null>(null);
+  const [rewardNotice, setRewardNotice] = useState("");
+  const [savingRewardEntryId, setSavingRewardEntryId] = useState<number | null>(
+    null,
+  );
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     setStatus("loading");
     setError("");
+    setRewardError(null);
+    setRewardNotice("");
 
     getReport(weekStart, {
       limit: PAGE_SIZE,
@@ -83,6 +99,44 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
 
     return () => controller.abort();
   }, [onSessionExpired, offset, reloadKey, weekStart]);
+
+  const markRewarded = async (entry: WeeklyReportEntry) => {
+    if (report === null) return;
+    setSavingRewardEntryId(entry.id);
+    setRewardError(null);
+    setRewardNotice("");
+    try {
+      const reward = await markReportEntryRewarded(
+        report.week_start,
+        entry.id,
+      );
+      setReport((current) =>
+        current === null
+          ? current
+          : {
+              ...current,
+              entries: current.entries.map((item) =>
+                item.id === entry.id ? { ...item, reward } : item,
+              ),
+            },
+      );
+      setRewardNotice(`${entry.family_member_name}'s reward was recorded.`);
+    } catch (reason: unknown) {
+      if (isUnauthorized(reason)) {
+        onSessionExpired();
+        return;
+      }
+      setRewardError({
+        entryName: entry.family_member_name,
+        message:
+          reason instanceof ApiError && reason.message
+            ? reason.message
+            : REWARD_ERROR,
+      });
+    } finally {
+      setSavingRewardEntryId(null);
+    }
+  };
 
   const weekLabel = report
     ? formatWeekRange(report.week_start, report.week_end)
@@ -227,6 +281,21 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
               />
             </div>
 
+            {rewardError && (
+              <Alert
+                color="critical"
+                title={`Couldn't record ${rewardError.entryName}'s reward`}
+              >
+                {rewardError.message}
+              </Alert>
+            )}
+
+            {rewardNotice && (
+              <p className="report-reward-notice" role="status">
+                {rewardNotice}
+              </p>
+            )}
+
             {report.total === 0 ? (
               <Alert color="neutral" title="This report has no entries">
                 No child had an assignment recorded for this week.
@@ -252,6 +321,7 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
                           </th>
                         ))}
                         <th scope="col">Week</th>
+                        <th scope="col">Reward</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -299,6 +369,49 @@ export function ReportDetail({ weekStart, onSessionExpired }: Props) {
                             >
                               {entryStatusLabel(entry)}
                             </span>
+                          </td>
+                          <td className="report-reward-cell">
+                            {entry.reward ? (
+                              <>
+                                <span className="report-reward-pill rewarded">
+                                  Rewarded
+                                </span>
+                                <span className="report-reward-audit">
+                                  <time
+                                    dateTime={entry.reward.rewarded_at}
+                                  >
+                                    {formatRewardTimestamp(
+                                      entry.reward.rewarded_at,
+                                    )}
+                                  </time>
+                                  <span>
+                                    by {entry.reward.rewarded_by.email}
+                                  </span>
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="report-reward-pill pending">
+                                  Not rewarded
+                                </span>
+                                <Button
+                                  size="small"
+                                  variant="outline"
+                                  disabled={savingRewardEntryId === entry.id}
+                                  attributes={{
+                                    "aria-label":
+                                      savingRewardEntryId === entry.id
+                                        ? `Saving reward for ${entry.family_member_name}`
+                                        : `Mark reward for ${entry.family_member_name}`,
+                                  }}
+                                  onClick={() => void markRewarded(entry)}
+                                >
+                                  {savingRewardEntryId === entry.id
+                                    ? "Saving…"
+                                    : "Mark rewarded"}
+                                </Button>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}

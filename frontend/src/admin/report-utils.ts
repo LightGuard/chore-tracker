@@ -3,7 +3,7 @@ const monthFormatter = new Intl.DateTimeFormat("en", {
   timeZone: "UTC",
 });
 
-const generatedFormatter = new Intl.DateTimeFormat("en", {
+const timestampFormatter = new Intl.DateTimeFormat("en", {
   weekday: "short",
   month: "short",
   day: "numeric",
@@ -41,7 +41,11 @@ export function formatReportWeekday(value: string): string {
 }
 
 export function formatGeneratedAt(value: string): string {
-  return generatedFormatter.format(new Date(value));
+  return timestampFormatter.format(new Date(value));
+}
+
+export function formatRewardTimestamp(value: string): string {
+  return formatGeneratedAt(value);
 }
 
 export function reportCompletionPercent(completed: number, total: number): number {
