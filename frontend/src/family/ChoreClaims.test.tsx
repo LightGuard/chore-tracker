@@ -160,13 +160,14 @@ describe("ChoreClaims", () => {
   it("does not create a claim when the confirmation is canceled", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/available-chores")) {
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (url.endsWith("/available-chores") && method === "GET") {
         return jsonResponse({
           claim_date: "2026-11-25",
           chores: [AVAILABLE_CHORE],
         });
       }
-      if (url.endsWith("/claimed-chores")) {
+      if (url.endsWith("/claimed-chores") && method === "GET") {
         return jsonResponse({ claim_date: "2026-11-25", claims: [] });
       }
       return jsonResponse({ detail: "Not found" }, 404);
