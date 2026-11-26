@@ -46,6 +46,26 @@ class ChecklistItemNotFound(ChildViewError):
     detail = "Checklist item was not found in the weekly assignment"
 
 
+class ChoreNotFound(ChildViewError):
+    status_code = 404
+    detail = "Chore was not found"
+
+
+class ChoreInactive(ChildViewError):
+    status_code = 409
+    detail = "Chore is not active"
+
+
+class ChoreAlreadyAssigned(ChildViewError):
+    status_code = 409
+    detail = "Chore is already assigned for this week"
+
+
+class ChoreAlreadyClaimed(ChildViewError):
+    status_code = 409
+    detail = "Chore has already been claimed for this day"
+
+
 def _with_quest_xp(member: dict[str, Any]) -> dict[str, Any]:
     """Attach Quest XP derived from the member's weighted completion facts."""
     member["lifetime_xp"] = xp_for_weighted_items(member["lifetime_weighted_items"])
@@ -91,6 +111,42 @@ class ChildViewsService:
         if result.get("date_outside_assignment"):
             raise CompletionDateOutsideAssignment
         return result["completion"]
+
+    def list_claimable_chores(
+        self, family_member_id: int, today: date
+    ) -> dict[str, Any]:
+        result = self._persistence.list_claimable_chores(family_member_id, today)
+        if result is None:
+            raise FamilyMemberNotFound
+        if result.get("inactive"):
+            raise FamilyMemberInactive
+        return result
+
+    def list_claimed_chores(self, family_member_id: int, today: date) -> dict[str, Any]:
+        result = self._persistence.list_claimed_chores(family_member_id, today)
+        if result is None:
+            raise FamilyMemberNotFound
+        if result.get("inactive"):
+            raise FamilyMemberInactive
+        return result
+
+    def claim_chore(
+        self, family_member_id: int, chore_id: int, today: date
+    ) -> dict[str, Any]:
+        result = self._persistence.claim_chore(family_member_id, chore_id, today)
+        if result is None:
+            raise FamilyMemberNotFound
+        if result.get("inactive"):
+            raise FamilyMemberInactive
+        if result.get("chore_missing"):
+            raise ChoreNotFound
+        if result.get("chore_inactive"):
+            raise ChoreInactive
+        if result.get("assignment_exists"):
+            raise ChoreAlreadyAssigned
+        if result.get("claim_exists"):
+            raise ChoreAlreadyClaimed
+        return result["claim"]
 
     def update_assignment_checklist_completion(
         self,

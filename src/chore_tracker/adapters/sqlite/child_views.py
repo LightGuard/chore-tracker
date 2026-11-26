@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -82,6 +83,163 @@ class SQLiteChildViewsPersistence:
                 "is_complete": bool(items)
                 and all(item["is_completed"] for item in items if item["is_required"]),
             }
+
+    @staticmethod
+    def _member_status(connection, family_member_id: int) -> str | None:
+        member = connection.execute(
+            "SELECT is_active FROM family_members WHERE id = ?",
+            (family_member_id,),
+        ).fetchone()
+        if member is None:
+            return None
+        return "active" if member["is_active"] else "inactive"
+
+    @staticmethod
+    def _claim(row) -> dict[str, Any]:
+        return {
+            "id": row["id"],
+            "family_member_id": row["family_member_id"],
+            "chore_id": row["chore_id"],
+            "claim_date": date.fromisoformat(row["claim_date"]),
+            "week_start": date.fromisoformat(row["week_start"]),
+            "week_end": date.fromisoformat(row["week_end"]),
+            "chore_name": row["chore_name_snapshot"],
+            "chore_description": row["chore_description_snapshot"],
+            "chore_weight": row["chore_weight_snapshot"],
+            "claimed_at": row["claimed_at"],
+        }
+
+    def list_claimable_chores(
+        self, family_member_id: int, day: date
+    ) -> dict[str, Any] | None:
+        """Return active chores left unassigned and unclaimed for one date."""
+        week_start = day - timedelta(days=day.weekday())
+        with transaction(self._database_path) as connection:
+            status = self._member_status(connection, family_member_id)
+            if status is None:
+                return None
+            if status == "inactive":
+                return {"inactive": True}
+            rows = connection.execute(
+                """SELECT chore.id, chore.name, chore.description, chore.weight
+                   FROM chores AS chore
+                   WHERE chore.is_active = 1
+                     AND NOT EXISTS (
+                       SELECT 1 FROM weekly_assignments AS assignment
+                       WHERE assignment.chore_id = chore.id
+                         AND assignment.week_start = ?
+                     )
+                     AND NOT EXISTS (
+                       SELECT 1 FROM daily_chore_claims AS claim
+                       WHERE claim.chore_id = chore.id
+                         AND claim.claim_date = ?
+                     )
+                   ORDER BY chore.name COLLATE NOCASE, chore.id""",
+                (week_start.isoformat(), day.isoformat()),
+            ).fetchall()
+            return {
+                "claim_date": day,
+                "chores": [dict(row) for row in rows],
+            }
+
+    def list_claimed_chores(
+        self, family_member_id: int, day: date
+    ) -> dict[str, Any] | None:
+        """Return one date's one-day chore claims for one child."""
+        with transaction(self._database_path) as connection:
+            status = self._member_status(connection, family_member_id)
+            if status is None:
+                return None
+            if status == "inactive":
+                return {"inactive": True}
+            rows = connection.execute(
+                """SELECT id, family_member_id, chore_id, claim_date, week_start,
+                          week_end, chore_name_snapshot,
+                          chore_description_snapshot, chore_weight_snapshot,
+                          claimed_at
+                   FROM daily_chore_claims
+                   WHERE family_member_id = ? AND claim_date = ?
+                   ORDER BY claimed_at, id""",
+                (family_member_id, day.isoformat()),
+            ).fetchall()
+            return {
+                "claim_date": day,
+                "claims": [self._claim(row) for row in rows],
+            }
+
+    def claim_chore(
+        self, family_member_id: int, chore_id: int, day: date
+    ) -> dict[str, Any] | None:
+        """Claim one unassigned chore for one child and one local date."""
+        week_start = day - timedelta(days=day.weekday())
+        week_end = week_start + timedelta(days=6)
+        with transaction(self._database_path) as connection:
+            # Serialize competing claims before checking availability.
+            connection.execute("BEGIN IMMEDIATE")
+            status = self._member_status(connection, family_member_id)
+            if status is None:
+                return None
+            if status == "inactive":
+                return {"inactive": True}
+            chore = connection.execute(
+                """SELECT name, description, weight, is_active
+                   FROM chores WHERE id = ?""",
+                (chore_id,),
+            ).fetchone()
+            if chore is None:
+                return {"chore_missing": True}
+            if not chore["is_active"]:
+                return {"chore_inactive": True}
+            assigned = connection.execute(
+                """SELECT 1 FROM weekly_assignments
+                   WHERE chore_id = ? AND week_start = ?""",
+                (chore_id, week_start.isoformat()),
+            ).fetchone()
+            if assigned is not None:
+                return {"assignment_exists": True}
+            existing = connection.execute(
+                """SELECT 1 FROM daily_chore_claims
+                   WHERE chore_id = ? AND claim_date = ?""",
+                (chore_id, day.isoformat()),
+            ).fetchone()
+            if existing is not None:
+                return {"claim_exists": True}
+            try:
+                claim_id = connection.execute(
+                    """INSERT INTO daily_chore_claims
+                       (family_member_id, chore_id, claim_date, week_start,
+                        week_end, chore_name_snapshot,
+                        chore_description_snapshot, chore_weight_snapshot)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        family_member_id,
+                        chore_id,
+                        day.isoformat(),
+                        week_start.isoformat(),
+                        week_end.isoformat(),
+                        chore["name"],
+                        chore["description"],
+                        chore["weight"],
+                    ),
+                ).lastrowid
+            except sqlite3.IntegrityError:
+                raced = connection.execute(
+                    """SELECT 1 FROM daily_chore_claims
+                       WHERE chore_id = ? AND claim_date = ?""",
+                    (chore_id, day.isoformat()),
+                ).fetchone()
+                if raced is not None:
+                    return {"claim_exists": True}
+                raise
+            row = connection.execute(
+                """SELECT id, family_member_id, chore_id, claim_date, week_start,
+                          week_end, chore_name_snapshot,
+                          chore_description_snapshot, chore_weight_snapshot,
+                          claimed_at
+                   FROM daily_chore_claims WHERE id = ?""",
+                (claim_id,),
+            ).fetchone()
+            return {"claim": self._claim(row)}
 
     def _assignment_for_date(self, connection, family_member_id, assignment_id, day):
         member = connection.execute(

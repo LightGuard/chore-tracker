@@ -342,10 +342,10 @@ sqlite3 ./data/chore-tracker.db "
 
 These queries are read-only. Do not update or delete rows in
 `weekly_assignments`, `assignment_checklist_items`,
-`daily_checklist_completions`, `weekly_reports`, `weekly_report_entries`,
-`weekly_report_days`, or `weekly_report_rewards`; triggers and application
-contracts assume they are immutable. Do not delete the rollover checkpoint to
-force a rerun.
+`daily_checklist_completions`, `daily_chore_claims`, `weekly_reports`,
+`weekly_report_entries`, `weekly_report_days`, or
+`weekly_report_rewards`; triggers and application contracts assume they are
+immutable. Do not delete the rollover checkpoint to force a rerun.
 
 ## Recovering a missed or failed rollover
 

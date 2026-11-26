@@ -85,6 +85,17 @@ The next week's plan uses the then-current active members and chores, ordered by
 the rules above, and the same original rotation anchor. Existing assignments
 must be retained rather than replaced when a week is already generated.
 
+## One-day claims
+
+A child can claim an active chore that the rotation did not assign for the
+current Monday-Sunday week, for the current local date only. A claim creates an
+immutable one-day record outside `weekly_assignments`; it never adds, replaces,
+or regenerates a weekly assignment and never moves the rotation anchor.
+Availability is evaluated per local date, so a claimed chore is no longer
+available for that date but can be claimed again on a later date while it
+remains unassigned for the week. A chore already named by a weekly assignment
+for the week is not claimable through this path.
+
 ## Implementation boundary
 
 The plan_weekly_assignments function is a pure planning function. It does not

@@ -7,7 +7,7 @@ from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(prefix="/family-members", tags=["child views"])
 
@@ -141,6 +141,111 @@ def get_current_assignment(family_member_id: int, request: Request) -> dict[str,
     return _invoke(
         lambda: _service(request).get_current_assignment(
             family_member_id, _today(request)
+        )
+    )
+
+
+class AvailableChore(BaseModel):
+    """One unassigned chore a child can claim for the current day."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: int
+    name: str
+    description: str
+    weight: int
+
+
+class ClaimableChores(BaseModel):
+    """The chores available to one child for one local date."""
+
+    model_config = ConfigDict(extra="forbid")
+    claim_date: date
+    chores: list[AvailableChore]
+
+
+class ChoreClaimRequest(BaseModel):
+    """The chore a child asks to claim; the profile comes from the path."""
+
+    model_config = ConfigDict(extra="forbid")
+    chore_id: int = Field(gt=0)
+
+
+class DailyChoreClaim(BaseModel):
+    """One immutable one-day assignment created by a child's claim."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: int
+    family_member_id: int
+    chore_id: int
+    claim_date: date
+    week_start: date
+    week_end: date
+    chore_name: str
+    chore_description: str
+    chore_weight: int
+    claimed_at: datetime
+
+
+class ClaimedChores(BaseModel):
+    """The one-day claims a child holds for one local date."""
+
+    model_config = ConfigDict(extra="forbid")
+    claim_date: date
+    claims: list[DailyChoreClaim]
+
+
+@router.get(
+    "/{family_member_id}/available-chores",
+    response_model=ClaimableChores,
+    responses={
+        404: {"description": "Family member was not found."},
+        409: {"description": "The selected family member is inactive."},
+    },
+    summary="List unassigned chores a child can claim for today",
+)
+def list_available_chores(family_member_id: int, request: Request) -> dict[str, Any]:
+    return _invoke(
+        lambda: _service(request).list_claimable_chores(
+            family_member_id, _today(request)
+        )
+    )
+
+
+@router.get(
+    "/{family_member_id}/claimed-chores",
+    response_model=ClaimedChores,
+    responses={
+        404: {"description": "Family member was not found."},
+        409: {"description": "The selected family member is inactive."},
+    },
+    summary="List a child's one-day chore claims for today",
+)
+def list_claimed_chores(family_member_id: int, request: Request) -> dict[str, Any]:
+    return _invoke(
+        lambda: _service(request).list_claimed_chores(family_member_id, _today(request))
+    )
+
+
+@router.post(
+    "/{family_member_id}/claimed-chores",
+    response_model=DailyChoreClaim,
+    status_code=201,
+    responses={
+        404: {"description": "Family member or chore was not found."},
+        409: {
+            "description": (
+                "The family member is inactive or the chore is no longer available."
+            )
+        },
+    },
+    summary="Claim an unassigned chore for today",
+)
+def claim_chore(
+    family_member_id: int, body: ChoreClaimRequest, request: Request
+) -> dict[str, Any]:
+    return _invoke(
+        lambda: _service(request).claim_chore(
+            family_member_id, body.chore_id, _today(request)
         )
     )
 

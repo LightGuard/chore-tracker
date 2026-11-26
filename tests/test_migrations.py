@@ -50,6 +50,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "weekly_report_days",
             "weekly_report_rewards",
             "weekly_rollover_state",
+            "daily_chore_claims",
             "report_deliveries",
             "administrator_passkey_credentials",
             "authentication_challenges",
@@ -60,7 +61,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0011_chore_weights"
+        assert revision == "0012_daily_chore_claims"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -1091,3 +1092,109 @@ def test_chore_weights_default_to_one_and_downgrade_removes_them(tmp_path) -> No
             connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
             == 1
         )
+
+
+def test_daily_chore_claims_are_unique_per_chore_day_and_immutable(tmp_path) -> None:
+    database_path = tmp_path / "chore-claims.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        connection.execute("INSERT INTO family_members (display_name) VALUES ('Alex')")
+        connection.execute("INSERT INTO family_members (display_name) VALUES ('Zoe')")
+        connection.execute(
+            "INSERT INTO chores (name, description, weight) VALUES ('Yard', 'Mow', 2)"
+        )
+        connection.execute(
+            """
+            INSERT INTO daily_chore_claims (
+                family_member_id, chore_id, claim_date, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot,
+                chore_weight_snapshot, claimed_at
+            )
+            VALUES (1, 1, '2026-11-25', '2026-11-23', '2026-11-29',
+                    'Yard', 'Mow', 2, '2026-11-25T10:00:00Z')
+            """
+        )
+
+        # The claim keeps its snapshot when the catalog changes later.
+        connection.execute(
+            "UPDATE chores SET name = 'Yard v2', weight = 5 WHERE id = 1"
+        )
+        claim = connection.execute(
+            """
+            SELECT chore_name_snapshot, chore_weight_snapshot,
+                   claim_date, week_start, week_end
+            FROM daily_chore_claims WHERE id = 1
+            """
+        ).fetchone()
+        assert dict(claim) == {
+            "chore_name_snapshot": "Yard",
+            "chore_weight_snapshot": 2,
+            "claim_date": "2026-11-25",
+            "week_start": "2026-11-23",
+            "week_end": "2026-11-29",
+        }
+
+        # Two children cannot hold the same chore on the same day.
+        try:
+            connection.execute(
+                """
+                INSERT INTO daily_chore_claims (
+                    family_member_id, chore_id, claim_date, week_start,
+                    week_end, chore_name_snapshot,
+                    chore_description_snapshot, chore_weight_snapshot,
+                    claimed_at
+                )
+                VALUES (2, 1, '2026-11-25', '2026-11-23', '2026-11-29',
+                        'Yard', 'Mow', 2, '2026-11-25T11:00:00Z')
+                """
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("a chore was claimed twice for one day")
+
+        for statement, expected in (
+            (
+                "UPDATE daily_chore_claims SET claim_date = '2026-11-26'",
+                "immutable",
+            ),
+            ("DELETE FROM daily_chore_claims", "cannot be deleted"),
+        ):
+            try:
+                connection.execute(statement)
+            except sqlite3.IntegrityError as error:
+                assert expected in str(error)
+            else:
+                raise AssertionError(f"claim mutation was allowed: {statement}")
+
+        # A claim must stay inside its Monday-Sunday week.
+        try:
+            connection.execute(
+                """
+                INSERT INTO daily_chore_claims (
+                    family_member_id, chore_id, claim_date, week_start,
+                    week_end, chore_name_snapshot,
+                    chore_description_snapshot, chore_weight_snapshot,
+                    claimed_at
+                )
+                VALUES (1, 1, '2026-12-01', '2026-11-23', '2026-11-29',
+                        'Yard', 'Mow', 2, '2026-11-25T12:00:00Z')
+                """
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("a claim outside its assignment week was accepted")
+
+    command.downgrade(config, "0011_chore_weights")
+
+    with read_connection(database_path) as connection:
+        tables = {
+            row["name"]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert "daily_chore_claims" not in tables
