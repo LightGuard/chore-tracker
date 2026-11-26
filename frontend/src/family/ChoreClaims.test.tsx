@@ -40,11 +40,37 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function renderClaims(onStatsChange: () => void = () => undefined) {
+function renderClaims(
+  onStatsChange: () => void = () => undefined,
+  weightLabel?: (weight: number) => string,
+) {
   return render(
     <Reshaped theme="slate">
-      <ChoreClaims familyMemberId={1} onStatsChange={onStatsChange} />
+      <ChoreClaims
+        familyMemberId={1}
+        onStatsChange={onStatsChange}
+        weightLabel={weightLabel}
+      />
     </Reshaped>,
+  );
+}
+
+function stubAvailableChores() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/available-chores")) {
+        return jsonResponse({
+          claim_date: "2026-11-25",
+          chores: [AVAILABLE_CHORE],
+        });
+      }
+      if (url.endsWith("/claimed-chores")) {
+        return jsonResponse({ claim_date: "2026-11-25", claims: [] });
+      }
+      return jsonResponse({ detail: "Not found" }, 404);
+    }),
   );
 }
 
@@ -314,6 +340,23 @@ describe("ChoreClaims", () => {
     expect(
       await screen.findByText("Sam's unfinished chore"),
     ).toBeInTheDocument();
+  });
+
+  it("uses the neutral weight wording by default", async () => {
+    stubAvailableChores();
+
+    renderClaims();
+
+    expect(await screen.findByText("Weight 2")).toBeInTheDocument();
+  });
+
+  it("lets a theme override the weight wording", async () => {
+    stubAvailableChores();
+
+    renderClaims(() => undefined, (weight) => `Worth ${weight * 10} XP`);
+
+    expect(await screen.findByText("Worth 20 XP")).toBeInTheDocument();
+    expect(screen.queryByText("Weight 2")).toBeNull();
   });
 
   it("shows a load error and retries", async () => {

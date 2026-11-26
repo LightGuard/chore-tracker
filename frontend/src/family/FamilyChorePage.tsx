@@ -41,6 +41,7 @@ import {
 import { useThemeCatalog } from "../theme/useThemeCatalog";
 import { FamilyCompletionHistory } from "./FamilyCompletionHistory";
 import { ChoreClaims } from "./ChoreClaims";
+import { claimWeightLabelFor } from "./claimsPresentation";
 import {
   getActiveFamilyMembers,
   getCurrentAssignment,
@@ -736,6 +737,7 @@ export function FamilyChorePage() {
                     <ChoreClaims
                       key={selectedMember.id}
                       familyMemberId={selectedMember.id}
+                      weightLabel={claimWeightLabelFor(themeId)}
                       onStatsChange={() =>
                         setStatsRefreshKey((value) => value + 1)
                       }
