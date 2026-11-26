@@ -252,6 +252,11 @@ class SQLiteChildViewsPersistence:
                          completion.completion_date,
                          SUM(completion.is_completed) AS completed_items,
                          SUM(
+                           CASE WHEN completion.is_completed = 1
+                                THEN assignment.chore_weight_snapshot
+                                ELSE 0 END
+                         ) AS completed_weight,
+                         SUM(
                            CASE WHEN item.is_required = 1
                                      AND completion.is_completed = 1
                                 THEN 1 ELSE 0 END
@@ -260,6 +265,8 @@ class SQLiteChildViewsPersistence:
                   FROM assignment_checklist_items AS item
                   JOIN daily_checklist_completions AS completion
                     ON completion.assignment_checklist_item_id = item.id
+                  JOIN weekly_assignments AS assignment
+                    ON assignment.id = item.weekly_assignment_id
                   WHERE item.weekly_assignment_id IN (
                     SELECT assignment_id FROM assignment_days
                   )
@@ -273,6 +280,8 @@ class SQLiteChildViewsPersistence:
                          COALESCE(required.required_items, 0) AS required_items,
                          COALESCE(completion.completed_items, 0)
                            AS completed_items,
+                         COALESCE(completion.completed_weight, 0)
+                           AS completed_weight,
                          COALESCE(completion.required_completed_items, 0)
                            AS required_completed_items,
                          CASE
@@ -351,6 +360,13 @@ class SQLiteChildViewsPersistence:
                        COALESCE(SUM(
                          CASE
                            WHEN fact.day BETWEEN :week_start AND :week_end
+                           THEN fact.completed_weight
+                           ELSE 0
+                         END
+                       ), 0) AS current_week_weighted_items,
+                       COALESCE(SUM(
+                         CASE
+                           WHEN fact.day BETWEEN :week_start AND :week_end
                             AND fact.is_complete = 1
                            THEN 1
                            ELSE 0
@@ -358,6 +374,8 @@ class SQLiteChildViewsPersistence:
                        ), 0) AS current_week_complete_days,
                        COALESCE(SUM(fact.completed_items), 0)
                          AS lifetime_completed_items,
+                       COALESCE(SUM(fact.completed_weight), 0)
+                         AS lifetime_weighted_items,
                        COALESCE(SUM(fact.is_complete), 0)
                          AS lifetime_complete_days,
                        COALESCE(streak.current_streak, 0)
