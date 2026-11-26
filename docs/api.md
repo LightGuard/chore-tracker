@@ -215,8 +215,11 @@ Themes map these facts in their presentation layer:
   `level = 1 + floor(XP / 500)`. Current-week XP is `10 ×
   current_week.completed_checklist_items`; rank, player count, and XP gap to
   first come from the order of `household.weekly_standings`.
-- **Sticker Club v2** uses `current_week.complete_days` as its sticker count and
-  `current_week.days` as its seven-slot week rail. It ignores weekly standings.
+- **Sticker Club v2** multiplies `current_week.complete_days` by the
+  `chore_weight` snapshot from the current assignment to total stickers, and uses
+  `current_week.days` as its seven-slot week rail. Its weight-to-sticker mapping
+  is documented in [Sticker Club v2](themes.md#sticker-club-v2); it ignores
+  weekly standings.
 
 A theme may read `household.xp_rankings` for the shared family-wide achievement
 rank; it is independent of the weekly standings order and of the child display
@@ -558,7 +561,8 @@ Every chore carries a reward-neutral weight:
   rewrites existing assignments, completion history, or reports.
 - The domain assigns no XP, stickers, or other rewards. Each consuming frontend
   is responsible for mapping the shared weight to its own reward system; this
-  domain only stores and returns the value.
+  domain only stores and returns the value. Sticker Club's mapping lives in
+  [Sticker Club v2](themes.md#sticker-club-v2).
 
 ## Administrator assignment-generation endpoints
 

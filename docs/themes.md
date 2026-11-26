@@ -147,28 +147,49 @@ has no reward jar or collectible inventory. The theme uses the shared header,
 child selector, theme picker, assignment/checklist writes, and completion
 history.
 
-The top bar always shows the current-week count as `N OF 7 STICKERS` with the
-assistive label `N of 7 this week`. The only source is
-`current_week.complete_days` from the generic derived-stat endpoint. A day is
-worth one sticker when every required checklist item for that immutable
-assignment day is complete; optional items never block the sticker. Incomplete
-and `not_recorded` days earn none. Checking the
-final item of today updates the seven-slot rail and count immediately from the
-successful assignment mutation, then reconciles with the derived endpoint. The
-count resets at the Monday boundary. `household.weekly_standings` is
-intentionally ignored: this is a personal sticker sheet, not a leaderboard.
+Sticker Club defines its own reward policy: a completed day mints one sticker
+per point of the assigned chore's weight. The top bar shows the weighted total
+as `N STICKERS THIS WEEK` with the assistive label `N stickers this week`.
+
+| Chore weight | Stickers per complete day |
+| --- | --- |
+| 0 | 0 |
+| 1 | 1 (baseline) |
+| 2 | 2 |
+| … | … |
+| 10 | 10 |
+
+The weight comes from the immutable `chore_weight` snapshot on
+`GET /family-members/{family_member_id}/current-assignment`, and the complete
+days come from `current_week.days` in the generic derived-stat endpoint.
+Sticker Club's weekly total is therefore `chore_weight × complete days` and
+ranges from 0 to 70. Weight 0 keeps the day's completion fact but mints no
+stickers; weight 1 keeps the original one-sticker-per-day behaviour. The
+mapping is Sticker Club's own policy, documented here rather than in the shared
+chore domain, and the same mapping feeds the header total, the seven-slot rail,
+and the all-done stamp. Sticker Club never writes the shared weight.
+
+A day earns stickers only when every required checklist item for that immutable
+assignment day is complete; optional items never block stickers. Incomplete and
+`not_recorded` days earn none. Checking the final item of today updates the
+seven-slot rail and total immediately from the successful assignment mutation,
+then reconciles with the derived endpoint. The total resets at the Monday
+boundary. `household.weekly_standings` is intentionally ignored: this is a
+personal sticker sheet, not a leaderboard.
 
 The seven-slot rail shows `DONE`, `PART`, or `—` in each slot so complete,
-incomplete, and not-recorded days are distinguishable without color; today
-receives an outline. The jobs live in a fixed-height scroll window with a
-visible position rail. The all-done state uses the stamp language
-`STICKER N OF 7`.
+incomplete, and not-recorded days are distinguishable without color; complete
+days also show the stickers they minted (`+N`) when the weight is above 0, and
+today receives an outline. The jobs live in a fixed-height scroll window with a
+visible position rail. The all-done stamp shows the weighted total as
+`N STICKERS` (or `N STICKER`), annotated with the per-finished-day rate when the
+weight is above 1; the aside reports completed days as `N of 7 days`.
 
-If the stats request fails, the assignment remains usable, the count shows a
-placeholder rather than zero, and an actionable retry is offered. Switching
-children clears the previous child's count before the new stats resolve. No
-sticker count, inventory, reward, or collectible data is persisted; only the
-existing theme preference is saved.
+If the stats or assignment request fails, the assignment remains usable, the
+total shows a placeholder rather than zero, and an actionable retry is offered.
+Switching children clears the previous child's total before the new stats
+resolve. No sticker count, inventory, reward, or collectible data is persisted;
+only the existing theme preference is saved.
 
 ### Administrator layouts
 

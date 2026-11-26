@@ -17,8 +17,10 @@ The scope is intentionally small. Read the MVP scope and known limitations in
 - Child-facing endpoints are unauthenticated by design.
 - SQLite is single-writer: one backend process, one replica.
 - Historical assignments, completions, and reports are immutable.
-- XP, currencies, and Sticker Club mappings are out of scope; the weekly-report
-  reward flag is an audit record, not a reward system.
+- XP, currencies, and reward economies are out of scope. Sticker Club maps the
+  shared chore weight to its own sticker total in presentation only (see
+  [Themes](docs/themes.md#sticker-club-v2)); the weekly-report reward flag is an
+  audit record, not a reward system.
 
 If your change would broaden any of these, open an issue first so the tradeoff is
 explicit.
