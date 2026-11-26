@@ -141,6 +141,9 @@ only that link to `NULL`; the snapshot label and completion rows remain.
 Completion rows are constrained to the assignment's Monday-Sunday week by
 database triggers. Reads do not create completion rows. A date with no saved
 row is `not_yet_recorded` in history and `not_recorded` in derived statistics.
+Derived statistics, including weekly standings and the family-wide XP ranking,
+are computed per request from these rows. They are never persisted and never
+rewrite display ordering.
 
 ### Weekly reports
 

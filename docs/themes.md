@@ -128,7 +128,10 @@ lifetime completed items to XP and level, current-week facts to weekly XP and
 the seven-day rail, the lifetime streak to the streak strip, and the weekly
 standings order to rank, player count, and XP gap to first. A completed day
 shows the all-done "QUEST CLEAR" state; optional checklist items contribute XP
-when checked but never block completion. Stats are never written by the theme.
+when checked but never block completion. The shared payload also publishes
+`household.xp_rankings`, a family-wide achievement rank derived from total XP
+that is independent of the weekly standings order and the child display order.
+Stats are never written by the theme.
 
 The stats request is independent of the checklist. If it fails, the checklist
 remains usable and the HUD shows an actionable retry; switching children clears

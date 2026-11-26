@@ -148,6 +148,20 @@ inactive profiles return HTTP 409, matching current-assignment behavior.
         "complete_days": 4,
         "current_streak": 2
       }
+    ],
+    "xp_rankings": [
+      {
+        "family_member_id": 1,
+        "display_name": "Alex",
+        "total_xp": 1240,
+        "rank": 1
+      },
+      {
+        "family_member_id": 2,
+        "display_name": "Sam",
+        "total_xp": 280,
+        "rank": 2
+      }
     ]
   }
 }
@@ -173,7 +187,19 @@ Field semantics:
   `complete` and later days remain `not_recorded`.
 - `household.weekly_standings` includes every active child, ordered by
   current-week completed items descending, current streak descending, then
-  case-insensitive display name ascending. It has no rank field.
+  case-insensitive display name ascending. It has no rank field; achievement
+  rank is a separate derived value.
+- `household.xp_rankings` includes every active child with their family-wide
+  achievement `rank` and the `total_xp` it is based on. `total_xp` uses the
+  application's existing total-XP calculation,
+  `10 × lifetime.completed_checklist_items`, so optional completed items count.
+  Equal totals share a rank, and the next distinct total skips the occupied
+  positions (competition ranking: 1, 1, 3). Entries are ordered by rank
+  ascending, then case-insensitive display name and id, making the response
+  deterministic; that tie order never changes the rank numbers. Ranking is
+  independent of the configured display order and of `weekly_standings`, and it
+  changes when lifetime XP totals change. It is computed per request, never
+  stored, and never rewrites ordering behavior.
 - Weekly values reset at the Monday boundary in the reporting timezone.
 
 Themes map these facts in their presentation layer:
@@ -185,7 +211,9 @@ Themes map these facts in their presentation layer:
 - **Sticker Club v2** uses `current_week.complete_days` as its sticker count and
   `current_week.days` as its seven-slot week rail. It ignores weekly standings.
 
-The themes never write derived data.
+A theme may read `household.xp_rankings` for the shared family-wide achievement
+rank; it is independent of the weekly standings order and of the child display
+order. The themes never write derived data.
 
 ### Get checklist completion for a date
 

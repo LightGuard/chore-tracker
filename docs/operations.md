@@ -520,8 +520,9 @@ the tested verification script, are in
   deliberate auditability property; recovery is retry- and backup-based.
 - **No email-based account recovery, no multi-family tenancy, no child
   identities.** These are out of scope for the MVP.
-- **Themes are presentation only.** XP, levels, streaks, stickers, and
-  standings are derived from completion facts and are not persisted game state.
+- **Themes are presentation only.** XP, levels, streaks, stickers, standings,
+  and the family-wide XP ranking are derived from completion facts and are not
+  persisted game state.
 
 ## Troubleshooting
 
