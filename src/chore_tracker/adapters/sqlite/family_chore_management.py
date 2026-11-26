@@ -30,7 +30,8 @@ class SQLiteFamilyChoreManagementPersistence:
     @staticmethod
     def _chore(connection, chore_id: int):
         row = connection.execute(
-            """SELECT id, name, description, is_active, created_at, updated_at
+            """SELECT id, name, description, weight, is_active, created_at,
+                      updated_at
                FROM chores WHERE id = ?""",
             (chore_id,),
         ).fetchone()
@@ -123,12 +124,12 @@ class SQLiteFamilyChoreManagementPersistence:
             ).fetchall()
             return [self._serialize_chore(connection, row["id"]) for row in ids]
 
-    def create_chore(self, name: str, description: str):
+    def create_chore(self, name: str, description: str, weight: int):
         with transaction(self._database_path) as connection:
             chore_id = connection.execute(
-                """INSERT INTO chores (name, description, is_active)
-                   VALUES (?, ?, 0)""",
-                (name, description),
+                """INSERT INTO chores (name, description, is_active, weight)
+                   VALUES (?, ?, 0, ?)""",
+                (name, description, weight),
             ).lastrowid
             if chore_id is None:
                 raise RuntimeError("The chore insert did not return an ID")

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
@@ -16,6 +17,7 @@ from chore_tracker.adapters.sqlite.family_chore_management import (
 )
 from chore_tracker.application.services.family_chore_management import (
     FamilyChoreManagementService,
+    ManagementError,
 )
 from chore_tracker.main import app
 
@@ -371,3 +373,79 @@ def test_checklist_items_can_be_created_and_updated_as_optional_or_required(
             "SELECT is_required FROM chore_checklist_items ORDER BY position, id"
         ).fetchall()
     assert [row["is_required"] for row in stored] == [1, 0]
+
+
+def test_chore_weight_defaults_validates_and_updates(tmp_path, monkeypatch):
+    client, _ = prepare_client(tmp_path, monkeypatch)
+    headers = admin_headers()
+
+    defaulted = client.post("/chores", json={"name": "Kitchen"}, headers=headers)
+    assert defaulted.status_code == 201
+    assert defaulted.json()["weight"] == 1
+
+    weighted = client.post(
+        "/chores", json={"name": "Yard", "weight": 7}, headers=headers
+    )
+    assert weighted.status_code == 201
+    assert weighted.json()["weight"] == 7
+    chore_id = weighted.json()["id"]
+
+    listed = {
+        chore["id"]: chore["weight"]
+        for chore in client.get("/chores", headers=headers).json()
+    }
+    assert listed == {defaulted.json()["id"]: 1, chore_id: 7}
+    assert client.get(f"/chores/{chore_id}", headers=headers).json()["weight"] == 7
+
+    ten = client.patch(f"/chores/{chore_id}", json={"weight": 10}, headers=headers)
+    assert ten.status_code == 200
+    assert ten.json()["weight"] == 10
+
+    zero = client.patch(f"/chores/{chore_id}", json={"weight": 0}, headers=headers)
+    assert zero.status_code == 200
+    assert zero.json()["weight"] == 0
+
+    renamed = client.patch(
+        f"/chores/{chore_id}", json={"name": "Yard work"}, headers=headers
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["weight"] == 0
+
+    for invalid in (-1, 11, "3", 2.5, True, None):
+        response = client.patch(
+            f"/chores/{chore_id}", json={"weight": invalid}, headers=headers
+        )
+        assert response.status_code == 422, invalid
+        assert client.get(f"/chores/{chore_id}", headers=headers).json()["weight"] == 0
+
+    for invalid in (-1, 11, "3", 2.5, True, None):
+        response = client.post(
+            "/chores",
+            json={"name": "Invalid weight", "weight": invalid},
+            headers=headers,
+        )
+        assert response.status_code == 422, invalid
+
+
+def test_service_validates_weight_for_direct_callers(tmp_path, monkeypatch):
+    _, database_path = prepare_client(tmp_path, monkeypatch)
+    service = FamilyChoreManagementService(
+        SQLiteFamilyChoreManagementPersistence(database_path)
+    )
+
+    for value in (0, 10):
+        chore = service.create_chore(f"Chore {value}", "", False, value)
+        assert chore["weight"] == value
+
+    for invalid in (-1, 11, 2.5, True, "3"):
+        with pytest.raises(ManagementError) as error:
+            service.create_chore("Invalid weight", "", False, invalid)
+        assert error.value.code == "invalid_weight"
+
+    chore = service.create_chore("Mutable weight", "", False)
+    assert chore["weight"] == 1
+    for invalid in (-1, 11, 2.5, True, "3"):
+        with pytest.raises(ManagementError) as error:
+            service.update_chore(chore["id"], {"weight": invalid})
+        assert error.value.code == "invalid_weight"
+    assert service.get_chore(chore["id"])["weight"] == 1

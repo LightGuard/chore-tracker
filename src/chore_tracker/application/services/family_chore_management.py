@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+CHORE_WEIGHT_MIN = 0
+CHORE_WEIGHT_MAX = 10
+DEFAULT_CHORE_WEIGHT = 1
+
 
 class ManagementError(Exception):
     """A management use case could not be completed."""
@@ -23,7 +27,9 @@ class ManagementPersistence(Protocol):
         self, family_member_id: int, changes: dict[str, Any]
     ) -> dict[str, Any] | None: ...
     def list_chores(self) -> list[dict[str, Any]]: ...
-    def create_chore(self, name: str, description: str) -> dict[str, Any]: ...
+    def create_chore(
+        self, name: str, description: str, weight: int
+    ) -> dict[str, Any]: ...
     def get_chore(self, chore_id: int) -> dict[str, Any] | None: ...
     def update_chore(
         self, chore_id: int, changes: dict[str, Any]
@@ -56,6 +62,20 @@ class FamilyChoreManagementService:
                 "value_too_long", f"{field} must be at most {maximum} characters"
             )
         return cleaned
+
+    @staticmethod
+    def _weight(value: Any) -> int:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or not CHORE_WEIGHT_MIN <= value <= CHORE_WEIGHT_MAX
+        ):
+            raise ManagementError(
+                "invalid_weight",
+                f"Weight must be a whole number between {CHORE_WEIGHT_MIN} "
+                f"and {CHORE_WEIGHT_MAX}",
+            )
+        return value
 
     @staticmethod
     def _changes(changes: dict[str, Any]) -> None:
@@ -100,15 +120,22 @@ class FamilyChoreManagementService:
         return self._persistence.list_chores()
 
     def create_chore(
-        self, name: str, description: str, is_active: bool
+        self,
+        name: str,
+        description: str,
+        is_active: bool,
+        weight: int = DEFAULT_CHORE_WEIGHT,
     ) -> dict[str, Any]:
         cleaned_name = self._clean(name, "Name", 200)
+        validated_weight = self._weight(weight)
         if is_active:
             raise ManagementError(
                 "chore_requires_checklist",
                 "A chore must have an active checklist item before it can be activated",
             )
-        return self._persistence.create_chore(cleaned_name, description.strip())
+        return self._persistence.create_chore(
+            cleaned_name, description.strip(), validated_weight
+        )
 
     def get_chore(self, chore_id: int) -> dict[str, Any]:
         chore = self._persistence.get_chore(chore_id)
@@ -122,6 +149,8 @@ class FamilyChoreManagementService:
             changes["name"] = self._clean(changes["name"], "Name", 200)
         if "description" in changes:
             changes["description"] = changes["description"].strip()
+        if "weight" in changes:
+            changes["weight"] = self._weight(changes["weight"])
         chore = self._persistence.update_chore(chore_id, changes)
         if chore is None:
             raise ManagementError("chore_missing", "Chore was not found")

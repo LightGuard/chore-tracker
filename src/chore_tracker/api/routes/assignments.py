@@ -40,6 +40,7 @@ class AssignmentSummary(BaseModel):
     family_member_name: str
     chore_id: int
     chore_name: str
+    chore_weight: int
     week_start: date
     week_end: date
 
@@ -65,6 +66,7 @@ def _summary(assignment: WeeklyAssignment) -> AssignmentSummary:
         family_member_name=assignment.family_member_name,
         chore_id=assignment.chore_id,
         chore_name=assignment.chore_name,
+        chore_weight=assignment.chore_weight,
         week_start=assignment.week_start,
         week_end=assignment.week_end,
     )

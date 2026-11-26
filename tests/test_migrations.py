@@ -60,7 +60,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0010_weekly_report_rewards"
+        assert revision == "0011_chore_weights"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -1000,5 +1000,94 @@ def test_weekly_report_rewards_are_unique_per_entry_and_removed_on_downgrade(
             connection.execute("SELECT COUNT(*) FROM weekly_report_entries").fetchone()[
                 0
             ]
+            == 1
+        )
+
+
+def test_chore_weights_default_to_one_and_downgrade_removes_them(tmp_path) -> None:
+    database_path = tmp_path / "chore-weights.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "0010_weekly_report_rewards")
+
+    with read_connection(database_path) as connection:
+        connection.execute("INSERT INTO family_members (display_name) VALUES ('Alex')")
+        connection.execute(
+            "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Clean')"
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot
+            )
+            VALUES (1, 1, '2026-11-16', '2026-11-22', 'Kitchen', 'Clean')
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        chore = connection.execute(
+            "SELECT name, weight FROM chores WHERE id = 1"
+        ).fetchone()
+        assignment = connection.execute(
+            "SELECT chore_weight_snapshot FROM weekly_assignments"
+        ).fetchone()
+        assert dict(chore) == {"name": "Kitchen", "weight": 1}
+        assert assignment["chore_weight_snapshot"] == 1
+
+        connection.execute("UPDATE chores SET weight = 10 WHERE id = 1")
+        try:
+            connection.execute(
+                "INSERT INTO chores (name, description, weight) "
+                "VALUES ('Too heavy', 'Invalid', 11)"
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("chore weight above the maximum must be rejected")
+        try:
+            connection.execute(
+                "INSERT INTO weekly_assignments ("
+                "family_member_id, chore_id, week_start, week_end, "
+                "chore_name_snapshot, chore_description_snapshot, "
+                "chore_weight_snapshot) "
+                "VALUES (1, 1, '2026-11-23', '2026-11-29', 'Kitchen', "
+                "'Clean', -1)"
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("assignment weight below the minimum must be rejected")
+        try:
+            connection.execute(
+                "INSERT INTO chores (name, description, weight) "
+                "VALUES ('Fractional', 'Invalid', 2.5)"
+            )
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("fractional chore weights must be rejected")
+
+    command.downgrade(config, "0010_weekly_report_rewards")
+
+    with read_connection(database_path) as connection:
+        chore_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(chores)")
+        }
+        assignment_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(weekly_assignments)")
+        }
+        assert "weight" not in chore_columns
+        assert "chore_weight_snapshot" not in assignment_columns
+        assert (
+            connection.execute("SELECT name FROM chores WHERE id = 1").fetchone()[
+                "name"
+            ]
+            == "Kitchen"
+        )
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
             == 1
         )

@@ -61,7 +61,11 @@ def create_member(connection, name, active=True):
 
 
 def create_assignment(
-    connection, family_member_id, *, required: tuple[bool, bool] = (True, True)
+    connection,
+    family_member_id,
+    *,
+    required: tuple[bool, bool] = (True, True),
+    weight: int = 1,
 ):
     chore_id = connection.execute(
         """INSERT INTO chores (name, description, is_active)
@@ -70,10 +74,11 @@ def create_assignment(
     assignment_id = connection.execute(
         """INSERT INTO weekly_assignments
            (family_member_id, chore_id, week_start, week_end,
-            chore_name_snapshot, chore_description_snapshot)
+            chore_name_snapshot, chore_description_snapshot,
+            chore_weight_snapshot)
            VALUES (?, ?, '2026-11-09', '2026-11-15', 'Kitchen snapshot',
-                   'Snapshot description')""",
-        (family_member_id, chore_id),
+                   'Snapshot description', ?)""",
+        (family_member_id, chore_id, weight),
     ).lastrowid
     first_item = connection.execute(
         """INSERT INTO assignment_checklist_items
@@ -135,6 +140,7 @@ def test_current_assignment_returns_snapshots_in_order_and_today_completion(
         "week_end": "2026-11-15",
         "chore_name": "Kitchen snapshot",
         "chore_description": "Snapshot description",
+        "chore_weight": 1,
         "today": "2026-11-12",
         "checklist_items": [
             {
@@ -362,3 +368,22 @@ def test_all_optional_assignment_is_complete_without_completion_rows(
     assert payload["is_complete"] is True
     assert all(item["is_required"] is False for item in payload["checklist_items"])
     assert all(item["is_completed"] is False for item in payload["checklist_items"])
+
+
+def test_current_assignment_returns_snapshot_weight_and_ignores_catalog_edits(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id = create_member(connection, "Alex")
+        create_assignment(connection, member_id, weight=4)
+
+    current = client.get(f"/family-members/{member_id}/current-assignment")
+    assert current.status_code == 200
+    assert current.json()["chore_weight"] == 4
+
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET weight = 9 WHERE id = 1")
+
+    preserved = client.get(f"/family-members/{member_id}/current-assignment")
+    assert preserved.json()["chore_weight"] == 4

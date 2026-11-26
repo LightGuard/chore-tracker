@@ -32,6 +32,7 @@ class WeeklyAssignment:
     week_end: date
     chore_name: str
     chore_description: str
+    chore_weight: int
     checklist_items: tuple[AssignmentChecklistSnapshot, ...]
 
 

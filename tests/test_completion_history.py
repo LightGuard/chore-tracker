@@ -59,6 +59,7 @@ def create_assignment(
     member_name="Alex",
     *,
     required: tuple[bool, bool] = (True, True),
+    weight: int = 1,
 ):
     start = date.fromisoformat(week_start)
     week_end = start + timedelta(days=6)
@@ -72,9 +73,10 @@ def create_assignment(
     assignment_id = connection.execute(
         """INSERT INTO weekly_assignments
            (family_member_id, chore_id, week_start, week_end,
-            chore_name_snapshot, chore_description_snapshot)
-           VALUES (?, ?, ?, ?, 'Kitchen snapshot', 'Original description')""",
-        (member_id, chore_id, start.isoformat(), week_end.isoformat()),
+            chore_name_snapshot, chore_description_snapshot,
+            chore_weight_snapshot)
+           VALUES (?, ?, ?, ?, 'Kitchen snapshot', 'Original description', ?)""",
+        (member_id, chore_id, start.isoformat(), week_end.isoformat(), weight),
     ).lastrowid
     item_ids = []
     for position, label in enumerate(("Sweep floor", "Wipe counters")):
@@ -306,3 +308,21 @@ def test_history_all_optional_days_are_complete_only_through_today(
         assert by_date[day]["completion_status"] == "complete"
     for day in ("2026-11-13", "2026-11-14", "2026-11-15"):
         assert by_date[day]["completion_status"] == "not_yet_recorded"
+
+
+def test_history_returns_snapshot_weight_and_preserves_it_after_catalog_edits(
+    tmp_path, monkeypatch
+):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    with connect(database_path) as connection:
+        member_id, _, chore_id, _ = create_assignment(connection, weight=4)
+
+    payload = client.get(f"/family-members/{member_id}/completion-history").json()
+    assert payload["items"]
+    assert all(item["chore_weight"] == 4 for item in payload["items"])
+
+    with connect(database_path) as connection:
+        connection.execute("UPDATE chores SET weight = 9 WHERE id = ?", (chore_id,))
+
+    preserved = client.get(f"/family-members/{member_id}/completion-history").json()
+    assert all(item["chore_weight"] == 4 for item in preserved["items"])
