@@ -24,10 +24,10 @@ type StickerHeaderCountProps = {
 export function StickerHeaderCount({ count, status }: StickerHeaderCountProps) {
   const accessibleLabel =
     count === null
-      ? status === "error"
-        ? "Sticker count unavailable"
-        : "Sticker count loading"
-      : `${count} of 7 this week`;
+      ? status === "loading" || status === "idle"
+        ? "Sticker count loading"
+        : "Sticker count unavailable"
+      : `${count} sticker${count === 1 ? "" : "s"} this week`;
 
   return (
     <span
@@ -36,7 +36,7 @@ export function StickerHeaderCount({ count, status }: StickerHeaderCountProps) {
       aria-label={accessibleLabel}
     >
       <b>{count ?? "—"}</b>
-      <span>OF 7 STICKERS</span>
+      <span>{count === 1 ? "STICKER THIS WEEK" : "STICKERS THIS WEEK"}</span>
     </span>
   );
 }
@@ -117,7 +117,29 @@ export function StickerAssignmentView({
     : rail.scrollTop < 4
       ? "Scroll · more jobs below"
       : "Scrolled · more jobs below";
+  const perDay = week.perDay;
+  const weightCopy =
+    perDay === null || perDay === 1
+      ? "One sticker for each finished day."
+      : perDay === 0
+        ? "This chore mints no stickers."
+        : `${perDay} stickers for each finished day.`;
   const stampCount = week.count === null ? "—" : String(week.count);
+  const stampUnit = week.count === 1 ? "STICKER" : "STICKERS";
+  const stampNote =
+    week.count === null
+      ? "Stickers earned"
+      : perDay === 0
+        ? "No sticker weight"
+        : perDay === 1
+          ? "Sticker earned."
+          : `${perDay} stickers per finished day`;
+  const weekNote =
+    perDay === null || perDay === 1
+      ? "One sticker for each finished day. A new week starts with a clean sheet."
+      : perDay === 0
+        ? "This chore's weight is 0, so finished days mint no stickers. A new week starts with a clean sheet."
+        : `${perDay} stickers for each finished day. A new week starts with a clean sheet.`;
 
   return (
     <div className="sticker-board">
@@ -129,7 +151,7 @@ export function StickerAssignmentView({
           Hey, <em>{displayName}!</em> Fill your sticker.
         </h1>
         <p className="sticker-subline">
-          <b>{itemCount} little jobs.</b> One chore, one sticker at a time.
+          <b>{itemCount} little jobs.</b> {weightCopy}
         </p>
       </header>
 
@@ -192,8 +214,10 @@ export function StickerAssignmentView({
 
           {assignment.is_complete && (
             <div className="sticker-stamp" role="status">
-              <span>STICKER {stampCount} OF 7</span>
-              <strong>Sticker earned.</strong>
+              <span>
+                {stampCount} {stampUnit}
+              </span>
+              <strong>{stampNote}</strong>
             </div>
           )}
 
@@ -300,7 +324,7 @@ export function StickerAssignmentView({
             <div className="sticker-week-head">
               <h2 id="sticker-week-heading">This week</h2>
               <span>
-                {week.count === null ? "—" : week.count} / 7 days
+                {week.completeDays === null ? "—" : week.completeDays} of 7 days
               </span>
             </div>
             <ol
@@ -321,13 +345,15 @@ export function StickerAssignmentView({
                   <span className="sticker-day-status" aria-hidden="true">
                     {day.statusLabel}
                   </span>
+                  {day.earned !== null && day.earned > 0 && (
+                    <span className="sticker-day-earned" aria-hidden="true">
+                      +{day.earned}
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>
-            <p className="sticker-week-note">
-              One sticker for each complete day. A new week starts with a
-              clean sheet.
-            </p>
+            <p className="sticker-week-note">{weekNote}</p>
           </section>
 
           <div className="sticker-aside-poster" aria-hidden="true">

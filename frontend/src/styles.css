@@ -3682,6 +3682,14 @@ body[data-theme="sticker-club-v2"] {
   text-transform: uppercase;
 }
 
+.sticker-day-earned {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 0.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
 .sticker-day.complete {
   background: var(--sc-mint);
 }

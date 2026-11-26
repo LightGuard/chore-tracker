@@ -822,10 +822,16 @@ def seed_quest_fixture(assign_quest_theme: bool) -> None:
 
 
 STICKER_TODAY = date(2026, 11, 11)
+STICKER_CHORE_WEIGHT = 2
 
 
 def seed_sticker_fixture(assign_sticker_theme: bool) -> None:
-    """Seed a current week with two complete days and five of six jobs done."""
+    """Seed a weight-2 week with two complete days and five of six jobs done.
+
+    The weight is deliberately above the baseline so the browser tests prove
+    Sticker Club's own weight mapping end to end: each complete day mints
+    STICKER_CHORE_WEIGHT stickers instead of one.
+    """
     reset_database()
     week_start = STICKER_TODAY - timedelta(days=STICKER_TODAY.weekday())
     week_end = week_start + timedelta(days=6)
@@ -848,9 +854,9 @@ def seed_sticker_fixture(assign_sticker_theme: bool) -> None:
 
         def create_chore(name, description, labels):
             chore_id = connection.execute(
-                """INSERT INTO chores (name, description, is_active)
-                   VALUES (?, ?, 1)""",
-                (name, description),
+                """INSERT INTO chores (name, description, weight, is_active)
+                   VALUES (?, ?, ?, 1)""",
+                (name, description, STICKER_CHORE_WEIGHT),
             ).lastrowid
             item_ids = [
                 connection.execute(
@@ -867,8 +873,9 @@ def seed_sticker_fixture(assign_sticker_theme: bool) -> None:
             assignment_id = connection.execute(
                 """INSERT INTO weekly_assignments
                    (family_member_id, chore_id, week_start, week_end,
-                    chore_name_snapshot, chore_description_snapshot)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                    chore_name_snapshot, chore_description_snapshot,
+                    chore_weight_snapshot)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     member_ids[member_name],
                     chore_id,
@@ -876,6 +883,7 @@ def seed_sticker_fixture(assign_sticker_theme: bool) -> None:
                     week_end.isoformat(),
                     name,
                     description,
+                    STICKER_CHORE_WEIGHT,
                 ),
             ).lastrowid
             snapshot_ids = []
