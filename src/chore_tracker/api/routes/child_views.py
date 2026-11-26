@@ -160,6 +160,7 @@ class DerivedStatsLifetime(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     completed_checklist_items: int
+    xp: int
     complete_days: int
     current_streak: int
 
@@ -171,6 +172,7 @@ class DerivedStatsCurrentWeek(BaseModel):
     week_start: date
     week_end: date
     completed_checklist_items: int
+    xp: int
     complete_days: int
     days: list[DerivedStatsDay]
 
@@ -182,6 +184,7 @@ class DerivedStatsStanding(BaseModel):
     family_member_id: int
     display_name: str
     completed_checklist_items: int
+    xp: int
     complete_days: int
     current_streak: int
 

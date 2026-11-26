@@ -70,18 +70,22 @@ def create_assignment(
     labels=("Sweep floor", "Wipe counters"),
     *,
     required: tuple[bool, ...] | None = None,
+    weight: int = 1,
 ):
     start = date.fromisoformat(week_start)
     week_end = start + timedelta(days=6)
     chore_id = connection.execute(
-        "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Clean kitchen')"
+        "INSERT INTO chores (name, description, weight) "
+        "VALUES ('Kitchen', 'Clean kitchen', ?)",
+        (weight,),
     ).lastrowid
     assignment_id = connection.execute(
         """INSERT INTO weekly_assignments
            (family_member_id, chore_id, week_start, week_end,
-            chore_name_snapshot, chore_description_snapshot)
-           VALUES (?, ?, ?, ?, 'Kitchen snapshot', 'Snapshot description')""",
-        (member_id, chore_id, start.isoformat(), week_end.isoformat()),
+            chore_name_snapshot, chore_description_snapshot,
+            chore_weight_snapshot)
+           VALUES (?, ?, ?, ?, 'Kitchen snapshot', 'Snapshot description', ?)""",
+        (member_id, chore_id, start.isoformat(), week_end.isoformat(), weight),
     ).lastrowid
     item_ids = []
     for position, label in enumerate(labels):
@@ -146,6 +150,7 @@ def test_returns_generic_completion_facts_and_current_week_day_states(
         "timezone": "America/Denver",
         "lifetime": {
             "completed_checklist_items": 8,
+            "xp": 80,
             "complete_days": 3,
             "current_streak": 1,
         },
@@ -153,6 +158,7 @@ def test_returns_generic_completion_facts_and_current_week_day_states(
             "week_start": "2026-11-09",
             "week_end": "2026-11-15",
             "completed_checklist_items": 5,
+            "xp": 50,
             "complete_days": 2,
             "days": [
                 {
@@ -206,6 +212,7 @@ def test_returns_generic_completion_facts_and_current_week_day_states(
                     "family_member_id": member_id,
                     "display_name": "Alex",
                     "completed_checklist_items": 5,
+                    "xp": 50,
                     "complete_days": 2,
                     "current_streak": 1,
                 }
@@ -289,7 +296,7 @@ def test_stats_ignore_later_catalog_edits(tmp_path, monkeypatch):
     with connect(database_path) as connection:
         connection.execute(
             "UPDATE chores SET name = 'Renamed', description = 'Changed', "
-            "is_active = 0 WHERE id = ?",
+            "is_active = 0, weight = 9 WHERE id = ?",
             (chore_id,),
         )
         connection.execute(
@@ -300,6 +307,54 @@ def test_stats_ignore_later_catalog_edits(tmp_path, monkeypatch):
     after = client.get(f"/family-members/{member_id}/derived-stats").json()
 
     assert after == before
+
+
+def test_quest_xp_scales_with_representative_chore_weights(tmp_path, monkeypatch):
+    client, database_path = prepare_client(tmp_path, monkeypatch)
+    weights = (0, 1, 2, 5, 10)
+    member_ids: dict[int, int] = {}
+    with connect(database_path) as connection:
+        for weight in weights:
+            member_id = create_member(connection, f"Weight {weight}")
+            member_ids[weight] = member_id
+            _, items = create_assignment(
+                connection, member_id, "2026-11-09", weight=weight
+            )
+            complete_day(connection, items, "2026-11-09")
+
+    payload = client.get(f"/family-members/{member_ids[0]}/derived-stats").json()
+
+    # Every child completed two items; Quest awards 10 XP per item per weight
+    # point, so the same completion facts produce different XP.
+    assert [
+        (standing["display_name"], standing["xp"])
+        for standing in payload["household"]["weekly_standings"]
+    ] == [
+        ("Weight 10", 200),
+        ("Weight 5", 100),
+        ("Weight 2", 40),
+        ("Weight 1", 20),
+        ("Weight 0", 0),
+    ]
+    assert [
+        (ranking["display_name"], ranking["total_xp"], ranking["rank"])
+        for ranking in payload["household"]["xp_rankings"]
+    ] == [
+        ("Weight 10", 200, 1),
+        ("Weight 5", 100, 2),
+        ("Weight 2", 40, 3),
+        ("Weight 1", 20, 4),
+        ("Weight 0", 0, 5),
+    ]
+    # A zero-weight chore keeps every non-reward completion fact; only XP is 0.
+    assert payload["lifetime"] == {
+        "completed_checklist_items": 2,
+        "xp": 0,
+        "complete_days": 1,
+        "current_streak": 0,
+    }
+    assert payload["current_week"]["completed_checklist_items"] == 2
+    assert payload["current_week"]["xp"] == 0
 
 
 def test_current_week_rolls_over_at_monday_without_losing_lifetime_facts(
@@ -328,7 +383,9 @@ def test_current_week_rolls_over_at_monday_without_losing_lifetime_facts(
     assert [day["state"] for day in payload["current_week"]["days"]] == [
         "not_recorded"
     ] * 7
+    assert payload["current_week"]["xp"] == 0
     assert payload["lifetime"]["completed_checklist_items"] == 10
+    assert payload["lifetime"]["xp"] == 100
     assert payload["lifetime"]["complete_days"] == 5
     assert payload["lifetime"]["current_streak"] == 0
 
@@ -380,6 +437,7 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
             "family_member_id": alex_id,
             "display_name": "Alex",
             "completed_checklist_items": 6,
+            "xp": 60,
             "complete_days": 3,
             "current_streak": 3,
         },
@@ -387,6 +445,7 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
             "family_member_id": sam_id,
             "display_name": "Sam",
             "completed_checklist_items": 6,
+            "xp": 60,
             "complete_days": 2,
             "current_streak": 0,
         },
@@ -394,6 +453,7 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
             "family_member_id": riley_id,
             "display_name": "Riley",
             "completed_checklist_items": 4,
+            "xp": 40,
             "complete_days": 1,
             "current_streak": 1,
         },
@@ -401,6 +461,7 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
             "family_member_id": amy_id,
             "display_name": "amy",
             "completed_checklist_items": 0,
+            "xp": 0,
             "complete_days": 0,
             "current_streak": 0,
         },
@@ -408,6 +469,7 @@ def test_standings_include_all_active_children_with_stable_tie_breakers(
             "family_member_id": bea_id,
             "display_name": "Bea",
             "completed_checklist_items": 0,
+            "xp": 0,
             "complete_days": 0,
             "current_streak": 0,
         },
@@ -634,10 +696,12 @@ def test_empty_history_returns_zeroes_for_an_active_child_without_an_assignment(
     payload = response.json()
     assert payload["lifetime"] == {
         "completed_checklist_items": 0,
+        "xp": 0,
         "complete_days": 0,
         "current_streak": 0,
     }
     assert payload["current_week"]["completed_checklist_items"] == 0
+    assert payload["current_week"]["xp"] == 0
     assert payload["current_week"]["complete_days"] == 0
     assert all(
         day["total_checklist_items"] == 0 and day["state"] == "not_recorded"
@@ -674,7 +738,7 @@ def test_derived_stats_are_read_only_and_add_no_schema(tmp_path, monkeypatch):
     client, database_path = prepare_client(tmp_path, monkeypatch)
     with connect(database_path) as connection:
         member_id = create_member(connection, "Alex")
-        _, items = create_assignment(connection, member_id, "2026-11-09")
+        _, items = create_assignment(connection, member_id, "2026-11-09", weight=3)
         complete_day(connection, items, "2026-11-09")
         before_tables = {
             row["name"]
@@ -698,6 +762,15 @@ def test_derived_stats_are_read_only_and_add_no_schema(tmp_path, monkeypatch):
         before_assignments = connection.execute(
             "SELECT COUNT(*) FROM weekly_assignments"
         ).fetchone()[0]
+        before_chore_weights = [
+            row["weight"] for row in connection.execute("SELECT weight FROM chores")
+        ]
+        before_weight_snapshots = [
+            row["chore_weight_snapshot"]
+            for row in connection.execute(
+                "SELECT chore_weight_snapshot FROM weekly_assignments"
+            )
+        ]
 
     assert client.get(f"/family-members/{member_id}/derived-stats").status_code == 200
 
@@ -725,6 +798,15 @@ def test_derived_stats_are_read_only_and_add_no_schema(tmp_path, monkeypatch):
             connection.execute("SELECT COUNT(*) FROM weekly_assignments").fetchone()[0]
             == before_assignments
         )
+        assert [
+            row["weight"] for row in connection.execute("SELECT weight FROM chores")
+        ] == before_chore_weights
+        assert [
+            row["chore_weight_snapshot"]
+            for row in connection.execute(
+                "SELECT chore_weight_snapshot FROM weekly_assignments"
+            )
+        ] == before_weight_snapshots
 
 
 def test_aggregate_reads_stay_constant_for_seven_active_children(tmp_path, monkeypatch):
@@ -814,6 +896,8 @@ def test_derived_stats_all_optional_days_complete_through_today(tmp_path, monkey
     for day in ("2026-11-13", "2026-11-14", "2026-11-15"):
         assert days[day] == "not_recorded"
     assert payload["current_week"]["completed_checklist_items"] == 0
+    assert payload["current_week"]["xp"] == 0
+    assert payload["lifetime"]["xp"] == 0
     assert all(
         day["completed_checklist_items"] == 0 for day in payload["current_week"]["days"]
     )

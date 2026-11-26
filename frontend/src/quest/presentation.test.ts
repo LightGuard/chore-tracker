@@ -8,7 +8,7 @@ import {
   levelForXp,
   questLeaderboard,
   questLevelProgress,
-  xpFromCompletedItems,
+  xpForObjectives,
 } from "./presentation";
 
 function standing(
@@ -16,11 +16,13 @@ function standing(
   name: string,
   completed: number,
   streak: number,
+  xp = completed * 10,
 ): DerivedStatsStanding {
   return {
     family_member_id: id,
     display_name: name,
     completed_checklist_items: completed,
+    xp,
     complete_days: 0,
     current_streak: streak,
   };
@@ -48,6 +50,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
     timezone: "America/Denver",
     lifetime: {
       completed_checklist_items: 0,
+      xp: 0,
       complete_days: 0,
       current_streak: 0,
     },
@@ -55,6 +58,7 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
       week_start: "2026-11-23",
       week_end: "2026-11-29",
       completed_checklist_items: 0,
+      xp: 0,
       complete_days: 0,
       days: [],
     },
@@ -68,11 +72,49 @@ function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
 }
 
 describe("Quest presentation", () => {
-  it("maps completed items to XP at ten points each", () => {
-    expect(xpFromCompletedItems(0)).toBe(0);
-    expect(xpFromCompletedItems(1)).toBe(10);
-    expect(xpFromCompletedItems(124)).toBe(1240);
-    expect(xpFromCompletedItems(-4)).toBe(0);
+  it("maps completed objectives to XP at ten points per weight point", () => {
+    expect(xpForObjectives(0, 1)).toBe(0);
+    expect(xpForObjectives(1, 1)).toBe(10);
+    expect(xpForObjectives(3, 2)).toBe(60);
+    expect(xpForObjectives(3, 10)).toBe(300);
+    expect(xpForObjectives(-4, 1)).toBe(0);
+    expect(xpForObjectives(3, -1)).toBe(0);
+  });
+
+  it("awards different XP for the same objectives at different weights", () => {
+    expect(xpForObjectives(3, 1)).toBe(30);
+    expect(xpForObjectives(3, 3)).toBe(90);
+    expect(xpForObjectives(3, 0)).toBe(0);
+  });
+
+  it("uses the API-provided weighted XP and ignores the item count", () => {
+    const progress = questLevelProgress(
+      stats({
+        lifetime: {
+          completed_checklist_items: 5,
+          xp: 1240,
+          complete_days: 31,
+          current_streak: 4,
+        },
+        current_week: {
+          week_start: "2026-11-23",
+          week_end: "2026-11-29",
+          completed_checklist_items: 2,
+          xp: 380,
+          complete_days: 3,
+          days: [],
+        },
+      }),
+    );
+
+    expect(progress).toEqual({
+      xp: 1240,
+      level: 3,
+      xpIntoLevel: 240,
+      xpForNextLevel: 500,
+      progress: 0.48,
+      weeklyXp: 380,
+    });
   });
 
   it("calculates level boundaries at 0, 499, and 500 XP", () => {
@@ -87,6 +129,7 @@ describe("Quest presentation", () => {
       stats({
         lifetime: {
           completed_checklist_items: 50,
+          xp: 500,
           complete_days: 10,
           current_streak: 1,
         },
@@ -96,6 +139,7 @@ describe("Quest presentation", () => {
       stats({
         lifetime: {
           completed_checklist_items: 49,
+          xp: 490,
           complete_days: 9,
           current_streak: 1,
         },
@@ -112,34 +156,6 @@ describe("Quest presentation", () => {
     expect(below).toMatchObject({ xp: 490, level: 1, xpIntoLevel: 490 });
   });
 
-  it("shows progress within the current level and current-week XP", () => {
-    const progress = questLevelProgress(
-      stats({
-        lifetime: {
-          completed_checklist_items: 124,
-          complete_days: 31,
-          current_streak: 4,
-        },
-        current_week: {
-          week_start: "2026-11-23",
-          week_end: "2026-11-29",
-          completed_checklist_items: 22,
-          complete_days: 3,
-          days: [],
-        },
-      }),
-    );
-
-    expect(progress).toEqual({
-      xp: 1240,
-      level: 3,
-      xpIntoLevel: 240,
-      xpForNextLevel: 500,
-      progress: 0.48,
-      weeklyXp: 220,
-    });
-  });
-
   it("derives rank, player count, and XP gap from weekly standings order", () => {
     const positions = questLeaderboard(
       stats({
@@ -147,10 +163,10 @@ describe("Quest presentation", () => {
         household: {
           active_players: 4,
           weekly_standings: [
-            standing(3, "Riley", 42, 5),
-            standing(2, "Alex", 38, 3),
-            standing(4, "Avery", 32, 2),
-            standing(1, "Sam", 24, 1),
+            standing(3, "Riley", 42, 5, 420),
+            standing(2, "Alex", 38, 3, 380),
+            standing(4, "Avery", 32, 2, 320),
+            standing(1, "Sam", 24, 1, 240),
           ],
           xp_rankings: [
             ranking(3, "Riley", 1240, 1),
@@ -166,8 +182,29 @@ describe("Quest presentation", () => {
       rank: 2,
       playerCount: 4,
       gapToFirstXp: 40,
-      selected: standing(2, "Alex", 38, 3),
+      selected: standing(2, "Alex", 38, 3, 380),
     });
+  });
+
+  it("uses weighted XP rather than item counts for the gap to first", () => {
+    const positions = questLeaderboard(
+      stats({
+        family_member_id: 2,
+        household: {
+          active_players: 2,
+          weekly_standings: [
+            standing(3, "Riley", 10, 1, 200),
+            standing(2, "Alex", 12, 4, 120),
+          ],
+          xp_rankings: [
+            ranking(3, "Riley", 200, 1),
+            ranking(2, "Alex", 120, 2),
+          ],
+        },
+      }),
+    );
+
+    expect(positions.gapToFirstXp).toBe(80);
   });
 
   it("uses the first standing as the leader and never returns a negative gap", () => {
@@ -175,7 +212,10 @@ describe("Quest presentation", () => {
       stats({
         household: {
           active_players: 2,
-          weekly_standings: [standing(1, "Alex", 22, 4), standing(2, "Sam", 10, 1)],
+          weekly_standings: [
+            standing(1, "Alex", 22, 4, 220),
+            standing(2, "Sam", 10, 1, 100),
+          ],
           xp_rankings: [ranking(1, "Alex", 220, 1), ranking(2, "Sam", 100, 2)],
         },
       }),
@@ -188,7 +228,10 @@ describe("Quest presentation", () => {
         family_member_id: 99,
         household: {
           active_players: 2,
-          weekly_standings: [standing(1, "Alex", 22, 4), standing(2, "Sam", 10, 1)],
+          weekly_standings: [
+            standing(1, "Alex", 22, 4, 220),
+            standing(2, "Sam", 10, 1, 100),
+          ],
           xp_rankings: [ranking(1, "Alex", 220, 1), ranking(2, "Sam", 100, 2)],
         },
       }),

@@ -67,6 +67,7 @@ export type DerivedStatsStanding = {
   family_member_id: number;
   display_name: string;
   completed_checklist_items: number;
+  xp: number;
   complete_days: number;
   current_streak: number;
 };
@@ -85,6 +86,7 @@ export type DerivedStats = {
   timezone: string;
   lifetime: {
     completed_checklist_items: number;
+    xp: number;
     complete_days: number;
     current_streak: number;
   };
@@ -92,6 +94,7 @@ export type DerivedStats = {
     week_start: string;
     week_end: string;
     completed_checklist_items: number;
+    xp: number;
     complete_days: number;
     days: DerivedStatsDay[];
   };
