@@ -48,6 +48,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
             "weekly_reports",
             "weekly_report_entries",
             "weekly_report_days",
+            "weekly_report_rewards",
             "weekly_rollover_state",
             "report_deliveries",
             "administrator_passkey_credentials",
@@ -59,7 +60,7 @@ def test_fresh_database_is_created_entirely_by_migrations(tmp_path) -> None:
         revision = connection.execute(
             "SELECT version_num FROM alembic_version"
         ).fetchone()["version_num"]
-        assert revision == "0009_optional_checklist_items"
+        assert revision == "0010_weekly_report_rewards"
 
 
 def test_upgrade_from_prior_revision_preserves_existing_rows(tmp_path) -> None:
@@ -858,3 +859,146 @@ def test_optional_snapshot_flag_survives_definition_edits_and_is_immutable(
             assert "immutable" in str(error)
         else:
             raise AssertionError("Optional snapshot flag was mutable")
+
+
+def test_weekly_report_rewards_are_unique_per_entry_and_removed_on_downgrade(
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "report-rewards.db"
+    config = migration_config(database_path)
+    command.upgrade(config, "0009_optional_checklist_items")
+
+    with read_connection(database_path) as connection:
+        connection.execute(
+            "INSERT INTO administrators (email) VALUES ('admin@example.test')"
+        )
+        connection.execute("INSERT INTO family_members (display_name) VALUES ('Alex')")
+        connection.execute(
+            "INSERT INTO chores (name, description) VALUES ('Kitchen', 'Clean')"
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_assignments (
+                family_member_id, chore_id, week_start, week_end,
+                chore_name_snapshot, chore_description_snapshot
+            )
+            VALUES (1, 1, '2026-11-16', '2026-11-22', 'Kitchen', 'Clean')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_reports (
+                week_start, week_end, family_member_count, total_days,
+                completed_days, incomplete_days, generated_at, finalized_at
+            )
+            VALUES (
+                '2026-11-16', '2026-11-22', 1, 7, 7, 0,
+                '2026-11-23T10:00:00Z', '2026-11-23T10:00:00Z'
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO weekly_report_entries (
+                report_id, weekly_assignment_id, position, family_member_id,
+                family_member_name_snapshot, chore_name_snapshot,
+                chore_description_snapshot, completed_days, incomplete_days
+            )
+            VALUES (1, 1, 0, 1, 'Alex', 'Kitchen', 'Clean', 7, 0)
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with read_connection(database_path) as connection:
+        # Existing report data survives the additive migration unchanged.
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_reports").fetchone()[0] == 1
+        )
+        entry = connection.execute(
+            """
+            SELECT family_member_name_snapshot, completed_days
+            FROM weekly_report_entries
+            WHERE id = 1
+            """
+        ).fetchone()
+        assert dict(entry) == {
+            "family_member_name_snapshot": "Alex",
+            "completed_days": 7,
+        }
+        connection.execute(
+            """
+            INSERT INTO weekly_report_rewards (
+                weekly_report_entry_id, rewarded_at,
+                rewarded_by_administrator_id
+            )
+            VALUES (1, '2026-11-23T11:00:00Z', 1)
+            """
+        )
+
+    with read_connection(database_path) as connection:
+        reward = connection.execute(
+            """
+            SELECT weekly_report_entry_id, rewarded_at,
+                   rewarded_by_administrator_id
+            FROM weekly_report_rewards
+            """
+        ).fetchone()
+        assert dict(reward) == {
+            "weekly_report_entry_id": 1,
+            "rewarded_at": "2026-11-23T11:00:00Z",
+            "rewarded_by_administrator_id": 1,
+        }
+        for statement, label in (
+            (
+                """
+                INSERT INTO weekly_report_rewards (
+                    weekly_report_entry_id, rewarded_at,
+                    rewarded_by_administrator_id
+                )
+                VALUES (1, '2026-11-23T12:00:00Z', 1)
+                """,
+                "duplicate rewards must be rejected",
+            ),
+            (
+                """
+                INSERT INTO weekly_report_rewards (
+                    weekly_report_entry_id, rewarded_at,
+                    rewarded_by_administrator_id
+                )
+                VALUES (999, '2026-11-23T12:00:00Z', 1)
+                """,
+                "rewards must reference an existing entry",
+            ),
+            (
+                "UPDATE weekly_report_rewards SET rewarded_at = '2026-11-24T00:00:00Z'",
+                "rewards must be immutable",
+            ),
+            ("DELETE FROM weekly_report_rewards", "rewards cannot be deleted"),
+        ):
+            try:
+                connection.execute(statement)
+            except sqlite3.IntegrityError:
+                pass
+            else:
+                raise AssertionError(label)
+
+    command.downgrade(config, "0009_optional_checklist_items")
+
+    with read_connection(database_path) as connection:
+        tables = {
+            row["name"]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert "weekly_report_rewards" not in tables
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_reports").fetchone()[0] == 1
+        )
+        assert (
+            connection.execute("SELECT COUNT(*) FROM weekly_report_entries").fetchone()[
+                0
+            ]
+            == 1
+        )

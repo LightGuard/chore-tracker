@@ -16,6 +16,7 @@ from chore_tracker.application.services.weekly_reports import (
     WeeklyReportEntryPage,
     WeeklyReportHeader,
     WeeklyReportIncompleteError,
+    WeeklyReportReward,
     WeeklyReportSummary,
     build_weekly_report_draft,
 )
@@ -58,7 +59,16 @@ class SQLiteWeeklyReportPersistence:
             entry.incomplete_days,
             entry.position,
             day.report_date,
-            day.status
+            day.status,
+            reward.rewarded_at AS reward_rewarded_at,
+            reward.rewarded_by_administrator_id AS reward_administrator_id,
+            reward_administrator.email AS reward_administrator_email
+        """
+        reward_joins = """
+            LEFT JOIN weekly_report_rewards AS reward
+              ON reward.weekly_report_entry_id = entry.id
+            LEFT JOIN administrators AS reward_administrator
+              ON reward_administrator.id = reward.rewarded_by_administrator_id
         """
         if limit is None:
             rows = connection.execute(
@@ -67,6 +77,7 @@ class SQLiteWeeklyReportPersistence:
                 FROM weekly_report_entries AS entry
                 JOIN weekly_report_days AS day
                   ON day.report_entry_id = entry.id
+                {reward_joins}
                 WHERE entry.report_id = ?
                 ORDER BY entry.position, day.day_index
                 """,
@@ -85,6 +96,7 @@ class SQLiteWeeklyReportPersistence:
                 ) AS entry
                 JOIN weekly_report_days AS day
                   ON day.report_entry_id = entry.id
+                {reward_joins}
                 ORDER BY entry.position, day.day_index
                 """,
                 (report_id, limit, offset),
@@ -112,8 +124,19 @@ class SQLiteWeeklyReportPersistence:
                 completed_days=row["completed_days"],
                 incomplete_days=row["incomplete_days"],
                 days=tuple(days),
+                reward=SQLiteWeeklyReportPersistence._reward_from_row(row),
             )
             for row, days in grouped.values()
+        )
+
+    @staticmethod
+    def _reward_from_row(row) -> WeeklyReportReward | None:
+        if row["reward_rewarded_at"] is None:
+            return None
+        return WeeklyReportReward(
+            rewarded_at=_parse_timestamp(row["reward_rewarded_at"]),
+            administrator_id=row["reward_administrator_id"],
+            administrator_email=row["reward_administrator_email"],
         )
 
     @staticmethod
@@ -408,4 +431,59 @@ class SQLiteWeeklyReportPersistence:
                 total=total,
                 limit=limit,
                 offset=offset,
+            )
+
+    def mark_rewarded(
+        self,
+        week_start: date,
+        entry_id: int,
+        administrator_id: int,
+        rewarded_at: datetime,
+    ) -> WeeklyReportReward | None:
+        with transaction(self._database_path) as connection:
+            # Serialize competing markers before checking the entry scope.
+            connection.execute("BEGIN IMMEDIATE")
+            entry = connection.execute(
+                """
+                SELECT entry.id
+                FROM weekly_report_entries AS entry
+                JOIN weekly_reports AS report
+                  ON report.id = entry.report_id
+                WHERE entry.id = ?
+                  AND report.week_start = ?
+                  AND report.finalized_at IS NOT NULL
+                """,
+                (entry_id, week_start.isoformat()),
+            ).fetchone()
+            if entry is None:
+                return None
+            connection.execute(
+                """
+                INSERT INTO weekly_report_rewards (
+                    weekly_report_entry_id, rewarded_at,
+                    rewarded_by_administrator_id
+                )
+                VALUES (?, ?, ?)
+                ON CONFLICT (weekly_report_entry_id) DO NOTHING
+                """,
+                (entry_id, _format_timestamp(rewarded_at), administrator_id),
+            )
+            reward_row = connection.execute(
+                """
+                SELECT reward.rewarded_at,
+                       reward.rewarded_by_administrator_id,
+                       administrator.email
+                FROM weekly_report_rewards AS reward
+                JOIN administrators AS administrator
+                  ON administrator.id = reward.rewarded_by_administrator_id
+                WHERE reward.weekly_report_entry_id = ?
+                """,
+                (entry_id,),
+            ).fetchone()
+            if reward_row is None:
+                raise RuntimeError("The weekly report reward was not persisted")
+            return WeeklyReportReward(
+                rewarded_at=_parse_timestamp(reward_row["rewarded_at"]),
+                administrator_id=reward_row["rewarded_by_administrator_id"],
+                administrator_email=reward_row["email"],
             )
