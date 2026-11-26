@@ -171,7 +171,7 @@ body {
 
 .report-table {
   width: 100%;
-  min-width: 45rem;
+  min-width: 54rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -189,14 +189,19 @@ body {
 }
 
 .report-table th:first-child {
-  width: 27%;
+  width: 24%;
   padding-left: 1.15rem;
   text-align: left;
 }
 
+.report-table th:nth-last-child(2) {
+  width: 14%;
+}
+
 .report-table th:last-child {
-  width: 15%;
+  width: 22%;
   padding-right: 1rem;
+  text-align: left;
 }
 
 .report-table th span,
@@ -329,6 +334,57 @@ body {
 .report-status-pill.empty-pill {
   background: #f1f1f1;
   color: #757575;
+}
+
+.report-reward-cell {
+  padding: 0.95rem 1rem 0.95rem 0.5rem;
+  text-align: left;
+}
+
+.report-reward-pill {
+  display: inline-block;
+  padding: 0.12rem 0.4rem;
+  border-radius: 99px;
+  font-size: 0.56rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.report-reward-pill.rewarded {
+  background: #e8f5ed;
+  color: #17713d;
+}
+
+.report-reward-pill.pending {
+  background: #f1f1f1;
+  color: #757575;
+}
+
+.report-reward-audit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.35rem;
+  color: #555;
+  font-size: 0.625rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.report-reward-audit time {
+  color: #333;
+  font-weight: 650;
+}
+
+.report-reward-notice {
+  margin: 0;
+  color: #17713d;
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
+.report-reward-cell > button {
+  margin-top: 0.45rem;
 }
 
 .report-legend {
