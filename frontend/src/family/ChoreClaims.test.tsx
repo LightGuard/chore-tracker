@@ -93,34 +93,63 @@ describe("ChoreClaims", () => {
   it("requires confirmation before claiming and refreshes both lists after confirming", async () => {
     let availableGets = 0;
     let claimedGets = 0;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = (init?.method ?? "GET").toUpperCase();
       if (url.endsWith("/available-chores") && method === "GET") {
         availableGets += 1;
-        return jsonResponse({ claim_date: "2026-11-25", chores: availableGets === 1 ? [AVAILABLE_CHORE] : [] });
+        return jsonResponse({
+          claim_date: "2026-11-25",
+          chores: availableGets === 1 ? [AVAILABLE_CHORE] : [],
+        });
       }
       if (url.endsWith("/claimed-chores") && method === "GET") {
         claimedGets += 1;
-        return jsonResponse({ claim_date: "2026-11-25", claims: claimedGets === 1 ? [] : [CLAIM] });
+        return jsonResponse({
+          claim_date: "2026-11-25",
+          claims: claimedGets === 1 ? [] : [CLAIM],
+        });
       }
-      if (url.endsWith("/claimed-chores") && method === "POST") return jsonResponse(CLAIM, 201);
+      if (url.endsWith("/claimed-chores") && method === "POST") {
+        return jsonResponse(CLAIM, 201);
+      }
       return jsonResponse({ detail: "Not found" }, 404);
-    });
+      },
+    );
     vi.stubGlobal("fetch", fetchMock);
     const onStatsChange = vi.fn();
     renderClaims(onStatsChange);
     expect(await screen.findByText("Bathroom")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
-    expect(screen.getByRole("dialog", { name: "Claim this extra chore?" })).toHaveTextContent("Bathroom");
+    expect(
+      screen.getByRole("dialog", { name: "Claim this extra chore?" }),
+    ).toHaveTextContent("Bathroom");
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Confirm claim" }));
-    await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => String(url) === "/api/family-members/1/claimed-chores" && init?.method === "POST" && init.body === JSON.stringify({ chore_id: 3 })).toBe(true));
-    const availableSection = screen.getByRole("region", { name: "Available today" });
-    await waitFor(() => expect(within(availableSection).queryByText("Bathroom")).toBeNull());
-    expect(await screen.findByText("No extra chores available right now.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, init]) =>
+            String(url) === "/api/family-members/1/claimed-chores" &&
+            init?.method === "POST" &&
+            init.body === JSON.stringify({ chore_id: 3 }),
+        ),
+      ).toBe(true);
+    });
+    const availableSection = screen.getByRole("region", {
+      name: "Available today",
+    });
+    await waitFor(() => {
+      expect(within(availableSection).queryByText("Bathroom")).toBeNull();
+    });
+    expect(
+      await screen.findByText("No extra chores available right now."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).toBeNull();
-    const claimedSection = screen.getByRole("region", { name: "Claimed today" });
+    const claimedSection = screen.getByRole("region", {
+      name: "Claimed today",
+    });
     expect(within(claimedSection).getByText("Bathroom")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Mark done" })).toBeInTheDocument();
     expect(availableGets).toBe(2);
@@ -131,8 +160,15 @@ describe("ChoreClaims", () => {
   it("does not create a claim when the confirmation is canceled", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.endsWith("/available-chores")) return jsonResponse({ claim_date: "2026-11-25", chores: [AVAILABLE_CHORE] });
-      if (url.endsWith("/claimed-chores")) return jsonResponse({ claim_date: "2026-11-25", claims: [] });
+      if (url.endsWith("/available-chores")) {
+        return jsonResponse({
+          claim_date: "2026-11-25",
+          chores: [AVAILABLE_CHORE],
+        });
+      }
+      if (url.endsWith("/claimed-chores")) {
+        return jsonResponse({ claim_date: "2026-11-25", claims: [] });
+      }
       return jsonResponse({ detail: "Not found" }, 404);
     });
     vi.stubGlobal("fetch", fetchMock);
