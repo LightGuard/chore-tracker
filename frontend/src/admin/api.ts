@@ -143,6 +143,14 @@ export type WeeklyReportDay = {
   status: ReportDayStatus;
 };
 
+export type WeeklyReportReward = {
+  rewarded_at: string;
+  rewarded_by: {
+    administrator_id: number;
+    email: string;
+  };
+};
+
 export type WeeklyReportEntry = {
   id: number;
   family_member_name: string;
@@ -151,6 +159,7 @@ export type WeeklyReportEntry = {
   completed_days: number;
   incomplete_days: number;
   days: WeeklyReportDay[];
+  reward: WeeklyReportReward | null;
 };
 
 export type WeeklyReportDetail = WeeklyReportListItem & {
@@ -189,6 +198,16 @@ export function generateAssignments(
     method: "POST",
     body: JSON.stringify({ week }),
   });
+}
+
+export function markReportEntryRewarded(
+  weekStart: string,
+  entryId: number,
+): Promise<WeeklyReportReward> {
+  return apiRequest<WeeklyReportReward>(
+    `/reports/${encodeURIComponent(weekStart)}/entries/${entryId}/reward`,
+    { method: "PUT" },
+  );
 }
 
 export function getReport(

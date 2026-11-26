@@ -57,6 +57,7 @@ const report = {
       completed_days: 7,
       incomplete_days: 0,
       days,
+      reward: null,
     },
   ],
   total: 1,

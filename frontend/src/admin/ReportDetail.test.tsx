@@ -53,6 +53,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 7,
     incomplete_days: 0,
     days: daysFor(7),
+    reward: null,
   },
   {
     id: 2,
@@ -62,6 +63,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 0,
     incomplete_days: 7,
     days: daysFor(0),
+    reward: null,
   },
   {
     id: 3,
@@ -71,6 +73,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 5,
     incomplete_days: 2,
     days: daysFor(5),
+    reward: null,
   },
   {
     id: 4,
@@ -80,6 +83,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 4,
     incomplete_days: 3,
     days: daysFor(4),
+    reward: null,
   },
   {
     id: 5,
@@ -89,6 +93,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 2,
     incomplete_days: 5,
     days: daysFor(2),
+    reward: null,
   },
   {
     id: 6,
@@ -98,6 +103,7 @@ const entries: WeeklyReportEntry[] = [
     completed_days: 3,
     incomplete_days: 4,
     days: daysFor(3),
+    reward: null,
   },
 ];
 
