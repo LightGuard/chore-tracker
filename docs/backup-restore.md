@@ -350,9 +350,8 @@ secret and is not used for encryption.
 
 1. Check readiness (`GET /health/ready`) before letting users back in.
 2. Sign in as an administrator and confirm the expected reports are listed.
-3. Open a report and spot-check the week, entries, and daily statuses. Confirm
-   reward records through the report API response or the documented `sqlite3`
-   query.
+3. Open a report and spot-check the week, entries, daily statuses, and reward
+   state. Reward records appear in the report detail view's **Reward** column.
 4. Select a child and verify the current assignment and history.
 5. Expect the scheduler to catch up any Mondays that were missed between the
    backup and the restore. This is safe and idempotent; the checkpoint prevents
