@@ -134,14 +134,22 @@ The rotation requires at least as many active chores as there are active
 children. If there are fewer active chores, planning raises an error and the
 week is not generated.
 
-1. In **Chores**, create a chore with a name and optional description.
-   New chores start inactive.
+1. In **Chores**, create a chore with a name, optional description, and
+   **New chore weight (0–10)**. New chores start inactive.
 2. Add at least one checklist item. Items are required by default; leave
    **Required** on for steps that must be done, or switch it off for optional
    guidance.
 3. Activate the chore. A chore cannot be activated without an active checklist
    item.
 4. Repeat for each chore that should participate in the rotation.
+
+Each chore has a reward-neutral weight from 0 to 10, defaulting to 1, edited
+with the per-chore **Weight (0–10)** field and saved with **Save chore details**.
+Zero means no reward weight and 1 is the baseline. The weight is copied into the
+immutable weekly assignment snapshot when a week is generated, so changing it
+affects the next generated week and never existing assignments. Each consuming
+frontend is responsible for mapping the weight to its own rewards; the chore
+catalog only stores it. Optional checklist items have no separate weight.
 
 The rotation uses only active chores and active checklist items. To retire a
 chore, deactivate it. An active chore must be deactivated before its last active

@@ -73,10 +73,13 @@ the preceding week.
 ## Catalog changes
 
 Family-member and chore activation changes affect the next generated weekly
-plan. They do not cause an already-started week's assignments to be regenerated.
-Weekly assignment rows and their checklist snapshots are historical records,
-including each item's required/optional flag; the database's immutable-history
-constraints protect existing assignments.
+plan. Chore weight edits behave the same way: the weight captured at generation
+stays with that week, and a new weight applies to the next generated week. They
+do not cause an already-started week's assignments to be regenerated. Weekly
+assignment rows and their checklist snapshots are historical records: the
+assignment row keeps the chore weight captured at generation, and each item
+keeps its required/optional flag. The database's immutable-history constraints
+protect existing assignments.
 
 The next week's plan uses the then-current active members and chores, ordered by
 the rules above, and the same original rotation anchor. Existing assignments
