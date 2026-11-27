@@ -134,7 +134,9 @@ standings order and the child display order; children tied on total XP share a
 rank. The HUD labels the value `XP RANK` and the squad strip labels it
 `ACHIEVEMENT RANK` so it is not mistaken for display position. A completed day
 shows the all-done "QUEST CLEAR" state; optional checklist items contribute XP
-when checked but never block completion. Stats are never written by the theme.
+when checked but never block completion. The today chip labels an unfinished
+quest's reward as potential (`UP TO +N XP TODAY`) and drops the prefix once the
+quest is complete. Stats are never written by the theme.
 
 #### Quest XP mapping
 

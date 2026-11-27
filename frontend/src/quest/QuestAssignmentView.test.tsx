@@ -3,6 +3,7 @@ import { Reshaped } from "reshaped";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CurrentAssignment, DerivedStats } from "../family/api";
 import { QuestAssignmentView } from "./QuestAssignmentView";
+import { xpForObjectives } from "./presentation";
 
 function stats(overrides: Partial<DerivedStats> = {}): DerivedStats {
   return {
@@ -320,6 +321,30 @@ describe("Quest assignment view", () => {
     );
   });
 
+  it("labels today's XP as potential until the quest is complete", () => {
+    const todayXp = xpForObjectives(3, 1);
+    renderView({});
+    expect(screen.getByText(`UP TO +${todayXp} XP TODAY`)).toBeInTheDocument();
+    expect(screen.queryByText(`+${todayXp} XP TODAY`)).not.toBeInTheDocument();
+  });
+
+  it("drops the potential prefix once the quest is complete", () => {
+    const todayXp = xpForObjectives(3, 1);
+    renderView({
+      assignment: assignment({
+        checklist_items: [
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
+          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: true },
+        ],
+        is_complete: true,
+      }),
+    });
+
+    expect(screen.getByText(`+${todayXp} XP TODAY`)).toBeInTheDocument();
+    expect(screen.queryByText(/UP TO/)).not.toBeInTheDocument();
+  });
+
   it("keeps the checklist usable when stats fail and exposes a retry", () => {
     const onRetry = vi.fn();
     render(
@@ -349,14 +374,14 @@ describe("Quest assignment view", () => {
 
   it("scales today's XP chip by the chore weight", () => {
     renderView({ assignment: assignment({ chore_weight: 3 }) });
-    expect(screen.getByText("+90 XP TODAY")).toBeInTheDocument();
+    expect(screen.getByText("UP TO +90 XP TODAY")).toBeInTheDocument();
     cleanup();
 
     renderView({ assignment: assignment({ chore_weight: 0 }) });
-    expect(screen.getByText("+0 XP TODAY")).toBeInTheDocument();
+    expect(screen.getByText("UP TO +0 XP TODAY")).toBeInTheDocument();
     cleanup();
 
     renderView({ assignment: assignment({ chore_weight: 1 }) });
-    expect(screen.getByText("+30 XP TODAY")).toBeInTheDocument();
+    expect(screen.getByText("UP TO +30 XP TODAY")).toBeInTheDocument();
   });
 });

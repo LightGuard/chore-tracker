@@ -162,7 +162,11 @@ export function QuestAssignmentView({
           <p className="quest-description">{assignment.chore_description}</p>
         )}
         <div className="quest-meta">
-          <span className="quest-xp-chip">+{todayXp} XP TODAY</span>
+          <span className="quest-xp-chip">
+            {assignment.is_complete
+              ? `+${todayXp} XP TODAY`
+              : `UP TO +${todayXp} XP TODAY`}
+          </span>
           <span>{level ? `${level.weeklyXp} XP THIS WEEK` : "WEEKLY XP --"}</span>
           <span>{itemCount} OBJECTIVES</span>
           <span>{completedCount} / {itemCount} CLEARED</span>
