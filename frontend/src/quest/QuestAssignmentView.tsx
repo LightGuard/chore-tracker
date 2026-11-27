@@ -248,7 +248,7 @@ export function QuestAssignmentView({
                       : "OPEN"}
                 </span>
                 <span className="quest-objective-xp" aria-hidden="true">
-                  +10 XP
+                  +{xpForObjectives(1, assignment.chore_weight)} XP
                 </span>
                 <span className="quest-hex" aria-hidden="true">
                   {item.is_completed ? "✓" : ""}

@@ -181,6 +181,22 @@ describe("Quest assignment view", () => {
     expect(screen.getByRole("checkbox", { name: "Sweep floor" })).not.toBeChecked();
   });
 
+  it("scales each objective's XP label by the chore weight", () => {
+    renderView({ assignment: assignment({ chore_weight: 3 }) });
+    expect(screen.getAllByText("+30 XP")).toHaveLength(3);
+    expect(screen.getByText(/\+90 XP TODAY/)).toBeInTheDocument();
+    cleanup();
+
+    renderView({ assignment: assignment({ chore_weight: 0 }) });
+    expect(screen.getAllByText("+0 XP")).toHaveLength(3);
+    expect(screen.getByText(/\+0 XP TODAY/)).toBeInTheDocument();
+    cleanup();
+
+    renderView({ assignment: assignment({ chore_weight: 1 }) });
+    expect(screen.getAllByText("+10 XP")).toHaveLength(3);
+    expect(screen.getByText(/\+30 XP TODAY/)).toBeInTheDocument();
+  });
+
   it("shows the family-wide achievement rank, not the weekly standings position", () => {
     renderView({
       stats: stats({
