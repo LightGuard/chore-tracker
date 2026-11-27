@@ -760,6 +760,7 @@ export function FamilyChorePage() {
                           key={selectedMember.id}
                           familyMemberId={selectedMember.id}
                           displayName={selectedMember.display_name}
+                          today={assignment?.today ?? null}
                         />
                       )}
                     </View>

@@ -19,14 +19,35 @@ const PAGE_SIZE = 50;
 const LOAD_ERROR =
   "We couldn't load the completion history. Check your connection and try again.";
 
-const STATUS: Record<
-  CompletionStatus,
-  { label: string; color: "positive" | "warning" | "neutral" }
-> = {
+type StatusDetails = {
+  label: string;
+  color: "positive" | "warning" | "neutral";
+};
+
+const STATUS: Record<CompletionStatus, StatusDetails> = {
   complete: { label: "Complete", color: "positive" },
   incomplete: { label: "Incomplete", color: "warning" },
   not_yet_recorded: { label: "Not yet recorded", color: "neutral" },
 };
+
+const UPCOMING_STATUS: StatusDetails = {
+  label: "Upcoming",
+  color: "neutral",
+};
+
+function statusFor(
+  record: CompletionHistoryRecord,
+  today: string | null | undefined,
+): StatusDetails {
+  if (
+    record.completion_status === "not_yet_recorded" &&
+    today != null &&
+    record.completion_date > today
+  ) {
+    return UPCOMING_STATUS;
+  }
+  return STATUS[record.completion_status];
+}
 
 const dayFormatter = new Intl.DateTimeFormat("en", {
   weekday: "long",
@@ -94,9 +115,14 @@ function messageFor(reason: unknown): string {
 type Props = {
   familyMemberId: number;
   displayName: string;
+  today?: string | null;
 };
 
-export function FamilyCompletionHistory({ familyMemberId, displayName }: Props) {
+export function FamilyCompletionHistory({
+  familyMemberId,
+  displayName,
+  today,
+}: Props) {
   const headingId = useId();
   const [records, setRecords] = useState<CompletionHistoryRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -171,7 +197,8 @@ export function FamilyCompletionHistory({ familyMemberId, displayName }: Props) 
           </Text>
           <Text color="neutral-faded">
             Saved daily records from this child&apos;s weekly assignments. Days
-            without saved checklist activity are marked not yet recorded.
+            without saved checklist activity are marked not yet recorded, and
+            future days are marked upcoming.
           </Text>
         </View>
 
@@ -244,7 +271,7 @@ export function FamilyCompletionHistory({ familyMemberId, displayName }: Props) 
                     }}
                   >
                     {group.records.map((record) => {
-                      const statusDetails = STATUS[record.completion_status];
+                      const statusDetails = statusFor(record, today);
                       return (
                         <View.Item as="li" key={record.completion_date}>
                           <View
