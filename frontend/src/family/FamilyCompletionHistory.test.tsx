@@ -66,10 +66,14 @@ function installFetch(
   return fetchMock;
 }
 
-function renderHistory() {
+function renderHistory(today?: string | null) {
   return render(
     <Reshaped theme="slate">
-      <FamilyCompletionHistory familyMemberId={1} displayName="Alex" />
+      <FamilyCompletionHistory
+        familyMemberId={1}
+        displayName="Alex"
+        today={today}
+      />
     </Reshaped>,
   );
 }
@@ -117,6 +121,87 @@ describe("family completion history", () => {
     expect(
       screen.getByRole("list", { name: "Kitchen daily records" }),
     ).toBeInTheDocument();
+  });
+
+  it("marks future dates as upcoming while past and today stay not yet recorded", async () => {
+    const week: CompletionHistoryRecord[] = [
+      {
+        assignment_id: 11,
+        week_start: "2026-11-23",
+        week_end: "2026-11-29",
+        chore_name: "Bath",
+        chore_description: "Wipe the tub.",
+        chore_weight: 1,
+        completion_date: "2026-11-24",
+        completion_status: "not_yet_recorded",
+      },
+      {
+        assignment_id: 11,
+        week_start: "2026-11-23",
+        week_end: "2026-11-29",
+        chore_name: "Bath",
+        chore_description: "Wipe the tub.",
+        chore_weight: 1,
+        completion_date: "2026-11-25",
+        completion_status: "complete",
+      },
+      {
+        assignment_id: 11,
+        week_start: "2026-11-23",
+        week_end: "2026-11-29",
+        chore_name: "Bath",
+        chore_description: "Wipe the tub.",
+        chore_weight: 1,
+        completion_date: "2026-11-26",
+        completion_status: "incomplete",
+      },
+      {
+        assignment_id: 11,
+        week_start: "2026-11-23",
+        week_end: "2026-11-29",
+        chore_name: "Bath",
+        chore_description: "Wipe the tub.",
+        chore_weight: 1,
+        completion_date: "2026-11-27",
+        completion_status: "not_yet_recorded",
+      },
+      {
+        assignment_id: 11,
+        week_start: "2026-11-23",
+        week_end: "2026-11-29",
+        chore_name: "Bath",
+        chore_description: "Wipe the tub.",
+        chore_weight: 1,
+        completion_date: "2026-11-28",
+        completion_status: "not_yet_recorded",
+      },
+    ];
+    function badgeTextFor(dayLabel: string): string | null {
+      const row = screen.getByText(dayLabel).closest("li");
+      return row?.textContent ?? null;
+    }
+
+    installFetch(async () => historyPage(week, week.length));
+
+    renderHistory("2026-11-27");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Completion history for Alex",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Week of Nov 23, 2026 – Nov 29, 2026"),
+    ).toBeInTheDocument();
+
+    expect(badgeTextFor("Tuesday, Nov 24, 2026")).toContain(
+      "Not yet recorded",
+    );
+    expect(badgeTextFor("Friday, Nov 27, 2026")).toContain("Not yet recorded");
+    expect(badgeTextFor("Saturday, Nov 28, 2026")).toContain("Upcoming");
+    expect(badgeTextFor("Wednesday, Nov 25, 2026")).toContain("Complete");
+    expect(badgeTextFor("Thursday, Nov 26, 2026")).toContain("Incomplete");
+    expect(screen.getByText("Upcoming")).toBeInTheDocument();
   });
 
   it("shows an empty state when the child has no history", async () => {

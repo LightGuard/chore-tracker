@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { resetFixture, selectChild, switchChild } from "./test-control";
+import {
+  E2E_TODAY,
+  resetFixture,
+  selectChild,
+  switchChild,
+} from "./test-control";
 
 test.beforeAll(async ({ playwright }) => {
   await resetFixture(playwright);
@@ -120,7 +125,12 @@ test.describe("family chore flow", () => {
         `li:has(time[datetime="${record.completion_date}"])`,
       );
       await expect(row).toBeVisible();
-      await expect(row.getByText(statusLabels[status])).toBeVisible();
+      const expected =
+        record.completion_status === "not_yet_recorded" &&
+        record.completion_date > E2E_TODAY
+          ? "Upcoming"
+          : statusLabels[status];
+      await expect(row.getByText(expected)).toBeVisible();
     }
 
     const weeks = new Set(payload.items.map((item) => item.week_start));
