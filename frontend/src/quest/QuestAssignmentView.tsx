@@ -269,9 +269,13 @@ export function QuestAssignmentView({
         <span className="quest-flame" aria-hidden="true">▲</span>
         <strong>{stats ? `${streak}-DAY STREAK` : "STREAK --"}</strong>
         <span className="quest-streak-copy">
-          {streak > 0
-            ? "Clear every objective to keep it going."
-            : "Clear every objective to start one."}
+          {hasOptionalItems
+            ? streak > 0
+              ? "Clear every required objective to keep it going."
+              : "Clear every required objective to start one."
+            : streak > 0
+              ? "Clear every objective to keep it going."
+              : "Clear every objective to start one."}
         </span>
       </div>
 
