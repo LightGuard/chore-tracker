@@ -297,6 +297,77 @@ describe("Quest assignment view", () => {
     expect(screen.queryByText(/XP TO #1/)).not.toBeInTheDocument();
   });
 
+  it("scopes the streak copy to required objectives when optional items exist", () => {
+    renderView({
+      assignment: assignment({
+        checklist_items: [
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
+          { id: 13, label: "Take out trash", position: 2, is_required: false, is_completed: false },
+        ],
+        is_complete: true,
+      }),
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("QUEST CLEAR");
+    expect(screen.getByText(/Every required objective is done today/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Clear every required objective to keep it going."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Clear every objective to keep it going."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("scopes the streak copy to required objectives when there is no streak yet", () => {
+    renderView({
+      stats: stats({
+        lifetime: {
+          completed_checklist_items: 124,
+          xp: 1240,
+          complete_days: 31,
+          current_streak: 0,
+        },
+      }),
+      assignment: assignment({
+        checklist_items: [
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Take out trash", position: 1, is_required: false, is_completed: false },
+        ],
+        is_complete: true,
+      }),
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("QUEST CLEAR");
+    expect(
+      screen.getByText("Clear every required objective to start one."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Clear every objective to start one."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the original streak copy when every objective is required", () => {
+    renderView({
+      assignment: assignment({
+        checklist_items: [
+          { id: 11, label: "Wipe counters", position: 0, is_required: true, is_completed: true },
+          { id: 12, label: "Sweep floor", position: 1, is_required: true, is_completed: true },
+          { id: 13, label: "Take out trash", position: 2, is_required: true, is_completed: true },
+        ],
+        is_complete: true,
+      }),
+    });
+
+    expect(screen.getByText(/Every objective is done today/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Clear every objective to keep it going."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Clear every required objective to keep it going."),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows a clear, non-color-only all-done state and toggles objectives", () => {
     const { onToggle } = renderView({
       assignment: assignment({
